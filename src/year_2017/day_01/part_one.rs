@@ -1,4 +1,4 @@
-pub mod year_2017_day_01 {
+pub mod part_one {
     pub use unicode_segmentation::UnicodeSegmentation;
     pub use itertools::Itertools;
     
@@ -15,7 +15,7 @@ pub mod year_2017_day_01 {
 
 #[cfg(test)]
 mod tests {
-    use crate::year_2017_day_01::year_2017_day_01::sum_of_repeated_characters;
+    use crate::year_2017::day_01::part_one::part_one::sum_of_repeated_characters;
 
     #[test]
     fn examples() {
