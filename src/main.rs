@@ -1,5 +1,7 @@
 use clap::Parser;
 
+mod year_2017_day_01;
+
 /// Runs the specfied Advent of Code solution
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -25,10 +27,8 @@ enum Part {
 }
 
 fn main() {
-    let args = Args::parse();
+    let _args = Args::parse();
+    // TODO: run the correct function based on parameters
 
-    println!(
-        "Year: {:?}, Day: {:?}, Part: {:?}", 
-        args.year, args.day, args.part
-    )
+    println!("{}", year_2017_day_01::year_2017_day_01::sum_of_repeated_characters("1111"));
 }
