@@ -19,9 +19,9 @@ mod tests {
 
     #[test]
     fn examples() {
-        assert_eq!(3, sum_of_repeated_characters("1122"));
-        assert_eq!(4, sum_of_repeated_characters("1111"));
-        assert_eq!(0, sum_of_repeated_characters("1234"));
-        assert_eq!(9, sum_of_repeated_characters("91212129"));
+        assert_eq!(3, sum_of_repeated_characters(include_str!("input/test_examples/example_1.txt")));
+        assert_eq!(4, sum_of_repeated_characters(include_str!("input/test_examples/example_2.txt")));
+        assert_eq!(0, sum_of_repeated_characters(include_str!("input/test_examples/example_3.txt")));
+        assert_eq!(9, sum_of_repeated_characters(include_str!("input/test_examples/example_4.txt")));
     }
 }
