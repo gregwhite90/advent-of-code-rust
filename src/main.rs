@@ -2,11 +2,12 @@ use clap::Parser;
 
 mod year_2017;
 mod utils;
+mod router;
 
 /// Runs the specfied Advent of Code solution
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[command(author, version, about, long_about = None)]
-struct Args {
+pub struct Args {
     /// Year of the Advent of Code solution
     #[arg(required = true)]
     year: u32,
@@ -21,7 +22,7 @@ struct Args {
     part: Part,
 }
 
-#[derive(clap::ValueEnum, Clone, Debug)]
+#[derive(clap::ValueEnum, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum Part {
     One,
     Two,
@@ -29,12 +30,6 @@ enum Part {
 }
 
 fn main() {
-    use crate::utils::utils::Solution;
-
-    let _args = Args::parse();
-    // TODO: run the correct function based on parameters
-
-    let soln = crate::year_2017::day_01::part_one::Soln::new("input/year_2017/day_01/input.txt");
-    println!("Part one:");
-    println!("{}", soln.solve().expect_left("Solution should be an integer."));
+    let args = Args::parse();
+    router::run_solution(args);
 }
