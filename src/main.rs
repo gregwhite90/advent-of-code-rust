@@ -1,7 +1,7 @@
 use clap::Parser;
-use crate::year_2017::day_01::{part_one, part_two};
 
 mod year_2017;
+mod utils;
 
 /// Runs the specfied Advent of Code solution
 #[derive(Parser, Debug)]
@@ -17,7 +17,7 @@ struct Args {
 
     /// Part of the solution
     #[clap(value_enum)]
-    #[arg(short, long, default_value_t = Part::Two)]
+    #[arg(short, long, default_value_t = Part::Both)]
     part: Part,
 }
 
@@ -25,12 +25,16 @@ struct Args {
 enum Part {
     One,
     Two,
+    Both,
 }
 
 fn main() {
+    use crate::utils::utils::Solution;
+
     let _args = Args::parse();
     // TODO: run the correct function based on parameters
 
-    println!("Part one: {}", part_one::sum_of_repeated_digits(include_str!("year_2017/input/day_01/input.txt")));
-    println!("Part two: {}", part_two::sum_of_matching_halfway_around_digits(include_str!("year_2017/input/day_01/input.txt")));
+    let soln = crate::year_2017::day_01::part_one::Soln::new("input/year_2017/day_01/input.txt");
+    println!("Part one:");
+    println!("{}", soln.solve().expect_left("Solution should be an integer."));
 }
