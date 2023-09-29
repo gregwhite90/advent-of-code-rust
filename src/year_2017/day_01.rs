@@ -41,16 +41,15 @@ pub mod part_one {
     use crate::year_2017::day_01::utils;
     use crate::utils::utils::Solution;
 
+    #[derive(Default)]
     pub struct Soln {
         text: String,
     }
 
     impl Solution for Soln {
-        fn new(filename: &str) -> Self {
-            Soln {
-                text: fs::read_to_string(filename)
-                    .expect("Should be able to read the file to a string."),
-            }
+        fn parse_input_file(&mut self, filename: &str) {
+            self.text = fs::read_to_string(filename)
+                .expect("Should be able to read the file to a string.");
         }
 
         fn solve(&self) -> Either<i32, &str> {
@@ -79,16 +78,16 @@ pub mod part_two {
     use crate::year_2017::day_01::utils;
     use crate::utils::utils::Solution;
 
+
+    #[derive(Default)]
     pub struct Soln {
         text: String,
     }
 
     impl Solution for Soln {
-        fn new(filename: &str) -> Self {
-            Soln {
-                text: fs::read_to_string(filename)
-                    .expect("Should be able to read the file to a string."),
-            }
+        fn parse_input_file(&mut self, filename: &str) {
+            self.text = fs::read_to_string(filename)
+                .expect("Should be able to read the file to a string.");
         }
 
         fn solve(&self) -> Either<i32, &str> {
@@ -150,7 +149,8 @@ mod tests {
                 (4, 9),
             ]);
             for (&example_key, &answer) in &cases {
-                let soln = Soln::new(
+                let mut soln = Soln::default();
+                soln.parse_input_file(
                     &format!("input/year_2017/day_01/test_examples/example_{example_key}.txt")
                 );
                 assert_eq!(answer, soln.solve().expect_left("Solution should be an integer."));    
@@ -173,7 +173,8 @@ mod tests {
                 (9, 4),
             ]);
             for (&example_key, &answer) in &cases {
-                let soln = Soln::new(
+                let mut soln = Soln::default();
+                soln.parse_input_file(
                     &format!("input/year_2017/day_01/test_examples/example_{example_key}.txt")
                 );
                 assert_eq!(answer, soln.solve().expect_left("Solution should be an integer."));    
