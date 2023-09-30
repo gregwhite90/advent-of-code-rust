@@ -33,7 +33,7 @@ mod utils {
     }
 }
 
-/// Solves 2017-01 part one.
+/// Solves 2017-01 part one
 pub mod part_one {
     use std::fs;
     pub use itertools::Itertools;

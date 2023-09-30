@@ -28,7 +28,7 @@ pub fn run_solution(args: &Args) {
                 println!("Part two:");
                 for_both!(p_two.solve(), answer => println!("{answer}"));            
             },
-            None => println!("No solution found for part one of this day."),
+            None => println!("No solution found for part two of this day."),
         }
     }
 }
@@ -48,6 +48,13 @@ fn get_solns(args: &Args) -> Option<DailySolutions> {
                 part_two: Some(Box::new(part_two)),
             })
         },
+        (2017, 2) => {
+            let part_one = crate::year_2017::day_02::part_one::Soln::default();
+            Some(DailySolutions { 
+                part_one: Some(Box::new(part_one)),
+                part_two: None,
+            })
+        }
         _ => None,
     };
     if let Some(ref mut solutions) = daily_solutions {
