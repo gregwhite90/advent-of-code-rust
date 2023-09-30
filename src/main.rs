@@ -31,5 +31,5 @@ enum Part {
 
 fn main() {
     let args = Args::parse();
-    router::run_solution(args);
+    router::run_solution(&args);
 }
