@@ -1,27 +1,63 @@
 use either::*;
 use crate::{Args, Part};
+use crate::utils::utils::Solution;
 
-pub fn run_solution(args: Args) {
-    use crate::utils::utils::Solution;
+pub fn run_solution(args: &Args) {
 
-    // TODO: make these variables more generic (an enum?)
-    let (part_one_soln, part_two_soln) = match (args.year, args.day) {
-        (2017, 1) => {
-            // TODO: error handling
-            let mut part_one_soln = crate::year_2017::day_01::part_one::Soln::default();
-            part_one_soln.parse_input_file("input/year_2017/day_01/input.txt");
-            let mut part_two_soln = crate::year_2017::day_01::part_two::Soln::default();
-            part_two_soln.parse_input_file("input/year_2017/day_01/input.txt");
-            (part_one_soln, part_two_soln)
+    let solns = get_solns(&args);
+    let daily_solns = match solns {
+        Some(daily_solns) => {
+            daily_solns
         },
-        _ => panic!(), // TODO: handle the error case
+        None => {
+            panic!("No solutions found for this day."); // TODO: possibly enumerate the valid days
+        }
     };
     if !matches!(args.part, Part::Two) {
-        println!("Part one:");
-        for_both!(part_one_soln.solve(), answer => println!("{answer}"));    
+        match daily_solns.part_one {
+            Some(mut p_one) => {
+                println!("Part one:");
+                for_both!(p_one.solve(), answer => println!("{answer}"));            
+            },
+            None => println!("No solution found for part one of this day."),
+        }
     }
     if !matches!(args.part, Part::One) {
-        println!("Part two:");
-        for_both!(part_two_soln.solve(), answer => println!("{answer}"));    
+        match daily_solns.part_two {
+            Some(mut p_two) => {
+                println!("Part two:");
+                for_both!(p_two.solve(), answer => println!("{answer}"));            
+            },
+            None => println!("No solution found for part one of this day."),
+        }
     }
+}
+
+struct DailySolutions {
+    part_one: Option<Box<dyn Solution>>,
+    part_two: Option<Box<dyn Solution>>,
+}
+
+fn get_solns(args: &Args) -> Option<DailySolutions> {
+    let mut daily_solutions: Option<DailySolutions> = match (args.year, args.day) {
+        (2017, 1) => {
+            let part_one = crate::year_2017::day_01::part_one::Soln::default();
+            let part_two = crate::year_2017::day_01::part_two::Soln::default();
+            Some(DailySolutions { 
+                part_one: Some(Box::new(part_one)),
+                part_two: Some(Box::new(part_two)),
+            })
+        },
+        _ => None,
+    };
+    if let Some(ref mut solutions) = daily_solutions {
+        let input_filename = format!("input/year_{}/day_{:02}/input.txt", args.year, args.day);
+        if let Some(ref mut p_one) = solutions.part_one {
+            p_one.parse_input_file(&input_filename);
+        }
+        if let Some(ref mut p_two) = solutions.part_two {
+            p_two.parse_input_file(&input_filename);
+        }
+    };
+    daily_solutions
 }
