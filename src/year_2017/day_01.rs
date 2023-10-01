@@ -18,10 +18,9 @@ mod utils {
     /// ```
     /// ```should_panic
     /// use crate::year_2017::day_01::utils::digits;
-    /// let panicky_call = digits("abc");
+    /// digits("abc");
     /// ```
     pub fn digits(text: &str) -> Vec<i32> {
-
         // Confirm that text is made up of ASCII numerical digits
         let re = Regex::new(r"^[0-9]+$").unwrap();
         assert!(re.is_match(text));
@@ -31,6 +30,29 @@ mod utils {
             .map(|digit| digit.parse::<i32>().unwrap())
             .collect()
     }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn parses_numerical_digits() {
+            assert_eq!(digits("1234"), vec![1, 2, 3, 4]);
+        }
+
+        #[test]
+        #[should_panic]
+        fn panics_empty_input() {
+            digits("");
+        }
+
+        #[test]
+        #[should_panic]
+        fn panics_with_non_numerical_characters() {
+            digits("abc");
+        }
+    }
+
 }
 
 /// Solves 2017-01 part one
@@ -69,15 +91,39 @@ pub mod part_one {
                 .fold(0, |acc, (&elem, &next)| acc + if elem == next { elem } else { 0 })
         }
     }
+
+    #[cfg(test)]
+    mod tests {
+        use std::collections::HashMap;
+        use crate::utils::utils::Solution;
+        use super::*;    
+
+        #[test]
+        fn examples_are_correct() {
+            let cases = HashMap::from([
+                (1, 3),
+                (2, 4),
+                (3, 0),
+                (4, 9),
+            ]);
+            for (&example_key, &answer) in &cases {
+                let mut soln = Soln::default();
+                soln.parse_input_file(
+                    &format!("input/year_2017/day_01/test_examples/example_{example_key}.txt")
+                );
+                assert_eq!(answer, soln.solve().expect_left("Solution should be an integer."));    
+            }
+        }
+    }
+
 }
 
-/// Solves 20017-01 part two.
+/// Solves 20017-01 part two
 pub mod part_two {
     use std::fs;
     pub use either::*;
     use crate::year_2017::day_01::utils;
     use crate::utils::utils::Solution;
-
 
     #[derive(Default)]
     pub struct Soln {
@@ -101,6 +147,7 @@ pub mod part_two {
         pub fn sum_of_matching_halfway_around_digits(&self) -> i32 {
             // Collect into a vector and then back into an iterator to allow enumeration and indexing
             let digits = utils::digits(&self.text);
+            assert!(digits.len() % 2 == 0);
             let mut sum: i32 = 0;
             for (i, &digit) in digits.iter().enumerate() {
                 if digit == digits[(i + (digits.len() / 2)) % digits.len()] {
@@ -110,58 +157,12 @@ pub mod part_two {
             sum
         }
     }
-}
 
-#[cfg(test)]
-mod tests {
-
-    mod utils {
-        use crate::year_2017::day_01::utils;
-
-        #[test]
-        fn parses_numerical_digits() {
-            assert_eq!(utils::digits("1234"), vec![1, 2, 3, 4]);
-        }
-
-        #[test]
-        #[should_panic]
-        fn panics_empty_input() {
-            utils::digits("");
-        }
-
-        #[test]
-        #[should_panic]
-        fn panics_with_non_numerical_characters() {
-            utils::digits("abc");
-        }
-    }
-    mod part_one {
+    #[cfg(test)]
+    mod tests {
         use std::collections::HashMap;
         use crate::utils::utils::Solution;    
-        use crate::year_2017::day_01::part_one::Soln;
-
-        #[test]
-        fn examples_are_correct() {
-            let cases = HashMap::from([
-                (1, 3),
-                (2, 4),
-                (3, 0),
-                (4, 9),
-            ]);
-            for (&example_key, &answer) in &cases {
-                let mut soln = Soln::default();
-                soln.parse_input_file(
-                    &format!("input/year_2017/day_01/test_examples/example_{example_key}.txt")
-                );
-                assert_eq!(answer, soln.solve().expect_left("Solution should be an integer."));    
-            }
-        }
-    }
-
-    mod part_two {
-        use std::collections::HashMap;
-        use crate::utils::utils::Solution;    
-        use crate::year_2017::day_01::part_two::Soln;
+        use super::*;
 
         #[test]
         fn examples_are_correct() {
