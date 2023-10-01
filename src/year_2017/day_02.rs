@@ -125,8 +125,25 @@ pub mod part_two {
         }
 
         fn solve(&mut self) -> Either<i32, &str> {
-            Left(0) // TODO: implement
+            Left(self.nums
+                .iter()
+                .map(|row| row_division(row).expect("Row should have a divisible pair."))
+                .sum()
+            )
         }
+    }
+
+    fn row_division(row: &Vec<i32>) -> Option<i32> {
+        for i in 0..row.len() {
+            for j in (i + 1)..row.len() {
+                if row[i] % row[j] == 0 {
+                    return Some(row[i] / row[j])
+                } else if row[j] % row[i] == 0 {
+                    return Some(row[j] / row[i])
+                }
+            }
+        }
+        None
     }
 
     #[cfg(test)]
@@ -137,7 +154,7 @@ pub mod part_two {
         fn example_is_correct() {
             let mut soln = Soln::default();
             soln.parse_input_file(
-                &format!("input/year_2017/day_02/test_examples/example_1.txt")
+                &format!("input/year_2017/day_02/test_examples/example_2.txt")
             );
             assert_eq!(9, soln.solve().expect_left("Solution should be an integer."));    
         }
