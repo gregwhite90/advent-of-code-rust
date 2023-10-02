@@ -1,3 +1,8 @@
+#[cfg(test)]
+const YEAR: u32 = 2017;
+#[cfg(test)]
+const DAY: u8 = 2;
+
 pub mod utils {
     use std::fs;
 
@@ -18,6 +23,8 @@ pub mod utils {
 
     #[cfg(test)]
     mod tests {
+        use crate::utils::utils::{InputFileType, input_filename};
+        use super::super::{YEAR, DAY};
         use super::*;    
 
         #[test]
@@ -39,7 +46,7 @@ pub mod utils {
         #[test]
         fn parse_input_file_is_correct() {
             assert_eq!(
-                parse_input_file("input/year_2017/day_02/test_examples/example_1.txt"),
+                parse_input_file(&input_filename(YEAR, DAY, InputFileType::Example(1))),
                 vec![
                     vec![5, 1, 9, 5],
                     vec![7, 5, 3],
@@ -85,6 +92,8 @@ pub mod part_one {
 
     #[cfg(test)]
     mod tests {
+        use crate::utils::utils::{InputFileType, input_filename};
+        use super::super::{YEAR, DAY};
         use super::*;    
 
         #[test]
@@ -102,7 +111,7 @@ pub mod part_one {
         fn example_is_correct() {
             let mut soln = Soln::default();
             soln.parse_input_file(
-                &format!("input/year_2017/day_02/test_examples/example_1.txt")
+                &input_filename(YEAR, DAY, InputFileType::Example(1))
             );
             assert_eq!(18, soln.solve().expect_left("Solution should be an integer."));    
         }
@@ -148,13 +157,15 @@ pub mod part_two {
 
     #[cfg(test)]
     mod tests {
+        use crate::utils::utils::{InputFileType, input_filename};
         use super::*;    
+        use super::super::{YEAR, DAY};
 
         #[test]
         fn example_is_correct() {
             let mut soln = Soln::default();
             soln.parse_input_file(
-                &format!("input/year_2017/day_02/test_examples/example_2.txt")
+                &input_filename(YEAR, DAY, InputFileType::Example(2))
             );
             assert_eq!(9, soln.solve().expect_left("Solution should be an integer."));    
         }

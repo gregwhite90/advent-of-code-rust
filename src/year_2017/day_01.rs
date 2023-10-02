@@ -1,3 +1,8 @@
+#[cfg(test)]
+const YEAR: u32 = 2017;
+#[cfg(test)]
+const DAY: u8 = 1;
+
 /// Defines utilities shared by both parts of 2017-01 solution.
 mod utils {
     pub use unicode_segmentation::UnicodeSegmentation;
@@ -95,8 +100,9 @@ pub mod part_one {
     #[cfg(test)]
     mod tests {
         use std::collections::HashMap;
-        use crate::utils::utils::Solution;
+        use crate::utils::utils::{Solution, InputFileType, input_filename};
         use super::*;    
+        use super::super::{YEAR, DAY};
 
         #[test]
         fn examples_are_correct() {
@@ -109,7 +115,7 @@ pub mod part_one {
             for (&example_key, &answer) in &cases {
                 let mut soln = Soln::default();
                 soln.parse_input_file(
-                    &format!("input/year_2017/day_01/test_examples/example_{example_key}.txt")
+                    &input_filename(YEAR, DAY, InputFileType::Example(example_key))
                 );
                 assert_eq!(answer, soln.solve().expect_left("Solution should be an integer."));    
             }
@@ -161,8 +167,9 @@ pub mod part_two {
     #[cfg(test)]
     mod tests {
         use std::collections::HashMap;
-        use crate::utils::utils::Solution;    
+        use crate::utils::utils::{Solution, InputFileType, input_filename};    
         use super::*;
+        use super::super::{YEAR, DAY};
 
         #[test]
         fn examples_are_correct() {
@@ -176,7 +183,7 @@ pub mod part_two {
             for (&example_key, &answer) in &cases {
                 let mut soln = Soln::default();
                 soln.parse_input_file(
-                    &format!("input/year_2017/day_01/test_examples/example_{example_key}.txt")
+                    &input_filename(YEAR, DAY, InputFileType::Example(example_key))
                 );
                 assert_eq!(answer, soln.solve().expect_left("Solution should be an integer."));    
             }
