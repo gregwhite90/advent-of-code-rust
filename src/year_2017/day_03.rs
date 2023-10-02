@@ -1,3 +1,8 @@
+#[cfg(test)]
+const YEAR: u32 = 2017;
+#[cfg(test)]
+const DAY: u8 = 3;
+
 pub mod utils {
     use std::fs;
 
@@ -11,20 +16,22 @@ pub mod utils {
     #[cfg(test)]
     mod tests {
         use std::collections::HashMap;
+        use crate::utils::utils::{InputFileType, input_filename};
         use super::*;    
+        use super::super::{YEAR, DAY};
 
         #[test]
         fn parse_input_file_is_correct() {
             let cases = HashMap::from([
-                (1, 1u32),
+                (1u8, 1u32),
                 (2, 12),
                 (3, 23),
                 (4, 1024),
             ]);
-            for (example_key, input_value) in &cases {
+            for (&example_key, &input_value) in &cases {
                 assert_eq!(
-                    parse_input_file(&format!("input/year_2017/day_03/test_examples/example_{}.txt", example_key)),
-                    *input_value
+                    parse_input_file(&input_filename(YEAR, DAY, InputFileType::Example(example_key))),
+                    input_value
                 );
             }
         }
@@ -80,22 +87,24 @@ pub mod part_one {
     #[cfg(test)]
     mod tests {
         use std::collections::HashMap;
+        use crate::utils::utils::{InputFileType, input_filename};
         use super::*;
+        use super::super::{YEAR, DAY};
 
         #[test]
         fn examples_are_correct() {
             let cases = HashMap::from([
-                (1, 0),
+                (1u8, 0),
                 (2, 3),
                 (3, 2),
                 (4, 31),
             ]);
-            for (example_key, answer) in &cases {
+            for (&example_key, &answer) in &cases {
                 let mut soln = Soln::default();
-                soln.parse_input_file(&format!("input/year_2017/day_03/test_examples/example_{}.txt", example_key));
+                soln.parse_input_file(&input_filename(YEAR, DAY, InputFileType::Example(example_key)));
                 assert_eq!(
                     soln.solve().expect_left("Solution should be an integer."),
-                    *answer
+                    answer
                 );
             }
         }
