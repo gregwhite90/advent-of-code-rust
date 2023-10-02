@@ -63,6 +63,13 @@ fn get_solns(args: &Args) -> Option<DailySolutions> {
                 part_one: Some(Box::new(part_one)),
                 part_two: Some(Box::new(part_two)),
             })
+        },
+        (2017, 4) => {
+            let part_one = crate::year_2017::day_04::part_one::Soln::default();
+            Some(DailySolutions {
+                part_one: Some(Box::new(part_one)),
+                part_two: None,
+            })
         }
         _ => None,
     };
