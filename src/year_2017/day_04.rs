@@ -40,7 +40,7 @@ pub mod part_one {
             self.num_valid = utils::parse_input_file(self, filename);
         }
 
-        fn solve(&mut self) -> Either<i32, &str> {
+        fn solve(&mut self) -> Either<i32, String> {
             Left(
                 self.num_valid as i32
             )
@@ -99,7 +99,7 @@ pub mod part_two {
             self.num_valid = utils::parse_input_file(self, filename);
         }
 
-        fn solve(&mut self) -> Either<i32, &str> {
+        fn solve(&mut self) -> Either<i32, String> {
             Left(
                 self.num_valid as i32
             )

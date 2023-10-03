@@ -53,7 +53,7 @@ pub mod part_one {
             self.num = utils::parse_input_file(filename);
         }
 
-        fn solve(&mut self) -> Either<i32, &str> {
+        fn solve(&mut self) -> Either<i32, String> {
             let sqrt = (self.num as f64).sqrt().ceil() as u32;
             let shortest_distance_from_layer = sqrt / 2;
             let step_shortest_dist_multiplier = 2;
@@ -183,7 +183,7 @@ pub mod part_two {
             self.num = utils::parse_input_file(filename);
         }
 
-        fn solve(&mut self) -> Either<i32, &str> {
+        fn solve(&mut self) -> Either<i32, String> {
             self.point = Point { x: 0, y: 0};
             self.point_values.insert(self.point, 1);
             self.next_point();

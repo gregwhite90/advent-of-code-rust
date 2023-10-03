@@ -62,7 +62,7 @@ pub mod part_one {
             self.banks = utils::parse_input_file(filename);
         }
 
-        fn solve(&mut self) -> Either<i32, &str> {
+        fn solve(&mut self) -> Either<i32, String> {
             Left(utils::steps(self).try_into().expect("Steps should be convertible to signed integer."))
         }
     }
@@ -128,7 +128,7 @@ pub mod part_two {
             self.banks = utils::parse_input_file(filename);
         }
 
-        fn solve(&mut self) -> Either<i32, &str> {
+        fn solve(&mut self) -> Either<i32, String> {
             Left(
                 (utils::steps(self) - self.seen.get(&self.banks).expect("Current banks should have been seen previously."))
                     .try_into()

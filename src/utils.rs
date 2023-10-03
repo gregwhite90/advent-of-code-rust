@@ -3,7 +3,7 @@ pub mod utils {
     // Solution implements solve, parse input filename
     pub trait Solution {
         fn parse_input_file(&mut self, filename: &str);
-        fn solve(&mut self) -> Either<i32, &str>;
+        fn solve(&mut self) -> Either<i32, String>; // TODO: possibly use Box<dyn Display + PartialEq + Eq> instead of Either?
     }
 
     pub enum InputFileType {
@@ -38,21 +38,21 @@ pub mod test_utils {
 
     pub fn check_example_cases<T: Solution + Default + Reset>(
         soln: &mut T,
-        cases: &HashMap<u8, Either<i32, &str>>,
+        cases: &HashMap<u8, Either<i32, String>>,
         year: u32,
         day: u8,
     ) {
-        for (&example_key, &answer) in cases {
+        for (&example_key, answer) in cases {
             let mut soln = soln.reset();
             soln.parse_input_file(&input_filename(year, day, InputFileType::Example(example_key)));
             match soln.solve() {
                 Left(ans) => assert_eq!(
                     ans,
-                    answer.expect_left("Solved answer and example answer should be the same type.")
+                    answer.clone().expect_left("Solved answer and example answer should be the same type.")
                 ),
                 Right(ans) => assert_eq!(
                     ans,
-                    answer.expect_right("Solved answer and example answer should be the same type.")
+                    answer.clone().expect_right("Solved answer and example answer should be the same type.")
                 ),
             }
         }
