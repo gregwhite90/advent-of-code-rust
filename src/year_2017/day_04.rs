@@ -3,11 +3,32 @@ const YEAR: u32 = 2017;
 #[cfg(test)]
 const DAY: u8 = 4;
 
+pub mod utils {
+    use std::fs;
+    use crate::utils::utils::Solution;
+
+    pub trait Year2017Day04Solution {
+        fn is_valid(&self, passphrase: &str) -> bool;
+    }
+
+    pub fn parse_input_file<T>(soln: &mut T, filename: &str) -> u32
+    where
+        T: Solution + Year2017Day04Solution,
+    {
+        fs::read_to_string(filename)
+                .expect("Should be able to read file to string.")
+                .lines()
+                .map(|line| soln.is_valid(line))
+                .filter(|valid| *valid)
+                .count() as u32
+    }
+}
+
 pub mod part_one {
     pub use either::*;
-    use std::fs;
     use std::collections::HashSet;
     use crate::utils::utils::Solution;
+    use super::utils::{self, Year2017Day04Solution};
 
     #[derive(Default)]
     pub struct Soln {
@@ -16,12 +37,7 @@ pub mod part_one {
  
     impl Solution for Soln {
         fn parse_input_file(&mut self, filename: &str) {
-            self.num_valid = fs::read_to_string(filename)
-                .expect("Should be able to read file to string.")
-                .lines()
-                .map(|line| self.is_valid(line))
-                .filter(|valid| *valid)
-                .count() as u32
+            self.num_valid = utils::parse_input_file(self, filename);
         }
 
         fn solve(&mut self) -> Either<i32, &str> {
@@ -31,7 +47,7 @@ pub mod part_one {
         }
     }
 
-    impl Soln {
+    impl Year2017Day04Solution for Soln {
         fn is_valid(&self, passphrase: &str) -> bool {
             let mut words = HashSet::new();
             for word in passphrase.split_whitespace() {
@@ -70,10 +86,10 @@ pub mod part_one {
 
 pub mod part_two {
     pub use either::*;
-    use std::fs;
     use std::collections::{HashSet, BTreeMap};
     use unicode_segmentation::UnicodeSegmentation;
     use crate::utils::utils::Solution;
+    use super::utils::{self, Year2017Day04Solution};
 
     #[derive(Default)]
     pub struct Soln {
@@ -82,12 +98,7 @@ pub mod part_two {
  
     impl Solution for Soln {
         fn parse_input_file(&mut self, filename: &str) {
-            self.num_valid = fs::read_to_string(filename)
-                .expect("Should be able to read file to string.")
-                .lines()
-                .map(|line| self.is_valid(line))
-                .filter(|valid| *valid)
-                .count() as u32
+            self.num_valid = utils::parse_input_file(self, filename);
         }
 
         fn solve(&mut self) -> Either<i32, &str> {
@@ -97,7 +108,7 @@ pub mod part_two {
         }
     }
 
-    impl Soln {
+    impl Year2017Day04Solution for Soln {
         fn is_valid(&self, passphrase: &str) -> bool {
             // Uses BTreeMap instead of HashMap because BTreeMap implements Hash
             // and HashMap can not.
