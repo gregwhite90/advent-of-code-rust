@@ -42,6 +42,8 @@ pub mod utils {
         }
         steps as i32
     }
+
+    // TODO: add tests
 }
 
 pub mod part_one {
@@ -76,19 +78,18 @@ pub mod part_one {
 
     #[cfg(test)]
     mod tests {
-        use std::collections::HashMap;
+        use test_case::test_case;
         use either::*;
         use crate::utils::test_utils;
         use super::*;
         use super::super::{YEAR, DAY};
 
-        #[test]
-        fn examples_are_correct() {
-            test_utils::check_example_cases(
+        #[test_case(1, Left(5); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+            test_utils::check_example_case(
                 &mut Soln::default(),
-                &HashMap::from([
-                    (1u8, Left(5)),
-                ]),
+                example_key,
+                answer,
                 YEAR,
                 DAY,
             );
@@ -136,19 +137,18 @@ pub mod part_two {
 
     #[cfg(test)]
     mod tests {
-        use std::collections::HashMap;
+        use test_case::test_case;
         use either::*;
         use crate::utils::test_utils;
         use super::*;
         use super::super::{YEAR, DAY};
 
-        #[test]
-        fn examples_are_correct() {
-            test_utils::check_example_cases(
+        #[test_case(1, Left(10); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+            test_utils::check_example_case(
                 &mut Soln::default(),
-                &HashMap::from([
-                    (1u8, Left(10)),
-                ]),
+                example_key,
+                answer,
                 YEAR,
                 DAY,
             );

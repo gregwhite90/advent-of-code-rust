@@ -7,6 +7,7 @@ pub mod utils { // TODO: make not pub?
     use std::{fs, collections::HashMap};
     use crate::utils::utils::Solution;
 
+    // TODO: test
     pub fn parse_input_file(filename: &str) -> Vec<u32> {
         fs::read_to_string(filename)
             .expect("Should be able to read the file to a string.")
@@ -91,19 +92,18 @@ pub mod part_one {
 
     #[cfg(test)]
     mod tests {
-        use std::collections::HashMap;
+        use test_case::test_case;
         use either::*;
         use crate::utils::test_utils;
         use super::*;
         use super::super::{YEAR, DAY};
 
-        #[test]
-        fn examples_are_correct() {
-            test_utils::check_example_cases(
+        #[test_case(1, Left(5); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+            test_utils::check_example_case(
                 &mut Soln::default(),
-                &HashMap::from([
-                    (1u8, Left(5)),
-                ]),
+                example_key,
+                answer,
                 YEAR,
                 DAY,
             );
@@ -161,19 +161,18 @@ pub mod part_two {
 
     #[cfg(test)]
     mod tests {
-        use std::collections::HashMap;
+        use test_case::test_case;
         use either::*;
         use crate::utils::test_utils;
         use super::*;
         use super::super::{YEAR, DAY};
 
-        #[test]
-        fn examples_are_correct() {
-            test_utils::check_example_cases(
+        #[test_case(1, Left(4); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+            test_utils::check_example_case(
                 &mut Soln::default(),
-                &HashMap::from([
-                    (1u8, Left(4)),
-                ]),
+                example_key,
+                answer,
                 YEAR,
                 DAY,
             );
