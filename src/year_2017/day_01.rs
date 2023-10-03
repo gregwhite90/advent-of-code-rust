@@ -99,22 +99,21 @@ pub mod part_one {
 
     #[cfg(test)]
     mod tests {
-        use std::collections::HashMap;
+        use test_case::test_case;
         use either::*;
         use crate::utils::test_utils;
         use super::*;    
         use super::super::{YEAR, DAY};
 
-        #[test]
-        fn examples_are_correct() {
-            test_utils::check_example_cases(
+        #[test_case(1, Left(3); "example_1")]
+        #[test_case(2, Left(4); "example_2")]
+        #[test_case(3, Left(0); "example_3")]
+        #[test_case(4, Left(9); "example_4")]
+        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+            test_utils::check_example_case(
                 &mut Soln::default(),
-                &HashMap::from([
-                    (1u8, Left(3)),
-                    (2,   Left(4)),
-                    (3,   Left(0)),
-                    (4,   Left(9)),
-                ]),
+                example_key,
+                answer,
                 YEAR,
                 DAY,
             );
@@ -165,23 +164,22 @@ pub mod part_two {
 
     #[cfg(test)]
     mod tests {
-        use std::collections::HashMap;
+        use test_case::test_case;
         use either::*;
         use crate::utils::test_utils;    
         use super::*;
         use super::super::{YEAR, DAY};
 
-        #[test]
-        fn examples_are_correct() {
-            test_utils::check_example_cases(
+        #[test_case(5, Left(6); "example_5")]
+        #[test_case(6, Left(0); "example_6")]
+        #[test_case(7, Left(4); "example_7")]
+        #[test_case(8, Left(12); "example_8")]
+        #[test_case(9, Left(4); "example_9")]
+        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+            test_utils::check_example_case(
                 &mut Soln::default(),
-                &HashMap::from([
-                    (5u8, Left(6)),
-                    (6,   Left(0)),
-                    (7,   Left(4)),
-                    (8,   Left(12)),
-                    (9,   Left(4)),
-                ]),
+                example_key,
+                answer,
                 YEAR,
                 DAY,
             );

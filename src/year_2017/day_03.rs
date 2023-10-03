@@ -15,25 +15,20 @@ pub mod utils {
     
     #[cfg(test)]
     mod tests {
-        use std::collections::HashMap;
+        use test_case::test_case;
         use crate::utils::utils::{InputFileType, input_filename};
         use super::*;    
         use super::super::{YEAR, DAY};
 
-        #[test]
-        fn parse_input_file_is_correct() {
-            let cases = HashMap::from([
-                (1u8, 1u32),
-                (2,   12),
-                (3,   23),
-                (4,   1024),
-            ]);
-            for (&example_key, &input_value) in &cases {
-                assert_eq!(
-                    parse_input_file(&input_filename(YEAR, DAY, InputFileType::Example(example_key))),
-                    input_value
-                );
-            }
+        #[test_case(1, 1; "example_1")]
+        #[test_case(2, 12; "example_2")]
+        #[test_case(3, 23; "example_3")]
+        #[test_case(4, 1024; "example_4")]
+        fn parse_input_file_is_correct(example_key: u8, input_value: u32) {
+            assert_eq!(
+                parse_input_file(&input_filename(YEAR, DAY, InputFileType::Example(example_key))),
+                input_value
+            );
         }
     }
 }
@@ -86,22 +81,21 @@ pub mod part_one {
 
     #[cfg(test)]
     mod tests {
-        use std::collections::HashMap;
+        use test_case::test_case;
         use either::*;
         use crate::utils::test_utils;
         use super::*;
         use super::super::{YEAR, DAY};
 
-        #[test]
-        fn examples_are_correct() {
-            test_utils::check_example_cases(
+        #[test_case(1, Left(0); "example_1")]
+        #[test_case(2, Left(3); "example_2")]
+        #[test_case(3, Left(2); "example_3")]
+        #[test_case(4, Left(31); "example_4")]
+        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+            test_utils::check_example_case(
                 &mut Soln::default(),
-                &HashMap::from([
-                    (1u8, Left(0)),
-                    (2,   Left(3)),
-                    (3,   Left(2)),
-                    (4,   Left(31)),
-                ]),
+                example_key,
+                answer,
                 YEAR,
                 DAY,
             );
@@ -228,8 +222,8 @@ pub mod part_two {
 
     #[cfg(test)]
     mod tests {
-        use std::collections::HashMap;
         use either::*;
+        use test_case::test_case;
         use crate::utils::test_utils;
         use super::*;
         use super::super::{YEAR, DAY};
@@ -251,15 +245,14 @@ pub mod part_two {
             );
         }
 
-        #[test]
-        fn examples_are_correct() {
-            test_utils::check_example_cases(
+        #[test_case(1, Left(2); "example_1")]
+        #[test_case(2, Left(23); "example_2")]
+        #[test_case(3, Left(25); "example_3")]
+        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+            test_utils::check_example_case(
                 &mut Soln::default(),
-                &HashMap::from([
-                    (1u8, Left(2)),
-                    (2,   Left(23)),
-                    (3,   Left(25)),
-                ]),
+                example_key,
+                answer,
                 YEAR,
                 DAY,
             );
