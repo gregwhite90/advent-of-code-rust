@@ -72,7 +72,7 @@ pub mod part_one {
             self.nums = utils::parse_input_file(filename);
         }
 
-        fn solve(&mut self) -> Either<i32, &str> {
+        fn solve(&mut self) -> Either<i32, String> {
             Left(self.nums
                 .iter()
                 .map(|row| row_range(row).expect("Row should not be empty."))
@@ -138,7 +138,7 @@ pub mod part_two {
             self.nums = utils::parse_input_file(filename);
         }
 
-        fn solve(&mut self) -> Either<i32, &str> {
+        fn solve(&mut self) -> Either<i32, String> {
             Left(self.nums
                 .iter()
                 .map(|row| row_division(row).expect("Row should have a divisible pair."))

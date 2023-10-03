@@ -59,7 +59,7 @@ pub mod part_one {
             self.instructions = utils::parse_input_file(filename);
         }
 
-        fn solve(&mut self) -> Either<i32, &str> {
+        fn solve(&mut self) -> Either<i32, String> {
             Left(utils::solve(self))
         }
     }
@@ -111,7 +111,7 @@ pub mod part_two {
             self.instructions = utils::parse_input_file(filename);
         }
 
-        fn solve(&mut self) -> Either<i32, &str> {
+        fn solve(&mut self) -> Either<i32, String> {
             Left(utils::solve(self))
         }
     }

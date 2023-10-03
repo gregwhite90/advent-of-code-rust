@@ -79,7 +79,7 @@ pub mod part_one {
                 .expect("Should be able to read the file to a string.");
         }
 
-        fn solve(&mut self) -> Either<i32, &str> {
+        fn solve(&mut self) -> Either<i32, String> {
             Left(self.sum_of_repeated_digits())
         }
     }
@@ -141,7 +141,7 @@ pub mod part_two {
                 .expect("Should be able to read the file to a string.");
         }
 
-        fn solve(&mut self) -> Either<i32, &str> {
+        fn solve(&mut self) -> Either<i32, String> {
             Left(self.sum_of_matching_halfway_around_digits())
         }
     }
