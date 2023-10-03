@@ -197,8 +197,8 @@ pub mod part_two {
                 for neighbor in &neighbors {
                     match self.point_values.get(neighbor) {
                         Some(&val) => {
-                            next_num = next_num + val;
-                            neighbors_count = neighbors_count + 1;
+                            next_num += val;
+                            neighbors_count += 1;
                         },
                         None => (),
                     }

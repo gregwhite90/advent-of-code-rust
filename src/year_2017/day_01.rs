@@ -157,7 +157,7 @@ pub mod part_two {
             let mut sum: i32 = 0;
             for (i, &digit) in digits.iter().enumerate() {
                 if digit == digits[(i + (digits.len() / 2)) % digits.len()] {
-                    sum = sum + digit;
+                    sum += digit;
                 }
             }
             sum
