@@ -19,3 +19,42 @@ pub mod utils {
         format!("input/year_{year}/day_{day:02}/{file}")
     }
 }
+
+#[cfg(test)]
+pub mod test_utils {
+    use std::collections::HashMap;
+    use either::*;
+    use super::utils::{Solution, InputFileType, input_filename};
+
+    pub trait Reset {
+        fn reset(&self) -> Self;
+    }
+
+    impl<T: Default> Reset for T {
+        fn reset(&self) -> T {
+            T::default()
+        }
+    }
+
+    pub fn check_example_cases<T: Solution + Default + Reset>(
+        soln: &mut T,
+        cases: &HashMap<u8, Either<i32, &str>>,
+        year: u32,
+        day: u8,
+    ) {
+        for (&example_key, &answer) in cases {
+            let mut soln = soln.reset();
+            soln.parse_input_file(&input_filename(year, day, InputFileType::Example(example_key)));
+            match soln.solve() {
+                Left(ans) => assert_eq!(
+                    ans,
+                    answer.expect_left("Solved answer and example answer should be the same type.")
+                ),
+                Right(ans) => assert_eq!(
+                    ans,
+                    answer.expect_right("Solved answer and example answer should be the same type.")
+                ),
+            }
+        }
+    }
+}

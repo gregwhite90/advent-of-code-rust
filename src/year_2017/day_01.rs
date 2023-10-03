@@ -100,25 +100,24 @@ pub mod part_one {
     #[cfg(test)]
     mod tests {
         use std::collections::HashMap;
-        use crate::utils::utils::{Solution, InputFileType, input_filename};
+        use either::*;
+        use crate::utils::test_utils;
         use super::*;    
         use super::super::{YEAR, DAY};
 
         #[test]
         fn examples_are_correct() {
-            let cases = HashMap::from([
-                (1, 3),
-                (2, 4),
-                (3, 0),
-                (4, 9),
-            ]);
-            for (&example_key, &answer) in &cases {
-                let mut soln = Soln::default();
-                soln.parse_input_file(
-                    &input_filename(YEAR, DAY, InputFileType::Example(example_key))
-                );
-                assert_eq!(answer, soln.solve().expect_left("Solution should be an integer."));    
-            }
+            test_utils::check_example_cases(
+                &mut Soln::default(),
+                &HashMap::from([
+                    (1u8, Left(3)),
+                    (2,   Left(4)),
+                    (3,   Left(0)),
+                    (4,   Left(9)),
+                ]),
+                YEAR,
+                DAY,
+            );
         }
     }
 
@@ -167,26 +166,25 @@ pub mod part_two {
     #[cfg(test)]
     mod tests {
         use std::collections::HashMap;
-        use crate::utils::utils::{Solution, InputFileType, input_filename};    
+        use either::*;
+        use crate::utils::test_utils;    
         use super::*;
         use super::super::{YEAR, DAY};
 
         #[test]
         fn examples_are_correct() {
-            let cases = HashMap::from([
-                (5, 6),
-                (6, 0),
-                (7, 4),
-                (8, 12),
-                (9, 4),
-            ]);
-            for (&example_key, &answer) in &cases {
-                let mut soln = Soln::default();
-                soln.parse_input_file(
-                    &input_filename(YEAR, DAY, InputFileType::Example(example_key))
-                );
-                assert_eq!(answer, soln.solve().expect_left("Solution should be an integer."));    
-            }
+            test_utils::check_example_cases(
+                &mut Soln::default(),
+                &HashMap::from([
+                    (5u8, Left(6)),
+                    (6,   Left(0)),
+                    (7,   Left(4)),
+                    (8,   Left(12)),
+                    (9,   Left(4)),
+                ]),
+                YEAR,
+                DAY,
+            );
         }    
     }
 }

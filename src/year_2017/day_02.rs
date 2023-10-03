@@ -92,7 +92,9 @@ pub mod part_one {
 
     #[cfg(test)]
     mod tests {
-        use crate::utils::utils::{InputFileType, input_filename};
+        use std::collections::HashMap;
+        use either::*;
+        use crate::utils::test_utils;
         use super::super::{YEAR, DAY};
         use super::*;    
 
@@ -109,11 +111,14 @@ pub mod part_one {
     
         #[test]
         fn example_is_correct() {
-            let mut soln = Soln::default();
-            soln.parse_input_file(
-                &input_filename(YEAR, DAY, InputFileType::Example(1))
+            test_utils::check_example_cases(
+                &mut Soln::default(),
+                &HashMap::from([
+                    (1u8, Left(18)),
+                ]),
+                YEAR,
+                DAY,
             );
-            assert_eq!(18, soln.solve().expect_left("Solution should be an integer."));    
         }
     }    
 }
@@ -157,17 +162,22 @@ pub mod part_two {
 
     #[cfg(test)]
     mod tests {
-        use crate::utils::utils::{InputFileType, input_filename};
+        use std::collections::HashMap;
+        use either::*;
+        use crate::utils::test_utils;
         use super::*;    
         use super::super::{YEAR, DAY};
 
         #[test]
         fn example_is_correct() {
-            let mut soln = Soln::default();
-            soln.parse_input_file(
-                &input_filename(YEAR, DAY, InputFileType::Example(2))
+            test_utils::check_example_cases(
+                &mut Soln::default(),
+                &HashMap::from([
+                    (2u8, Left(9)),
+                ]),
+                YEAR,
+                DAY,
             );
-            assert_eq!(9, soln.solve().expect_left("Solution should be an integer."));    
         }
     }    
 }
