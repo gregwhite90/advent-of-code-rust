@@ -69,9 +69,9 @@ pub mod part_one {
                             .unwrap()
                     )
                     .map(|cross_point| {
-                        (cross_point as i32 - (
+                        cross_point.abs_diff(
                             self.num - if sqrt % 2 == 0 { sqrt - 1 } else { sqrt - 2 }.pow(2)
-                        ) as i32).abs() as u32
+                        )
                     })
                     .min()
                     .expect("Should be at least one cross point to find the distance to.")
