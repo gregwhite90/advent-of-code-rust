@@ -28,7 +28,7 @@ pub mod part_one {
             while (idx as usize) < self.instructions.len() && idx >= 0 {
                 steps += 1;
                 let jump = self.instructions[idx as usize];
-                self.instructions[idx as usize] += 1; // TODO: implement += everywhere
+                self.instructions[idx as usize] += 1;
                 idx += jump;
             }
             Left(
