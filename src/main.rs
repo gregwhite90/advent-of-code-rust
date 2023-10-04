@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{self, Parser};
 
 mod router;
 
@@ -6,12 +6,14 @@ mod router;
 #[derive(Parser, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[command(author, version, about, long_about = None)]
 pub struct Args {
-    /// Year of the Advent of Code solution
+    /// Year of the solution [possible values: 2015-2022 inclusive]
     #[arg(required = true)]
+    #[arg(value_parser = clap::value_parser!(u32).range(2015..=2022))]
     year: u32,
 
-    /// Day of the solution
+    /// Day of the solution  [possible values: 1-25 inclusive]
     #[arg(required = true)]
+    #[arg(value_parser = clap::value_parser!(u8).range(1..=25))]
     day: u8,
 
     /// Part of the solution
