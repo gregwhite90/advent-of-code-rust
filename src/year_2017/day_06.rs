@@ -3,7 +3,7 @@ const YEAR: u32 = 2017;
 #[cfg(test)]
 const DAY: u8 = 6;
 
-pub mod utils { // TODO: make not pub?
+mod utils {
     use std::collections::HashMap;
     use crate::utils::{solution::Solution, io_utils};
 

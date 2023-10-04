@@ -3,7 +3,7 @@ const YEAR: u32 = 2017;
 #[cfg(test)]
 const DAY: u8 = 5;
 
-pub mod utils {
+mod utils {
     use crate::utils::{solution::Solution, io_utils};
 
     pub trait Year2017Day05Solution {

@@ -3,7 +3,7 @@ const YEAR: u32 = 2017;
 #[cfg(test)]
 const DAY: u8 = 7;
 
-pub mod utils {
+mod utils {
     use regex::Regex;
     use std::collections::HashMap;
     use crate::utils::io_utils;

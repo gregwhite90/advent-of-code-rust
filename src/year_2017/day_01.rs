@@ -111,7 +111,7 @@ pub mod part_one {
 
 /// Solves 20017-01 part two
 pub mod part_two {
-    use crate::year_2017::day_01::utils;
+    use super::utils;
     use crate::utils::{solution::{Solution, Answer}, io_utils};
 
     #[derive(Default)]

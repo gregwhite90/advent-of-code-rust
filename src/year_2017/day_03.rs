@@ -3,7 +3,7 @@ const YEAR: u32 = 2017;
 #[cfg(test)]
 const DAY: u8 = 3;
 
-pub mod utils {
+mod utils {
     use crate::utils::io_utils;
 
     pub fn parse_input_file(filename: &str) -> u32 {
