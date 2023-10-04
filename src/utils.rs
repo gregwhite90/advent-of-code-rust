@@ -1,3 +1,8 @@
+pub struct Day { 
+    pub year: u32,
+    pub day: u8,
+}
+
 pub mod solution {
     use std::fmt;
 
@@ -20,7 +25,7 @@ pub mod solution {
 
     pub trait Solution {
         fn parse_input_file(&mut self, filename: &str);
-        fn solve(&mut self) -> Answer; // TODO: possibly use Box<dyn Display + PartialEq + Eq> instead of Either?
+        fn solve(&mut self) -> Answer;
     }
 }
 
@@ -28,18 +33,19 @@ pub mod io_utils {
     use std::fs::{self, File};
     use std::io::{self, BufRead};
     use std::path::Path;
+    use super::Day;
 
     pub enum InputFileType {
         Input,
-        #[allow(dead_code)] Example(u8), // constructed only in test cases. TODO: change to cfg(test)?
+        #[allow(dead_code)] Example(u8),
     }
 
-    pub fn input_filename(year: u32, day: u8, input_file_type: InputFileType) -> String {
+    pub fn input_filename(day: &Day, input_file_type: InputFileType) -> String {
         let file = match input_file_type {
             InputFileType::Input => String::from("input.txt"),
             InputFileType::Example(example_key) => format!("test_examples/example_{example_key}.txt"),
         };
-        format!("input/year_{year}/day_{day:02}/{file}")
+        format!("input/year_{}/day_{:02}/{}", day.year, day.day, file)
     }
 
     pub fn file_to_string(filename: &str) -> String {
@@ -64,16 +70,15 @@ pub mod io_utils {
 
 #[cfg(test)]
 pub mod test_utils {
-    use super::{solution::{Solution, Answer}, io_utils::{InputFileType, input_filename}};
+    use super::{solution::{Solution, Answer}, io_utils::{InputFileType, input_filename}, Day};
 
     pub fn check_example_case<T: Solution>(
         soln: &mut T,
         example_key: u8,
         answer: Answer,
-        year: u32,
-        day: u8,
+        day: &Day,
     ) {
-        soln.parse_input_file(&input_filename(year, day, InputFileType::Example(example_key)));
+        soln.parse_input_file(&input_filename(day, InputFileType::Example(example_key)));
         assert_eq!(
             soln.solve(),
             answer,

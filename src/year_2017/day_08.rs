@@ -1,7 +1,7 @@
 #[cfg(test)]
-const YEAR: u32 = 2017;
+use crate::utils::Day;
 #[cfg(test)]
-const DAY: u8 = 8;
+const DAY: Day = crate::utils::Day { year: 2017, day: 8};
 
 mod utils {
     use std::{str::FromStr, collections::HashMap, cmp};
@@ -142,7 +142,7 @@ pub mod part_one {
         use test_case::test_case;
         use crate::utils::{test_utils, solution::Answer};
         use super::*;
-        use super::super::{YEAR, DAY};
+        use super::super::DAY;
 
         #[test_case(1, Answer::I32(1); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
@@ -150,8 +150,7 @@ pub mod part_one {
                 &mut Soln::default(),
                 example_key,
                 answer,
-                YEAR,
-                DAY,
+                &DAY,
             );
         }
     }    
@@ -183,7 +182,7 @@ pub mod part_two {
         use test_case::test_case;
         use crate::utils::{test_utils, solution::Answer};
         use super::*;
-        use super::super::{YEAR, DAY};
+        use super::super::DAY;
 
         #[test_case(1, Answer::I32(10); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
@@ -191,8 +190,7 @@ pub mod part_two {
                 &mut Soln::default(),
                 example_key,
                 answer,
-                YEAR,
-                DAY,
+                &DAY,
             );
         }
     }    

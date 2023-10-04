@@ -1,7 +1,7 @@
 #[cfg(test)]
-const YEAR: u32 = 2017;
+use crate::utils::Day;
 #[cfg(test)]
-const DAY: u8 = 2;
+const DAY: Day = crate::utils::Day { year: 2017, day: 2};
 
 mod utils {
     use crate::utils::io_utils;
@@ -22,7 +22,7 @@ mod utils {
     #[cfg(test)]
     mod tests {
         use crate::utils::io_utils::{InputFileType, input_filename};
-        use super::super::{YEAR, DAY};
+        use super::super::DAY;
         use super::*;    
 
         #[test]
@@ -44,7 +44,7 @@ mod utils {
         #[test]
         fn parse_input_file_is_correct() {
             assert_eq!(
-                parse_input_file(&input_filename(YEAR, DAY, InputFileType::Example(1))),
+                parse_input_file(&input_filename(&DAY, InputFileType::Example(1))),
                 vec![
                     vec![5, 1, 9, 5],
                     vec![7, 5, 3],
@@ -91,7 +91,7 @@ pub mod part_one {
     mod tests {
         use test_case::test_case;
         use crate::utils::{test_utils, solution::Answer};
-        use super::super::{YEAR, DAY};
+        use super::super::DAY;
         use super::*;    
 
         #[test]
@@ -111,8 +111,7 @@ pub mod part_one {
                 &mut Soln::default(),
                 example_key,
                 answer,
-                YEAR,
-                DAY,
+                &DAY,
             );
         }
     }    
@@ -159,7 +158,7 @@ pub mod part_two {
         use test_case::test_case;
         use crate::utils::test_utils;
         use super::*;    
-        use super::super::{YEAR, DAY};
+        use super::super::DAY;
 
         #[test_case(2, Answer::I32(9); "example_2")]
         fn example_is_correct(example_key: u8, answer: Answer) {
@@ -167,8 +166,7 @@ pub mod part_two {
                 &mut Soln::default(),
                 example_key,
                 answer,
-                YEAR,
-                DAY,
+                &DAY,
             );
         }
     }    
