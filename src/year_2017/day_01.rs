@@ -62,16 +62,18 @@ pub mod part_one {
     }
 
     impl Solution for Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.text = io_utils::file_to_string(filename);
-        }
-
-        fn solve(&mut self) -> Answer {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.parse_input_file(filename);
             Answer::U32(self.sum_of_repeated_digits())
         }
     }
     
     impl Soln {
+
+        fn parse_input_file(&mut self, filename: &str) {
+            self.text = io_utils::file_to_string(filename);
+        }
+
         /// Finds the sum of all repeated consecutive digits, considered circularly.
         fn sum_of_repeated_digits(&self) -> u32 {
             // Collect into a vector and then back to an iterator to satisfy trait bounds in 
@@ -119,19 +121,19 @@ pub mod part_two {
     }
 
     impl Solution for Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.text = io_utils::file_to_string(filename);
-        }
-
-        fn solve(&mut self) -> Answer {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.parse_input_file(filename);
             Answer::U32(self.sum_of_matching_halfway_around_digits())
         }
     }
     
     impl Soln {    
+        fn parse_input_file(&mut self, filename: &str) {
+            self.text = io_utils::file_to_string(filename);
+        }
         /// Finds the sum of the digits halfway around the string (considered circularly)
         /// that match.
-        pub fn sum_of_matching_halfway_around_digits(&self) -> u32 {
+        fn sum_of_matching_halfway_around_digits(&self) -> u32 {
             // Collect into a vector and then back into an iterator to allow enumeration and indexing
             let digits = utils::digits(&self.text);
             assert!(digits.len() % 2 == 0);

@@ -22,6 +22,7 @@ pub struct Args {
     part: Part,
 }
 
+/// Represents a part of the day's solution to run (or both parts)
 #[derive(clap::ValueEnum, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum Part {
     One,
