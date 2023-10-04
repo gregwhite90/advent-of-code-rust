@@ -4,8 +4,9 @@ const YEAR: u32 = 2017;
 const DAY: u8 = 8;
 
 pub mod utils {
-    use std::{str::FromStr, collections::HashMap, cmp, fs};
+    use std::{str::FromStr, collections::HashMap, cmp};
     use regex::Regex;
+    use crate::utils::io_utils;
 
     pub enum Operation {
         Increase,
@@ -73,41 +74,42 @@ pub mod utils {
         }
     }
 
-    pub fn parse_input_file(registers: &mut HashMap<String, i32>, max_register_value: &mut i32, filename: &str) {
+    pub fn parse_input_file(
+        registers: &mut HashMap<String, i32>,
+        max_register_value: &mut i32,
+        filename: &str
+    ) {
         *max_register_value = i32::MIN;
-        fs::read_to_string(filename)
-            .expect("Should be able to read the file to a string.")
-            .lines()
-            .for_each(|line| {
-                let instruction = Instruction::from(line);
-                let comparison_register = registers
-                    .entry(instruction.comparison_register.clone())
-                    .or_insert(0);
-                let comparison: bool = match instruction.comparison_operator {
-                    ComparisonOperator::GreaterThan => *comparison_register > instruction.comparison_value,
-                    ComparisonOperator::LessThan => *comparison_register < instruction.comparison_value,
-                    ComparisonOperator::GreaterThanOrEqual => *comparison_register >= instruction.comparison_value,
-                    ComparisonOperator::LessThanOrEqual => *comparison_register <= instruction.comparison_value,
-                    ComparisonOperator::Equal => *comparison_register == instruction.comparison_value,
-                    ComparisonOperator::NotEqual => *comparison_register != instruction.comparison_value,
-                };
-                if !comparison { return; }
-                let added_value = match instruction.operation { Operation::Increase => 1, Operation::Decrease => -1 } * instruction.value;
-                let register_value = registers
-                    .entry(instruction.register.clone())
-                    .and_modify(|register_val| {
-                        *register_val += added_value;
-                    })
-                    .or_insert(added_value); // Default = 0, then add added_value
-                *max_register_value = cmp::max(*max_register_value, *register_value);
-            });
-        }
+        io_utils::file_to_lines(filename).for_each(|line| {
+            let instruction = Instruction::from(&line);
+            let comparison_register = registers
+                .entry(instruction.comparison_register.clone())
+                .or_insert(0);
+            let comparison: bool = match instruction.comparison_operator {
+                ComparisonOperator::GreaterThan => *comparison_register > instruction.comparison_value,
+                ComparisonOperator::LessThan => *comparison_register < instruction.comparison_value,
+                ComparisonOperator::GreaterThanOrEqual => *comparison_register >= instruction.comparison_value,
+                ComparisonOperator::LessThanOrEqual => *comparison_register <= instruction.comparison_value,
+                ComparisonOperator::Equal => *comparison_register == instruction.comparison_value,
+                ComparisonOperator::NotEqual => *comparison_register != instruction.comparison_value,
+            };
+            if !comparison { return; }
+            let added_value = match instruction.operation { Operation::Increase => 1, Operation::Decrease => -1 } * instruction.value;
+            let register_value = registers
+                .entry(instruction.register.clone())
+                .and_modify(|register_val| {
+                    *register_val += added_value;
+                })
+                .or_insert(added_value); // Default = 0, then add added_value
+            *max_register_value = cmp::max(*max_register_value, *register_value);
+        });
+    }
 }
 
 pub mod part_one {
     use std::collections::HashMap;
     pub use either::*;
-    use crate::utils::utils::Solution;
+    use crate::utils::solution::Solution;
     use super::utils;
 
     #[derive(Default)]
@@ -160,7 +162,7 @@ pub mod part_one {
 pub mod part_two {
     use std::collections::HashMap;
     pub use either::*;
-    use crate::utils::utils::Solution;
+    use crate::utils::solution::Solution;
     use super::utils;
 
     #[derive(Default)]

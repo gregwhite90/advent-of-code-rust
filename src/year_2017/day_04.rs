@@ -4,8 +4,7 @@ const YEAR: u32 = 2017;
 const DAY: u8 = 4;
 
 pub mod utils {
-    use std::fs;
-    use crate::utils::utils::Solution;
+    use crate::utils::{solution::Solution, io_utils};
 
     pub trait Year2017Day04Solution {
         fn is_valid(&self, passphrase: &str) -> bool;
@@ -15,19 +14,17 @@ pub mod utils {
     where
         T: Solution + Year2017Day04Solution,
     {
-        fs::read_to_string(filename)
-                .expect("Should be able to read file to string.")
-                .lines()
-                .map(|line| soln.is_valid(line))
-                .filter(|valid| *valid)
-                .count() as u32
+        io_utils::file_to_lines(filename)
+            .map(|line| soln.is_valid(&line))
+            .filter(|valid| *valid)
+            .count() as u32
     }
 }
 
 pub mod part_one {
     pub use either::*;
     use std::collections::HashSet;
-    use crate::utils::utils::Solution;
+    use crate::utils::solution::Solution;
     use super::utils::{self, Year2017Day04Solution};
 
     #[derive(Default)]
@@ -85,7 +82,7 @@ pub mod part_two {
     pub use either::*;
     use std::collections::{HashSet, BTreeMap};
     use unicode_segmentation::UnicodeSegmentation;
-    use crate::utils::utils::Solution;
+    use crate::utils::solution::Solution;
     use super::utils::{self, Year2017Day04Solution};
 
     #[derive(Default)]

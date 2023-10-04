@@ -1,6 +1,6 @@
 use either::*;
 use crate::{Args, Part};
-use crate::utils::utils::{Solution, InputFileType, input_filename};
+use crate::utils::{solution::Solution, io_utils::{self, InputFileType}};
 
 pub fn run_solution(args: &Args) {
 
@@ -107,7 +107,7 @@ fn get_solns(args: &Args) -> Option<DailySolutions> {
         _ => None,
     };
     if let Some(ref mut solutions) = daily_solutions {
-        let input_filename = input_filename(args.year, args.day, InputFileType::Input);
+        let input_filename = io_utils::input_filename(args.year, args.day, InputFileType::Input);
         if let Some(ref mut p_one) = solutions.part_one {
             p_one.parse_input_file(&input_filename);
         }

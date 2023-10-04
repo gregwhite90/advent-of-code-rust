@@ -5,7 +5,8 @@ const DAY: u8 = 7;
 
 pub mod utils {
     use regex::Regex;
-    use std::{fs, collections::HashMap};
+    use std::collections::HashMap;
+    use crate::utils::io_utils;
 
     pub struct Program { // TODO: use borrowed references to strings and lifetimes to avoid unecessary copies.
         pub name: String,
@@ -21,39 +22,36 @@ pub mod utils {
     ) {
         let re = Regex::new(r"(?<name>[a-z]+) \((?<weight>[0-9]+)\)( -> (?<holding>[a-z ,]+))?")
             .unwrap();
-        fs::read_to_string(filename)
-            .expect("Should be able to read file to string.")
-            .lines()
-            .for_each(|line| {
-                let captures = re.captures(line)
-                    .expect("Line should match regex.");
-                let name = captures.name("name").unwrap().as_str();
-                let holding = match captures.name("holding") {
-                    Some(h) => h.as_str().split(", ").map(|name| String::from(name)).collect(),
-                    None => vec![],
-                };
-                for program_held in holding.iter() {
-                    if programs.contains_key(program_held) {
-                        programs.entry(String::from(program_held))
-                            .and_modify(|program| program.held_by = Some(String::from(name)));
-                    } else {
-                        held_by.insert(String::from(program_held), String::from(name));
-                    }
+        io_utils::file_to_lines(filename).for_each(|line| {
+            let captures = re.captures(&line)
+                .expect("Line should match regex.");
+            let name = captures.name("name").unwrap().as_str();
+            let holding = match captures.name("holding") {
+                Some(h) => h.as_str().split(", ").map(|name| String::from(name)).collect(),
+                None => vec![],
+            };
+            for program_held in holding.iter() {
+                if programs.contains_key(program_held) {
+                    programs.entry(String::from(program_held))
+                        .and_modify(|program| program.held_by = Some(String::from(name)));
+                } else {
+                    held_by.insert(String::from(program_held), String::from(name));
                 }
-                programs.insert(
-                    String::from(name),
-                    Program {
-                        name: String::from(name),
-                        individual_weight: captures.name("weight")
-                            .unwrap()
-                            .as_str()
-                            .parse()
-                            .expect("Weight should be convertible to an unsigned integer."),
-                        holding: holding,
-                        held_by: held_by.remove(name)
-                    }
-                );
-            });
+            }
+            programs.insert(
+                String::from(name),
+                Program {
+                    name: String::from(name),
+                    individual_weight: captures.name("weight")
+                        .unwrap()
+                        .as_str()
+                        .parse()
+                        .expect("Weight should be convertible to an unsigned integer."),
+                    holding: holding,
+                    held_by: held_by.remove(name)
+                }
+            );
+        });
     }
 
     pub fn base_program(programs: &HashMap<String, Program>) -> &Program {
@@ -72,7 +70,7 @@ pub mod utils {
 pub mod part_one {
     use std::collections::HashMap;
     pub use either::*;
-    use crate::utils::utils::Solution;
+    use crate::utils::solution::Solution;
     use super::utils::{self, Program};
 
     #[derive(Default)]
@@ -115,7 +113,7 @@ pub mod part_one {
 pub mod part_two {
     use std::collections::HashMap;
     pub use either::*;
-    use crate::utils::utils::Solution;
+    use crate::utils::solution::Solution;
     use super::utils::{self, Program};
 
     #[derive(Default)]

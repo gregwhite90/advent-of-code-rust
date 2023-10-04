@@ -4,11 +4,10 @@ const YEAR: u32 = 2017;
 const DAY: u8 = 3;
 
 pub mod utils {
-    use std::fs;
+    use crate::utils::io_utils;
 
     pub fn parse_input_file(filename: &str) -> u32 {
-        fs::read_to_string(filename)
-            .expect("Should be able to read the file to a string.")
+        io_utils::file_to_string(filename)
             .parse::<u32>()
             .expect("File should be a single unsigned integer.")
     }
@@ -16,7 +15,7 @@ pub mod utils {
     #[cfg(test)]
     mod tests {
         use test_case::test_case;
-        use crate::utils::utils::{InputFileType, input_filename};
+        use crate::utils::io_utils::{InputFileType, input_filename};
         use super::*;    
         use super::super::{YEAR, DAY};
 
@@ -35,7 +34,7 @@ pub mod utils {
 
 pub mod part_one {
     pub use either::*;
-    use crate::utils::utils::Solution;
+    use crate::utils::solution::Solution;
     use super::utils;
 
     #[derive(Default)]
@@ -107,7 +106,7 @@ pub mod part_two {
     use std::collections::{HashSet, HashMap};
     use itertools::Itertools;
     pub use either::*;
-    use crate::utils::utils::Solution;
+    use crate::utils::solution::Solution;
     use super::utils;
 
     #[derive(PartialEq, Eq, Hash, Debug, Default, Clone, Copy)]

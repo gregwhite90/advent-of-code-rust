@@ -4,13 +4,11 @@ const YEAR: u32 = 2017;
 const DAY: u8 = 2;
 
 pub mod utils {
-    use std::fs;
+    use crate::utils::io_utils;
 
     pub fn parse_input_file(filename: &str) -> Vec<Vec<i32>> {
-        fs::read_to_string(filename)
-            .expect("Should be able to read the file to a string.")
-            .lines()
-            .map(|line| parse_line(line))
+        io_utils::file_to_lines(filename)
+            .map(|line| parse_line(&line))
             .collect()
     }
     
@@ -23,7 +21,7 @@ pub mod utils {
 
     #[cfg(test)]
     mod tests {
-        use crate::utils::utils::{InputFileType, input_filename};
+        use crate::utils::io_utils::{InputFileType, input_filename};
         use super::super::{YEAR, DAY};
         use super::*;    
 
@@ -59,7 +57,7 @@ pub mod utils {
 
 pub mod part_one {
     pub use either::*;
-    use crate::utils::utils::Solution;
+    use crate::utils::solution::Solution;
     use crate::year_2017::day_02::utils;
 
     #[derive(Default)]
@@ -124,7 +122,7 @@ pub mod part_one {
 
 pub mod part_two {
     pub use either::*;
-    use crate::utils::utils::Solution;
+    use crate::utils::solution::Solution;
     use crate::year_2017::day_02::utils;
 
     #[derive(Default)]

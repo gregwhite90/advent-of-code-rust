@@ -4,13 +4,12 @@ const YEAR: u32 = 2017;
 const DAY: u8 = 6;
 
 pub mod utils { // TODO: make not pub?
-    use std::{fs, collections::HashMap};
-    use crate::utils::utils::Solution;
+    use std::collections::HashMap;
+    use crate::utils::{solution::Solution, io_utils};
 
     // TODO: test
     pub fn parse_input_file(filename: &str) -> Vec<u32> {
-        fs::read_to_string(filename)
-            .expect("Should be able to read the file to a string.")
+        io_utils::file_to_string(filename)
             .split_whitespace()
             .map(|num| num.parse().expect("Each part of the input should be an unsigned integer."))
             .collect()
@@ -49,7 +48,7 @@ pub mod utils { // TODO: make not pub?
 pub mod part_one {
     use std::collections::HashMap;
     pub use either::*;
-    use crate::utils::utils::Solution;
+    use crate::utils::solution::Solution;
     use super::utils::{self, Year2017Day06Solution};
 
     #[derive(Default)]
@@ -114,7 +113,7 @@ pub mod part_one {
 pub mod part_two {
     use std::collections::HashMap;
     pub use either::*;
-    use crate::utils::utils::Solution;
+    use crate::utils::solution::Solution;
     use super::utils::{self, Year2017Day06Solution};
 
     #[derive(Default)]
