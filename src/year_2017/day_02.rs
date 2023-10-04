@@ -3,7 +3,7 @@ const YEAR: u32 = 2017;
 #[cfg(test)]
 const DAY: u8 = 2;
 
-pub mod utils {
+mod utils {
     use crate::utils::io_utils;
 
     pub fn parse_input_file(filename: &str) -> Vec<Vec<i32>> {
@@ -57,7 +57,7 @@ pub mod utils {
 
 pub mod part_one {
     use crate::utils::solution::{Solution, Answer};
-    use crate::year_2017::day_02::utils;
+    use super::utils;
 
     #[derive(Default)]
     pub struct Soln {
@@ -120,7 +120,7 @@ pub mod part_one {
 
 pub mod part_two {
     use crate::utils::solution::{Solution, Answer};
-    use crate::year_2017::day_02::utils;
+    use super::utils;
 
     #[derive(Default)]
     pub struct Soln {
