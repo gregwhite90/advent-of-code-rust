@@ -1,7 +1,5 @@
 use clap::Parser;
 
-mod year_2017;
-mod utils;
 mod router;
 
 /// Runs the specfied Advent of Code solution

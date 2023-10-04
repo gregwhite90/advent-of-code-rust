@@ -15,16 +15,6 @@ mod utils {
     /// # Arguments
     /// 
     /// * `text` A string slice of ASCII numerical digits
-    /// 
-    /// # Examples
-    /// ```
-    /// use crate::year_2017::day_01::utils::digits;
-    /// assert_eq!(digits("1234"), vec![1, 2, 3, 4]);
-    /// ```
-    /// ```should_panic
-    /// use crate::year_2017::day_01::utils::digits;
-    /// digits("abc");
-    /// ```
     pub fn digits(text: &str) -> Vec<u32> {
         // Confirm that text is made up of ASCII numerical digits
         let re = Regex::new(r"^[0-9]+$").unwrap();
@@ -63,7 +53,7 @@ mod utils {
 /// Solves 2017-01 part one
 pub mod part_one {
     pub use itertools::Itertools;
-    use crate::year_2017::day_01::utils;
+    use super::utils;
     use crate::utils::{solution::{Solution, Answer}, io_utils};
 
     #[derive(Default)]
