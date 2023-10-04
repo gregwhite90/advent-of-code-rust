@@ -1,4 +1,3 @@
-use either::*;
 use crate::{Args, Part};
 use crate::utils::{solution::Solution, io_utils::{self, InputFileType}};
 
@@ -17,7 +16,7 @@ pub fn run_solution(args: &Args) {
         match daily_solns.part_one {
             Some(mut p_one) => {
                 println!("Part one:");
-                for_both!(p_one.solve(), answer => println!("{answer}"));            
+                println!("{}", p_one.solve());            
             },
             None => println!("No solution found for part one of this day."),
         }
@@ -26,7 +25,7 @@ pub fn run_solution(args: &Args) {
         match daily_solns.part_two {
             Some(mut p_two) => {
                 println!("Part two:");
-                for_both!(p_two.solve(), answer => println!("{answer}"));            
+                println!("{}", p_two.solve());            
             },
             None => println!("No solution found for part two of this day."),
         }

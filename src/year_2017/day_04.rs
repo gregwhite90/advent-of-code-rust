@@ -22,9 +22,8 @@ pub mod utils {
 }
 
 pub mod part_one {
-    pub use either::*;
     use std::collections::HashSet;
-    use crate::utils::solution::Solution;
+    use crate::utils::solution::{Solution, Answer};
     use super::utils::{self, Year2017Day04Solution};
 
     #[derive(Default)]
@@ -37,10 +36,8 @@ pub mod part_one {
             self.num_valid = utils::parse_input_file(self, filename);
         }
 
-        fn solve(&mut self) -> Either<i32, String> {
-            Left(
-                self.num_valid as i32
-            )
+        fn solve(&mut self) -> Answer {
+            Answer::U32(self.num_valid)
         }
     }
 
@@ -60,13 +57,12 @@ pub mod part_one {
     #[cfg(test)]
     mod tests {
         use test_case::test_case;
-        use either::*;
-        use crate::utils::test_utils;
+        use crate::utils::{test_utils, solution::Answer};
         use super::*;
         use super::super::{YEAR, DAY};
 
-        #[test_case(1, Left(2); "example_1")]
-        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+        #[test_case(1, Answer::U32(2); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
                 example_key,
@@ -79,10 +75,9 @@ pub mod part_one {
 }
 
 pub mod part_two {
-    pub use either::*;
     use std::collections::{HashSet, BTreeMap};
     use unicode_segmentation::UnicodeSegmentation;
-    use crate::utils::solution::Solution;
+    use crate::utils::solution::{Solution, Answer};
     use super::utils::{self, Year2017Day04Solution};
 
     #[derive(Default)]
@@ -95,10 +90,8 @@ pub mod part_two {
             self.num_valid = utils::parse_input_file(self, filename);
         }
 
-        fn solve(&mut self) -> Either<i32, String> {
-            Left(
-                self.num_valid as i32
-            )
+        fn solve(&mut self) -> Answer {
+            Answer::U32(self.num_valid)
         }
     }
 
@@ -125,13 +118,12 @@ pub mod part_two {
     #[cfg(test)]
     mod tests {
         use test_case::test_case;
-        use either::*;
-        use crate::utils::test_utils;
+        use crate::utils::{test_utils, solution::Answer};
         use super::*;
         use super::super::{YEAR, DAY};
 
-        #[test_case(2, Left(3); "example_2")]
-        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+        #[test_case(2, Answer::U32(3); "example_2")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
                 example_key,

@@ -47,8 +47,7 @@ pub mod utils { // TODO: make not pub?
 
 pub mod part_one {
     use std::collections::HashMap;
-    pub use either::*;
-    use crate::utils::solution::Solution;
+    use crate::utils::solution::{Solution, Answer};
     use super::utils::{self, Year2017Day06Solution};
 
     #[derive(Default)]
@@ -62,8 +61,8 @@ pub mod part_one {
             self.banks = utils::parse_input_file(filename);
         }
 
-        fn solve(&mut self) -> Either<i32, String> {
-            Left(utils::steps(self).try_into().expect("Steps should be convertible to signed integer."))
+        fn solve(&mut self) -> Answer {
+            Answer::U32(utils::steps(self))
         }
     }
 
@@ -92,13 +91,12 @@ pub mod part_one {
     #[cfg(test)]
     mod tests {
         use test_case::test_case;
-        use either::*;
-        use crate::utils::test_utils;
+        use crate::utils::{test_utils, solution::Answer};
         use super::*;
         use super::super::{YEAR, DAY};
 
-        #[test_case(1, Left(5); "example_1")]
-        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+        #[test_case(1, Answer::U32(5); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
                 example_key,
@@ -112,8 +110,7 @@ pub mod part_one {
 
 pub mod part_two {
     use std::collections::HashMap;
-    pub use either::*;
-    use crate::utils::solution::Solution;
+    use crate::utils::solution::{Solution, Answer};
     use super::utils::{self, Year2017Day06Solution};
 
     #[derive(Default)]
@@ -127,11 +124,9 @@ pub mod part_two {
             self.banks = utils::parse_input_file(filename);
         }
 
-        fn solve(&mut self) -> Either<i32, String> {
-            Left(
-                (utils::steps(self) - self.seen.get(&self.banks).expect("Current banks should have been seen previously."))
-                    .try_into()
-                    .expect("Steps should be convertable to an unsigned integer.")
+        fn solve(&mut self) -> Answer {
+            Answer::U32(
+                utils::steps(self) - self.seen.get(&self.banks).expect("Current banks should have been seen previously.")
             )
         }
     }
@@ -161,13 +156,12 @@ pub mod part_two {
     #[cfg(test)]
     mod tests {
         use test_case::test_case;
-        use either::*;
-        use crate::utils::test_utils;
+        use crate::utils::{test_utils, solution::Answer};
         use super::*;
         use super::super::{YEAR, DAY};
 
-        #[test_case(1, Left(4); "example_1")]
-        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+        #[test_case(1, Answer::U32(4); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
                 example_key,

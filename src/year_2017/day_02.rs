@@ -56,8 +56,7 @@ pub mod utils {
 }
 
 pub mod part_one {
-    pub use either::*;
-    use crate::utils::solution::Solution;
+    use crate::utils::solution::{Solution, Answer};
     use crate::year_2017::day_02::utils;
 
     #[derive(Default)]
@@ -70,8 +69,8 @@ pub mod part_one {
             self.nums = utils::parse_input_file(filename);
         }
 
-        fn solve(&mut self) -> Either<i32, String> {
-            Left(self.nums
+        fn solve(&mut self) -> Answer {
+            Answer::I32(self.nums
                 .iter()
                 .map(|row| row_range(row).expect("Row should not be empty."))
                 .sum()
@@ -91,8 +90,7 @@ pub mod part_one {
     #[cfg(test)]
     mod tests {
         use test_case::test_case;
-        use either::*;
-        use crate::utils::test_utils;
+        use crate::utils::{test_utils, solution::Answer};
         use super::super::{YEAR, DAY};
         use super::*;    
 
@@ -107,8 +105,8 @@ pub mod part_one {
             assert_eq!(row_range(&vec![]), None);
         }
     
-        #[test_case(1, Left(18); "example_1")]
-        fn example_is_correct(example_key: u8, answer: Either<i32, String>) {
+        #[test_case(1, Answer::I32(18); "example_1")]
+        fn example_is_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
                 example_key,
@@ -121,8 +119,7 @@ pub mod part_one {
 }
 
 pub mod part_two {
-    pub use either::*;
-    use crate::utils::solution::Solution;
+    use crate::utils::solution::{Solution, Answer};
     use crate::year_2017::day_02::utils;
 
     #[derive(Default)]
@@ -135,8 +132,8 @@ pub mod part_two {
             self.nums = utils::parse_input_file(filename);
         }
 
-        fn solve(&mut self) -> Either<i32, String> {
-            Left(self.nums
+        fn solve(&mut self) -> Answer {
+            Answer::I32(self.nums
                 .iter()
                 .map(|row| row_division(row).expect("Row should have a divisible pair."))
                 .sum()
@@ -160,13 +157,12 @@ pub mod part_two {
     #[cfg(test)]
     mod tests {
         use test_case::test_case;
-        use either::*;
         use crate::utils::test_utils;
         use super::*;    
         use super::super::{YEAR, DAY};
 
-        #[test_case(2, Left(9); "example_2")]
-        fn example_is_correct(example_key: u8, answer: Either<i32, String>) {
+        #[test_case(2, Answer::I32(9); "example_2")]
+        fn example_is_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
                 example_key,

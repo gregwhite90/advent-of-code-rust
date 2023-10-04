@@ -22,10 +22,11 @@ pub mod utils {
             .collect()
     }
 
-    pub fn solve<T>(soln: &mut T) -> i32
+    pub fn solve<T>(soln: &mut T) -> u32
     where
         T: Solution + Year2017Day05Solution,
     {
+        // TODO: clean up type conversions?
         let mut idx: i32 = 0;
         let mut steps: u32 = 0;
         while (idx as usize) < soln.get_instructions().len() && idx >= 0 {
@@ -37,15 +38,14 @@ pub mod utils {
             );
             idx += jump;
         }
-        steps as i32
+        steps
     }
 
     // TODO: add tests
 }
 
 pub mod part_one {
-    pub use either::*;
-    use crate::utils::solution::Solution;
+    use crate::utils::solution::{Solution, Answer};
     use super::utils::{self, Year2017Day05Solution};
 
     #[derive(Default)]
@@ -58,8 +58,8 @@ pub mod part_one {
             self.instructions = utils::parse_input_file(filename);
         }
 
-        fn solve(&mut self) -> Either<i32, String> {
-            Left(utils::solve(self))
+        fn solve(&mut self) -> Answer {
+            Answer::U32(utils::solve(self))
         }
     }
 
@@ -76,13 +76,12 @@ pub mod part_one {
     #[cfg(test)]
     mod tests {
         use test_case::test_case;
-        use either::*;
-        use crate::utils::test_utils;
+        use crate::utils::{test_utils, solution::Answer};
         use super::*;
         use super::super::{YEAR, DAY};
 
-        #[test_case(1, Left(5); "example_1")]
-        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+        #[test_case(1, Answer::U32(5); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
                 example_key,
@@ -95,8 +94,7 @@ pub mod part_one {
 }
 
 pub mod part_two {
-    pub use either::*;
-    use crate::utils::solution::Solution;
+    use crate::utils::solution::{Solution, Answer};
     use super::utils::{self, Year2017Day05Solution};
 
     #[derive(Default)]
@@ -109,8 +107,8 @@ pub mod part_two {
             self.instructions = utils::parse_input_file(filename);
         }
 
-        fn solve(&mut self) -> Either<i32, String> {
-            Left(utils::solve(self))
+        fn solve(&mut self) -> Answer {
+            Answer::U32(utils::solve(self))
         }
     }
 
@@ -135,13 +133,12 @@ pub mod part_two {
     #[cfg(test)]
     mod tests {
         use test_case::test_case;
-        use either::*;
-        use crate::utils::test_utils;
+        use crate::utils::{test_utils, solution::Answer};
         use super::*;
         use super::super::{YEAR, DAY};
 
-        #[test_case(1, Left(10); "example_1")]
-        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+        #[test_case(1, Answer::U32(10); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
                 example_key,

@@ -69,8 +69,7 @@ pub mod utils {
 
 pub mod part_one {
     use std::collections::HashMap;
-    pub use either::*;
-    use crate::utils::solution::Solution;
+    use crate::utils::solution::{Solution, Answer};
     use super::utils::{self, Program};
 
     #[derive(Default)]
@@ -84,21 +83,20 @@ pub mod part_one {
             utils::parse_input_file(&mut self.programs, &mut self.held_by, filename);
         }
 
-        fn solve(&mut self) -> Either<i32, String> {
-            Right(utils::base_program(&self.programs).name.clone())
+        fn solve(&mut self) -> Answer {
+            Answer::String(utils::base_program(&self.programs).name.clone())
         }
     }
 
     #[cfg(test)]
     mod tests {
         use test_case::test_case;
-        use either::*;
-        use crate::utils::test_utils;
+        use crate::utils::{test_utils, solution::Answer};
         use super::*;
         use super::super::{YEAR, DAY};
 
-        #[test_case(1, Right(String::from("tknk")); "example_1")]
-        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+        #[test_case(1, Answer::String(String::from("tknk")); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
                 example_key,
@@ -112,8 +110,7 @@ pub mod part_one {
 
 pub mod part_two {
     use std::collections::HashMap;
-    pub use either::*;
-    use crate::utils::solution::Solution;
+    use crate::utils::solution::{Solution, Answer};
     use super::utils::{self, Program};
 
     #[derive(Default)]
@@ -127,18 +124,16 @@ pub mod part_two {
             utils::parse_input_file(&mut self.programs, &mut self.held_by, filename);
         }
 
-        fn solve(&mut self) -> Either<i32, String> {
+        fn solve(&mut self) -> Answer {
             let program = utils::base_program(&self.programs);
             let mut weights_incl_holding = HashMap::new();
             self.weight_incl_holding(
                 &mut weights_incl_holding,
                 program,
             );
-            let new_weight: u32 = self.find_misweighted_program(&weights_incl_holding, program.name.clone(), 0); // TODO: figure out change amount
-            Left(new_weight.try_into().unwrap()) 
-        }
-
-        
+            let new_weight: u32 = self.find_misweighted_program(&weights_incl_holding, program.name.clone(), 0);
+            Answer::U32(new_weight) 
+        }        
     }
 
     impl Soln {
@@ -229,13 +224,12 @@ pub mod part_two {
     #[cfg(test)]
     mod tests {
         use test_case::test_case;
-        use either::*;
-        use crate::utils::test_utils;
+        use crate::utils::{test_utils, solution::Answer};
         use super::*;
         use super::super::{YEAR, DAY};
 
-        #[test_case(1, Left(60); "example_1")]
-        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+        #[test_case(1, Answer::U32(60); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
                 example_key,
