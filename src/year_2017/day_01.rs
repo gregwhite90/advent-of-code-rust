@@ -1,7 +1,7 @@
 #[cfg(test)]
-const YEAR: u32 = 2017;
+use crate::utils::Day;
 #[cfg(test)]
-const DAY: u8 = 1;
+const DAY: Day = crate::utils::Day { year: 2017, day: 1};
 
 /// Defines utilities shared by both parts of 2017-01 solution.
 mod utils {
@@ -90,7 +90,7 @@ pub mod part_one {
         use crate::utils::solution::Answer;
         use crate::utils::test_utils;
         use super::*;    
-        use super::super::{YEAR, DAY};
+        use super::super::DAY;
 
         #[test_case(1, Answer::U32(3); "example_1")]
         #[test_case(2, Answer::U32(4); "example_2")]
@@ -101,8 +101,7 @@ pub mod part_one {
                 &mut Soln::default(),
                 example_key,
                 answer,
-                YEAR,
-                DAY,
+                &DAY,
             );
         }
     }
@@ -151,7 +150,7 @@ pub mod part_two {
         use test_case::test_case;
         use crate::utils::{test_utils, solution::Answer};    
         use super::*;
-        use super::super::{YEAR, DAY};
+        use super::super::DAY;
 
         #[test_case(5, Answer::U32(6); "example_5")]
         #[test_case(6, Answer::U32(0); "example_6")]
@@ -163,8 +162,7 @@ pub mod part_two {
                 &mut Soln::default(),
                 example_key,
                 answer,
-                YEAR,
-                DAY,
+                &DAY,
             );
         }    
     }
