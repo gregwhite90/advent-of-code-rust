@@ -4,8 +4,7 @@ const YEAR: u32 = 2017;
 const DAY: u8 = 5;
 
 pub mod utils {
-    use std::fs;
-    use crate::utils::utils::Solution;
+    use crate::utils::{solution::Solution, io_utils};
 
     pub trait Year2017Day05Solution {
         #[allow(unused_variables)] // The default (part one) implementation does not use the instruction argument
@@ -18,9 +17,7 @@ pub mod utils {
     }
 
     pub fn parse_input_file(filename: &str) -> Vec<i32> {
-        fs::read_to_string(filename)
-            .expect("Should be able to read file to string.")
-            .lines()
+        io_utils::file_to_lines(filename)
             .map(|line| line.parse::<i32>().expect("Each line should be an integer."))
             .collect()
     }
@@ -48,7 +45,7 @@ pub mod utils {
 
 pub mod part_one {
     pub use either::*;
-    use crate::utils::utils::Solution;
+    use crate::utils::solution::Solution;
     use super::utils::{self, Year2017Day05Solution};
 
     #[derive(Default)]
@@ -99,7 +96,7 @@ pub mod part_one {
 
 pub mod part_two {
     pub use either::*;
-    use crate::utils::utils::Solution;
+    use crate::utils::solution::Solution;
     use super::utils::{self, Year2017Day05Solution};
 
     #[derive(Default)]

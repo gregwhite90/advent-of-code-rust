@@ -62,11 +62,10 @@ mod utils {
 
 /// Solves 2017-01 part one
 pub mod part_one {
-    use std::fs;
     pub use itertools::Itertools;
     pub use either::*;
     use crate::year_2017::day_01::utils;
-    use crate::utils::utils::Solution;
+    use crate::utils::{solution::Solution, io_utils};
 
     #[derive(Default)]
     pub struct Soln {
@@ -75,8 +74,7 @@ pub mod part_one {
 
     impl Solution for Soln {
         fn parse_input_file(&mut self, filename: &str) {
-            self.text = fs::read_to_string(filename)
-                .expect("Should be able to read the file to a string.");
+            self.text = io_utils::file_to_string(filename);
         }
 
         fn solve(&mut self) -> Either<i32, String> {
@@ -124,10 +122,9 @@ pub mod part_one {
 
 /// Solves 20017-01 part two
 pub mod part_two {
-    use std::fs;
     pub use either::*;
     use crate::year_2017::day_01::utils;
-    use crate::utils::utils::Solution;
+    use crate::utils::{solution::Solution, io_utils};
 
     #[derive(Default)]
     pub struct Soln {
@@ -136,8 +133,7 @@ pub mod part_two {
 
     impl Solution for Soln {
         fn parse_input_file(&mut self, filename: &str) {
-            self.text = fs::read_to_string(filename)
-                .expect("Should be able to read the file to a string.");
+            self.text = io_utils::file_to_string(filename);
         }
 
         fn solve(&mut self) -> Either<i32, String> {
