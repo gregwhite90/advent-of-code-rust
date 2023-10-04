@@ -108,8 +108,7 @@ pub mod utils {
 
 pub mod part_one {
     use std::collections::HashMap;
-    pub use either::*;
-    use crate::utils::solution::Solution;
+    use crate::utils::solution::{Solution, Answer};
     use super::utils;
 
     #[derive(Default)]
@@ -127,8 +126,8 @@ pub mod part_one {
             );
         }
 
-        fn solve(&mut self) -> Either<i32, String> {
-            Left(
+        fn solve(&mut self) -> Answer {
+            Answer::I32(
                 self.registers
                     .iter()
                     .map(|(_name, &val)| val)
@@ -141,13 +140,12 @@ pub mod part_one {
     #[cfg(test)]
     mod tests {
         use test_case::test_case;
-        use either::*;
-        use crate::utils::test_utils;
+        use crate::utils::{test_utils, solution::Answer};
         use super::*;
         use super::super::{YEAR, DAY};
 
-        #[test_case(1, Left(1); "example_1")]
-        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+        #[test_case(1, Answer::I32(1); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
                 example_key,
@@ -161,8 +159,7 @@ pub mod part_one {
 
 pub mod part_two {
     use std::collections::HashMap;
-    pub use either::*;
-    use crate::utils::solution::Solution;
+    use crate::utils::solution::{Solution, Answer};
     use super::utils;
 
     #[derive(Default)]
@@ -176,21 +173,20 @@ pub mod part_two {
             utils::parse_input_file(&mut self.registers, &mut self.max_register_value, filename);
         }
 
-        fn solve(&mut self) -> Either<i32, String> {
-            Left(self.max_register_value)
+        fn solve(&mut self) -> Answer {
+            Answer::I32(self.max_register_value)
         }
     }
 
     #[cfg(test)]
     mod tests {
         use test_case::test_case;
-        use either::*;
-        use crate::utils::test_utils;
+        use crate::utils::{test_utils, solution::Answer};
         use super::*;
         use super::super::{YEAR, DAY};
 
-        #[test_case(1, Left(10); "example_1")]
-        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+        #[test_case(1, Answer::I32(10); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
                 example_key,

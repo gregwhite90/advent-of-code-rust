@@ -33,8 +33,7 @@ pub mod utils {
 }
 
 pub mod part_one {
-    pub use either::*;
-    use crate::utils::solution::Solution;
+    use crate::utils::solution::{Solution, Answer};
     use super::utils;
 
     #[derive(Default)]
@@ -47,7 +46,7 @@ pub mod part_one {
             self.num = utils::parse_input_file(filename);
         }
 
-        fn solve(&mut self) -> Either<i32, String> {
+        fn solve(&mut self) -> Answer {
             let sqrt = (self.num as f64).sqrt().ceil() as u32;
             let shortest_distance_from_layer = sqrt / 2;
             let step_shortest_dist_multiplier = 2;
@@ -72,8 +71,8 @@ pub mod part_one {
                 } else { 
                     0
                 };
-            Left(
-                (shortest_distance_from_layer + dist_within_layer) as i32
+            Answer::U32(
+                shortest_distance_from_layer + dist_within_layer
             )
         }
     }
@@ -81,16 +80,15 @@ pub mod part_one {
     #[cfg(test)]
     mod tests {
         use test_case::test_case;
-        use either::*;
         use crate::utils::test_utils;
         use super::*;
         use super::super::{YEAR, DAY};
 
-        #[test_case(1, Left(0); "example_1")]
-        #[test_case(2, Left(3); "example_2")]
-        #[test_case(3, Left(2); "example_3")]
-        #[test_case(4, Left(31); "example_4")]
-        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+        #[test_case(1, Answer::U32(0); "example_1")]
+        #[test_case(2, Answer::U32(3); "example_2")]
+        #[test_case(3, Answer::U32(2); "example_3")]
+        #[test_case(4, Answer::U32(31); "example_4")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
                 example_key,
@@ -105,8 +103,7 @@ pub mod part_one {
 pub mod part_two {
     use std::collections::{HashSet, HashMap};
     use itertools::Itertools;
-    pub use either::*;
-    use crate::utils::solution::Solution;
+    use crate::utils::solution::{Solution, Answer};
     use super::utils;
 
     #[derive(PartialEq, Eq, Hash, Debug, Default, Clone, Copy)]
@@ -176,7 +173,7 @@ pub mod part_two {
             self.num = utils::parse_input_file(filename);
         }
 
-        fn solve(&mut self) -> Either<i32, String> {
+        fn solve(&mut self) -> Answer {
             self.point = Point { x: 0, y: 0};
             self.point_values.insert(self.point, 1);
             self.next_point();
@@ -197,7 +194,7 @@ pub mod part_two {
                 self.point_values.insert(self.point, next_num);
                 self.advance_direction_and_point(neighbors_count);
             }
-            Left(next_num as i32)
+            Answer::U32(next_num)
         }
     }
 
@@ -221,9 +218,8 @@ pub mod part_two {
 
     #[cfg(test)]
     mod tests {
-        use either::*;
         use test_case::test_case;
-        use crate::utils::test_utils;
+        use crate::utils::{test_utils, solution::Answer};
         use super::*;
         use super::super::{YEAR, DAY};
 
@@ -244,10 +240,10 @@ pub mod part_two {
             );
         }
 
-        #[test_case(1, Left(2); "example_1")]
-        #[test_case(2, Left(23); "example_2")]
-        #[test_case(3, Left(25); "example_3")]
-        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+        #[test_case(1, Answer::U32(2); "example_1")]
+        #[test_case(2, Answer::U32(23); "example_2")]
+        #[test_case(3, Answer::U32(25); "example_3")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
                 example_key,
