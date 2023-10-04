@@ -1,5 +1,6 @@
 use crate::{Args, Part};
-use crate::utils::{solution::Solution, io_utils::{self, InputFileType}};
+use advent_of_code_rust::utils::{solution::Solution, io_utils::{self, InputFileType}};
+use advent_of_code_rust::year_2017;
 
 pub fn run_solution(args: &Args) {
 
@@ -40,64 +41,64 @@ struct DailySolutions {
 fn get_solns(args: &Args) -> Option<DailySolutions> {
     let mut daily_solutions: Option<DailySolutions> = match (args.year, args.day) {
         (2017, 1) => {
-            let part_one = crate::year_2017::day_01::part_one::Soln::default();
-            let part_two = crate::year_2017::day_01::part_two::Soln::default();
+            let part_one = year_2017::day_01::part_one::Soln::default();
+            let part_two = year_2017::day_01::part_two::Soln::default();
             Some(DailySolutions { 
                 part_one: Some(Box::new(part_one)),
                 part_two: Some(Box::new(part_two)),
             })
         },
         (2017, 2) => {
-            let part_one = crate::year_2017::day_02::part_one::Soln::default();
-            let part_two = crate::year_2017::day_02::part_two::Soln::default();
+            let part_one = year_2017::day_02::part_one::Soln::default();
+            let part_two = year_2017::day_02::part_two::Soln::default();
             Some(DailySolutions { 
                 part_one: Some(Box::new(part_one)),
                 part_two: Some(Box::new(part_two)),
             })
         },
         (2017, 3) => {
-            let part_one = crate::year_2017::day_03::part_one::Soln::default();
-            let part_two = crate::year_2017::day_03::part_two::Soln::default();
+            let part_one = year_2017::day_03::part_one::Soln::default();
+            let part_two = year_2017::day_03::part_two::Soln::default();
             Some(DailySolutions {
                 part_one: Some(Box::new(part_one)),
                 part_two: Some(Box::new(part_two)),
             })
         },
         (2017, 4) => {
-            let part_one = crate::year_2017::day_04::part_one::Soln::default();
-            let part_two = crate::year_2017::day_04::part_two::Soln::default();
+            let part_one = year_2017::day_04::part_one::Soln::default();
+            let part_two = year_2017::day_04::part_two::Soln::default();
             Some(DailySolutions {
                 part_one: Some(Box::new(part_one)),
                 part_two: Some(Box::new(part_two)),
             })
         },
         (2017, 5) => {
-            let part_one = crate::year_2017::day_05::part_one::Soln::default();
-            let part_two = crate::year_2017::day_05::part_two::Soln::default();
+            let part_one = year_2017::day_05::part_one::Soln::default();
+            let part_two = year_2017::day_05::part_two::Soln::default();
             Some(DailySolutions {
                 part_one: Some(Box::new(part_one)),
                 part_two: Some(Box::new(part_two)),
             })
         },
         (2017, 6) => {
-            let part_one = crate::year_2017::day_06::part_one::Soln::default();
-            let part_two = crate::year_2017::day_06::part_two::Soln::default();
+            let part_one = year_2017::day_06::part_one::Soln::default();
+            let part_two = year_2017::day_06::part_two::Soln::default();
             Some(DailySolutions {
                 part_one: Some(Box::new(part_one)),
                 part_two: Some(Box::new(part_two)),
             })
         },
         (2017, 7) => {
-            let part_one = crate::year_2017::day_07::part_one::Soln::default();
-            let part_two = crate::year_2017::day_07::part_two::Soln::default();
+            let part_one = year_2017::day_07::part_one::Soln::default();
+            let part_two = year_2017::day_07::part_two::Soln::default();
             Some(DailySolutions {
                 part_one: Some(Box::new(part_one)),
                 part_two: Some(Box::new(part_two)),
             })
         },
         (2017, 8) => {
-            let part_one = crate::year_2017::day_08::part_one::Soln::default();
-            let part_two = crate::year_2017::day_08::part_two::Soln::default();
+            let part_one = year_2017::day_08::part_one::Soln::default();
+            let part_two = year_2017::day_08::part_two::Soln::default();
             Some(DailySolutions {
                 part_one: Some(Box::new(part_one)),
                 part_two: Some(Box::new(part_two)),
