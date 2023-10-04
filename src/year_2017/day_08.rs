@@ -1,0 +1,216 @@
+#[cfg(test)]
+const YEAR: u32 = 2017;
+#[cfg(test)]
+const DAY: u8 = 8;
+
+pub mod utils {
+    use std::str::FromStr;
+    use regex::Regex;
+
+    pub enum Operation {
+        Increase,
+        Decrease,
+    }
+
+    impl FromStr for Operation {
+        type Err = (); // TODO: implement
+        fn from_str(input: &str) -> Result<Operation, Self::Err> {
+            match input {
+                "inc" => Ok(Operation::Increase),
+                "dec" => Ok(Operation::Decrease),
+                _ => Err(()),
+            }
+        }
+    }
+
+    pub enum ComparisonOperator {
+        GreaterThan,
+        LessThan,
+        GreaterThanOrEqual,
+        LessThanOrEqual,
+        Equal,
+        NotEqual,
+    }
+
+    impl FromStr for ComparisonOperator {
+        type Err = (); // TODO: implement
+        fn from_str(input: &str) -> Result<ComparisonOperator, Self::Err> {
+            match input {
+                ">" => Ok(ComparisonOperator::GreaterThan),
+                "<" => Ok(ComparisonOperator::LessThan),
+                ">=" => Ok(ComparisonOperator::GreaterThanOrEqual),
+                "<=" => Ok(ComparisonOperator::LessThanOrEqual),
+                "==" => Ok(ComparisonOperator::Equal),
+                "!=" => Ok(ComparisonOperator::NotEqual),
+                _ => Err(()),
+            }
+        }
+    }
+
+    pub struct Instruction { // TODO: use lifetimes to share &strs?
+        pub register: String,
+        pub operation: Operation,
+        pub value: i32,
+        pub comparison_register: String,
+        pub comparison_operator: ComparisonOperator,
+        pub comparison_value: i32,
+    }
+
+    impl Instruction {
+        pub fn from(line: &str) -> Self {
+            let re = Regex::new(
+                r"(?<register>[a-z]+) (?<operation>inc|dec) (?<value>\-?[0-9]+) if (?<comparison_register>[a-z]+) (?<comparison_operator><|>|<=|>=|==|!=) (?<comparison_value>\-?[0-9]+)"
+            ).unwrap();
+            let caps = re.captures(line).expect("Line should match the regex.");
+            Instruction {
+                register: String::from(caps.name("register").unwrap().as_str()),
+                operation: Operation::from_str(caps.name("operation").unwrap().as_str()).expect("Operation should be convertible to enum."),
+                value: caps.name("value").unwrap().as_str().parse().expect("Value should be convertible to signed integer."),
+                comparison_register: String::from(caps.name("comparison_register").unwrap().as_str()),
+                comparison_operator: ComparisonOperator::from_str(caps.name("comparison_operator").unwrap().as_str()).expect("Comparison operator should be convertible to enum."),
+                comparison_value: caps.name("comparison_value").unwrap().as_str().parse().expect("Comparison value should be convertible to signed integer."),
+            }           
+        }
+    }
+}
+
+pub mod part_one {
+    use std::{fs, collections::HashMap};
+    pub use either::*;
+    use crate::utils::utils::Solution;
+    use super::utils::{Instruction, ComparisonOperator, Operation};
+
+    #[derive(Default)]
+    pub struct Soln {
+        registers: HashMap<String, i32>,
+    }
+ 
+    impl Solution for Soln {
+        fn parse_input_file(&mut self, filename: &str) {
+            fs::read_to_string(filename)
+                .expect("Should be able to read the file to a string.")
+                .lines()
+                .for_each(|line| {
+                    let instruction = Instruction::from(line);
+                    let comparison_register = self.registers
+                        .entry(instruction.comparison_register.clone())
+                        .or_insert(0);
+                    let comparison: bool = match instruction.comparison_operator {
+                        ComparisonOperator::GreaterThan => *comparison_register > instruction.comparison_value,
+                        ComparisonOperator::LessThan => *comparison_register < instruction.comparison_value,
+                        ComparisonOperator::GreaterThanOrEqual => *comparison_register >= instruction.comparison_value,
+                        ComparisonOperator::LessThanOrEqual => *comparison_register <= instruction.comparison_value,
+                        ComparisonOperator::Equal => *comparison_register == instruction.comparison_value,
+                        ComparisonOperator::NotEqual => *comparison_register != instruction.comparison_value,
+                    };
+                    if !comparison { return; }
+                    let added_value = match instruction.operation { Operation::Increase => 1, Operation::Decrease => -1 } * instruction.value;
+                    self.registers
+                        .entry(instruction.register.clone())
+                        .and_modify(|register_val| {
+                            *register_val += added_value;
+                        })
+                        .or_insert(added_value); // Default = 0, then add added_value
+                });
+        }
+
+        fn solve(&mut self) -> Either<i32, String> {
+            Left(
+                self.registers
+                    .iter()
+                    .map(|(_name, &val)| val)
+                    .max()
+                    .expect("There should be at least one register.")
+            )
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use either::*;
+        use crate::utils::test_utils;
+        use super::*;
+        use super::super::{YEAR, DAY};
+
+        #[test_case(1, Left(1); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                YEAR,
+                DAY,
+            );
+        }
+    }    
+}
+
+pub mod part_two {
+    use std::{fs, collections::HashMap, cmp};
+    pub use either::*;
+    use crate::utils::utils::Solution;
+    use super::utils::{Instruction, ComparisonOperator, Operation};
+
+    #[derive(Default)]
+    pub struct Soln {
+        registers: HashMap<String, i32>,
+        max_register_value: i32,
+    }
+ 
+    impl Solution for Soln {
+        fn parse_input_file(&mut self, filename: &str) {
+            self.max_register_value = i32::MIN;
+            fs::read_to_string(filename)
+                .expect("Should be able to read the file to a string.")
+                .lines()
+                .for_each(|line| {
+                    let instruction = Instruction::from(line);
+                    let comparison_register = self.registers
+                        .entry(instruction.comparison_register.clone())
+                        .or_insert(0);
+                    let comparison: bool = match instruction.comparison_operator {
+                        ComparisonOperator::GreaterThan => *comparison_register > instruction.comparison_value,
+                        ComparisonOperator::LessThan => *comparison_register < instruction.comparison_value,
+                        ComparisonOperator::GreaterThanOrEqual => *comparison_register >= instruction.comparison_value,
+                        ComparisonOperator::LessThanOrEqual => *comparison_register <= instruction.comparison_value,
+                        ComparisonOperator::Equal => *comparison_register == instruction.comparison_value,
+                        ComparisonOperator::NotEqual => *comparison_register != instruction.comparison_value,
+                    };
+                    if !comparison { return; }
+                    let added_value = match instruction.operation { Operation::Increase => 1, Operation::Decrease => -1 } * instruction.value;
+                    let register_value = self.registers
+                        .entry(instruction.register.clone())
+                        .and_modify(|register_val| {
+                            *register_val += added_value;
+                        })
+                        .or_insert(added_value); // Default = 0, then add added_value
+                    self.max_register_value = cmp::max(self.max_register_value, *register_value);
+                });
+        }
+
+        fn solve(&mut self) -> Either<i32, String> {
+            Left(self.max_register_value)
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use either::*;
+        use crate::utils::test_utils;
+        use super::*;
+        use super::super::{YEAR, DAY};
+
+        #[test_case(1, Left(10); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Either<i32, String>) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                YEAR,
+                DAY,
+            );
+        }
+    }    
+}
