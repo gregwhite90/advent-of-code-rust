@@ -42,11 +42,8 @@ pub mod part_one {
     }
  
     impl Solution for Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.num = utils::parse_input_file(filename);
-        }
-
-        fn solve(&mut self) -> Answer {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.parse_input_file(filename);
             let sqrt = (self.num as f64).sqrt().ceil() as u32;
             let shortest_distance_from_layer = sqrt / 2;
             let step_shortest_dist_multiplier = 2;
@@ -74,6 +71,12 @@ pub mod part_one {
             Answer::U32(
                 shortest_distance_from_layer + dist_within_layer
             )
+        }
+    }
+
+    impl Soln {
+        fn parse_input_file(&mut self, filename: &str) {
+            self.num = utils::parse_input_file(filename);
         }
     }
 
@@ -168,11 +171,8 @@ pub mod part_two {
     }
  
     impl Solution for Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.num = utils::parse_input_file(filename);
-        }
-
-        fn solve(&mut self) -> Answer {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.parse_input_file(filename);
             self.point = Point { x: 0, y: 0};
             self.point_values.insert(self.point, 1);
             self.next_point();
@@ -198,6 +198,10 @@ pub mod part_two {
     }
 
     impl Soln {
+        fn parse_input_file(&mut self, filename: &str) {
+            self.num = utils::parse_input_file(filename);
+        }
+
         fn next_point(&mut self) {
             self.point = self.point.next_point(&self.direction);
         }

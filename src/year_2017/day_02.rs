@@ -65,16 +65,19 @@ pub mod part_one {
     }
 
     impl Solution for Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.nums = utils::parse_input_file(filename);
-        }
-
-        fn solve(&mut self) -> Answer {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.parse_input_file(filename);
             Answer::I32(self.nums
                 .iter()
                 .map(|row| row_range(row).expect("Row should not be empty."))
                 .sum()
             )
+        }
+    }
+
+    impl Soln {
+        fn parse_input_file(&mut self, filename: &str) {
+            self.nums = utils::parse_input_file(filename);
         }
     }
 
@@ -127,16 +130,19 @@ pub mod part_two {
     }
 
     impl Solution for Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.nums = utils::parse_input_file(filename);
-        }
-
-        fn solve(&mut self) -> Answer {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.parse_input_file(filename);
             Answer::I32(self.nums
                 .iter()
                 .map(|row| row_division(row).expect("Row should have a divisible pair."))
                 .sum()
             )
+        }
+    }
+
+    impl Soln {
+        fn parse_input_file(&mut self, filename: &str) {
+            self.nums = utils::parse_input_file(filename);
         }
     }
 

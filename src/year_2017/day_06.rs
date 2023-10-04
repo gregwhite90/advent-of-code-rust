@@ -57,11 +57,8 @@ pub mod part_one {
     }
  
     impl Solution for Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.banks = utils::parse_input_file(filename);
-        }
-
-        fn solve(&mut self) -> Answer {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.parse_input_file(filename);
             Answer::U32(utils::steps(self))
         }
     }
@@ -85,6 +82,12 @@ pub mod part_one {
 
         fn insert_into_seen(&mut self, banks: Vec<u32>, steps: u32) {
             self.seen.insert(banks, steps);
+        }
+    }
+
+    impl Soln {
+        fn parse_input_file(&mut self, filename: &str) {
+            self.banks = utils::parse_input_file(filename);
         }
     }
 
@@ -119,11 +122,8 @@ pub mod part_two {
     }
  
     impl Solution for Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.banks = utils::parse_input_file(filename);
-        }
-
-        fn solve(&mut self) -> Answer {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.parse_input_file(filename);
             Answer::U32(
                 utils::steps(self) - self.seen.get(&self.banks).expect("Current banks should have been seen previously.")
             )
@@ -149,6 +149,12 @@ pub mod part_two {
 
         fn insert_into_seen(&mut self, banks: Vec<u32>, steps: u32) {
             self.seen.insert(banks, steps);
+        }
+    }
+    
+    impl Soln {
+        fn parse_input_file(&mut self, filename: &str) {
+            self.banks = utils::parse_input_file(filename);
         }
     }
 

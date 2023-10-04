@@ -32,11 +32,8 @@ pub mod part_one {
     }
  
     impl Solution for Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.num_valid = utils::parse_input_file(self, filename);
-        }
-
-        fn solve(&mut self) -> Answer {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.parse_input_file(filename);
             Answer::U32(self.num_valid)
         }
     }
@@ -51,6 +48,12 @@ pub mod part_one {
                 words.insert(word);
             }
             true
+        }
+    }
+
+    impl Soln {
+        fn parse_input_file(&mut self, filename: &str) {
+            self.num_valid = utils::parse_input_file(self, filename);
         }
     }
 
@@ -85,11 +88,8 @@ pub mod part_two {
     }
  
     impl Solution for Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.num_valid = utils::parse_input_file(self, filename);
-        }
-
-        fn solve(&mut self) -> Answer {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.parse_input_file(filename);
             Answer::U32(self.num_valid)
         }
     }
@@ -111,6 +111,12 @@ pub mod part_two {
                 grapheme_counts.insert(word_grapheme_count);
             }
             true
+        }
+    }
+
+    impl Soln {
+        fn parse_input_file(&mut self, filename: &str) {
+            self.num_valid = utils::parse_input_file(self, filename);
         }
     }
 

@@ -3,8 +3,6 @@ use crate::{Args, Part};
 use advent_of_code_rust::utils::{solution::Solution, io_utils::{self, InputFileType}, Day};
 use advent_of_code_rust::year_2017;
 
-const TAB_WIDTH: usize = 2;
-
 pub fn run_solution(args: &Args) {
 
     let day = Day { year: args.year, day: args.day };
@@ -15,9 +13,8 @@ pub fn run_solution(args: &Args) {
     if !matches!(args.part, Part::Two) {
         match solns.part_one {
             Some(mut p_one) => {
-                p_one.parse_input_file(&input_filename);
                 println!("Part one:");
-                println!("{}", p_one.solve());            
+                println!("{}", p_one.solve(&input_filename));            
             },
             None => println!("No solution found for part one of this day."),
         }
@@ -27,8 +24,7 @@ pub fn run_solution(args: &Args) {
         match solns.part_two {
             Some(mut p_two) => {
                 println!("Part two:");
-                p_two.parse_input_file(&input_filename);
-                println!("{}", p_two.solve());            
+                println!("{}", p_two.solve(&input_filename));            
             },
             None => println!("No solution found for part two of this day."),
         }
@@ -108,14 +104,15 @@ fn get_solns(day: &Day) -> DailySolutions {
             days.sort();
             let mut output: String = String::from("\nNo solutions found for this day. Days with solutions:\n");
             let mut years_seen: HashSet<u32> = HashSet::new();
+            let tab_width: usize = 2;
             days.iter()
                 .for_each(|day| {
                     if !years_seen.contains(&day.year) {
                         years_seen.insert(day.year);
-                        output.push_str(&format!("{:>tab_width$}Year: {}\n"," ", day.year, tab_width = TAB_WIDTH));
-                        output.push_str(&format!("{:>tab_width$}Days:\n", "", tab_width = 2 * TAB_WIDTH));
+                        output.push_str(&format!("{:>tab_width$}Year: {}\n"," ", day.year, tab_width = tab_width));
+                        output.push_str(&format!("{:>tab_width$}Days:\n", "", tab_width = 2 * tab_width));
                     }
-                    output.push_str(&format!("{:>tab_width$}\n", day.day, tab_width = 3 * TAB_WIDTH + 1));
+                    output.push_str(&format!("{:>tab_width$}\n", day.day, tab_width = 3 * tab_width + 1));
                 });
             println!("{output}");
             panic!();

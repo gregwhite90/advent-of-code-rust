@@ -25,8 +25,7 @@ pub mod solution {
     }
 
     pub trait Solution {
-        fn parse_input_file(&mut self, filename: &str);
-        fn solve(&mut self) -> Answer;
+        fn solve(&mut self, filename: &str) -> Answer;
     }
 }
 
@@ -79,9 +78,8 @@ pub mod test_utils {
         answer: Answer,
         day: &Day,
     ) {
-        soln.parse_input_file(&input_filename(day, InputFileType::Example(example_key)));
         assert_eq!(
-            soln.solve(),
+            soln.solve(&input_filename(day, InputFileType::Example(example_key))),
             answer,
         );
     }

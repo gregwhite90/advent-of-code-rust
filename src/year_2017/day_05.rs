@@ -54,11 +54,8 @@ pub mod part_one {
     }
  
     impl Solution for Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.instructions = utils::parse_input_file(filename);
-        }
-
-        fn solve(&mut self) -> Answer {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.parse_input_file(filename);
             Answer::U32(utils::solve(self))
         }
     }
@@ -70,6 +67,12 @@ pub mod part_one {
 
         fn offset_instruction(&mut self, idx: usize, offset: i32) {
             self.instructions[idx] += offset;
+        }
+    }
+
+    impl Soln {
+        fn parse_input_file(&mut self, filename: &str) {
+            self.instructions = utils::parse_input_file(filename);
         }
     }
 
@@ -102,11 +105,8 @@ pub mod part_two {
     }
  
     impl Solution for Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.instructions = utils::parse_input_file(filename);
-        }
-
-        fn solve(&mut self) -> Answer {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.parse_input_file(filename);
             Answer::U32(utils::solve(self))
         }
     }
@@ -126,6 +126,12 @@ pub mod part_two {
 
         fn offset_instruction(&mut self, idx: usize, offset: i32) {
             self.instructions[idx] += offset;
+        }
+    }
+
+    impl Soln {
+        fn parse_input_file(&mut self, filename: &str) {
+            self.instructions = utils::parse_input_file(filename);
         }
     }
 
