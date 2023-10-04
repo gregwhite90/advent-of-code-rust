@@ -1,3 +1,4 @@
+#[derive(PartialEq, Eq, Hash, PartialOrd, Ord, Debug)]
 pub struct Day { 
     pub year: u32,
     pub day: u8,
