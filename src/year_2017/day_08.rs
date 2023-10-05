@@ -1,8 +1,8 @@
 #[cfg(test)]
 use crate::utils::Day;
 #[cfg(test)]
-const DAY: Day = crate::utils::Day { year: 2017, day: 8};
-
+const DAY: Day = crate::utils::Day { year: 2017, day: 8 };
+// TODO: shared functionality
 mod utils {
     use std::{str::FromStr, collections::HashMap, cmp};
     use regex::Regex;
