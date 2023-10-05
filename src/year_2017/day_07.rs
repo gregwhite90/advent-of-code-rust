@@ -15,6 +15,8 @@ mod utils {
         pub held_by: Option<String>,
     }
 
+    // TODO: implement DaySolution Trait and use it for parse_input_file.
+
     pub fn parse_input_file(
         programs: &mut HashMap<String, Program>,
         held_by: &mut HashMap<String, String>,
@@ -80,14 +82,8 @@ pub mod part_one {
  
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
-            Answer::String(utils::base_program(&self.programs).name.clone())
-        }
-    }
-
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
             utils::parse_input_file(&mut self.programs, &mut self.held_by, filename);
+            Answer::String(utils::base_program(&self.programs).name.clone())
         }
     }
 
@@ -123,7 +119,7 @@ pub mod part_two {
  
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
+            utils::parse_input_file(&mut self.programs, &mut self.held_by, filename);
             let program = utils::base_program(&self.programs);
             let mut weights_incl_holding = HashMap::new();
             self.weight_incl_holding(
@@ -136,11 +132,7 @@ pub mod part_two {
     }
 
     impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            utils::parse_input_file(&mut self.programs, &mut self.held_by, filename);
-        }
-
-        pub fn weight_incl_holding(
+        fn weight_incl_holding(
             &self,
             weights_including_holding: &mut HashMap<String, u32>,
             program: &Program

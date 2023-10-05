@@ -14,12 +14,17 @@ mod utils {
         // Don't have shared/default implementation because needs to access fields on Soln struct
         fn get_instructions(&self) -> &Vec<i32>;
         fn offset_instruction(&mut self, idx: usize, offset: i32);
+        fn set_instructions(&mut self, instructions: Vec<i32>);
     }
 
-    pub fn parse_input_file(filename: &str) -> Vec<i32> {
-        io_utils::file_to_lines(filename)
-            .map(|line| line.parse::<i32>().expect("Each line should be an integer."))
-            .collect()
+    pub fn parse_input_file<T>(soln: &mut T, filename: &str)
+    where
+        T: Solution + Year2017Day05Solution {
+        soln.set_instructions(
+            io_utils::file_to_lines(filename)
+                .map(|line| line.parse::<i32>().expect("Each line should be an integer."))
+                .collect()
+        );
     }
 
     pub fn solve<T>(soln: &mut T) -> u32
@@ -55,7 +60,7 @@ pub mod part_one {
  
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
+            utils::parse_input_file(self, filename);
             Answer::U32(utils::solve(self))
         }
     }
@@ -65,14 +70,12 @@ pub mod part_one {
             &self.instructions
         }
 
+        fn set_instructions(&mut self, instructions: Vec<i32>) {
+            self.instructions = instructions;
+        }
+
         fn offset_instruction(&mut self, idx: usize, offset: i32) {
             self.instructions[idx] += offset;
-        }
-    }
-
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.instructions = utils::parse_input_file(filename);
         }
     }
 
@@ -106,7 +109,7 @@ pub mod part_two {
  
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
+            utils::parse_input_file(self, filename);
             Answer::U32(utils::solve(self))
         }
     }
@@ -124,14 +127,12 @@ pub mod part_two {
             &self.instructions
         }
 
+        fn set_instructions(&mut self, instructions: Vec<i32>) {
+            self.instructions = instructions;
+        }
+
         fn offset_instruction(&mut self, idx: usize, offset: i32) {
             self.instructions[idx] += offset;
-        }
-    }
-
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.instructions = utils::parse_input_file(filename);
         }
     }
 

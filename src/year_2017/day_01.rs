@@ -7,6 +7,18 @@ const DAY: Day = crate::utils::Day { year: 2017, day: 1};
 mod utils {
     pub use unicode_segmentation::UnicodeSegmentation;
     use regex::Regex;
+    use crate::utils::{solution::Solution, io_utils};
+
+    pub trait Year2017Day01Solution {
+        fn set_text(&mut self, text: String);
+    }
+
+    pub fn parse_input_file<T>(soln: &mut T, filename: &str)
+    where
+        T: Solution + Year2017Day01Solution
+    {
+        soln.set_text(io_utils::file_to_string(filename));
+    }
 
     /// Creates a vector of integers from a string slice of numerical digits.
     /// Collects into a vector to satisfy shared requirements of client code
@@ -53,8 +65,8 @@ mod utils {
 /// Solves 2017-01 part one
 pub mod part_one {
     pub use itertools::Itertools;
-    use super::utils;
-    use crate::utils::{solution::{Solution, Answer}, io_utils};
+    use super::utils::{self, Year2017Day01Solution};
+    use crate::utils::solution::{Solution, Answer};
 
     #[derive(Default)]
     pub struct Soln {
@@ -63,17 +75,18 @@ pub mod part_one {
 
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
+            utils::parse_input_file(self, filename);
             Answer::U32(self.sum_of_repeated_digits())
+        }
+    }
+
+    impl Year2017Day01Solution for Soln {
+        fn set_text(&mut self, text: String) {
+            self.text = text;
         }
     }
     
     impl Soln {
-
-        fn parse_input_file(&mut self, filename: &str) {
-            self.text = io_utils::file_to_string(filename);
-        }
-
         /// Finds the sum of all repeated consecutive digits, considered circularly.
         fn sum_of_repeated_digits(&self) -> u32 {
             // Collect into a vector and then back to an iterator to satisfy trait bounds in 
@@ -112,8 +125,8 @@ pub mod part_one {
 
 /// Solves 20017-01 part two
 pub mod part_two {
-    use super::utils;
-    use crate::utils::{solution::{Solution, Answer}, io_utils};
+    use super::utils::{self, Year2017Day01Solution};
+    use crate::utils::solution::{Solution, Answer};
 
     #[derive(Default)]
     pub struct Soln {
@@ -122,15 +135,18 @@ pub mod part_two {
 
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
+            utils::parse_input_file(self, filename);
             Answer::U32(self.sum_of_matching_halfway_around_digits())
+        }
+    }
+
+    impl Year2017Day01Solution for Soln {
+        fn set_text(&mut self, text: String) {
+            self.text = text;
         }
     }
     
     impl Soln {    
-        fn parse_input_file(&mut self, filename: &str) {
-            self.text = io_utils::file_to_string(filename);
-        }
         /// Finds the sum of the digits halfway around the string (considered circularly)
         /// that match.
         fn sum_of_matching_halfway_around_digits(&self) -> u32 {

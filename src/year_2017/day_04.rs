@@ -8,16 +8,19 @@ mod utils {
 
     pub trait Year2017Day04Solution {
         fn is_valid(&self, passphrase: &str) -> bool;
+        fn set_num_valid(&mut self, num_valid: u32);
     }
 
-    pub fn parse_input_file<T>(soln: &mut T, filename: &str) -> u32
+    pub fn parse_input_file<T>(soln: &mut T, filename: &str)
     where
         T: Solution + Year2017Day04Solution,
     {
-        io_utils::file_to_lines(filename)
-            .map(|line| soln.is_valid(&line))
-            .filter(|valid| *valid)
-            .count() as u32
+        soln.set_num_valid(
+            io_utils::file_to_lines(filename)
+                .map(|line| soln.is_valid(&line))
+                .filter(|valid| *valid)
+                .count() as u32
+        );
     }
 }
 
@@ -33,7 +36,7 @@ pub mod part_one {
  
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
+            utils::parse_input_file(self, filename);
             Answer::U32(self.num_valid)
         }
     }
@@ -49,11 +52,9 @@ pub mod part_one {
             }
             true
         }
-    }
 
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.num_valid = utils::parse_input_file(self, filename);
+        fn set_num_valid(&mut self, num_valid: u32) {
+            self.num_valid = num_valid;
         }
     }
 
@@ -89,7 +90,7 @@ pub mod part_two {
  
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
+            utils::parse_input_file(self, filename);
             Answer::U32(self.num_valid)
         }
     }
@@ -112,11 +113,9 @@ pub mod part_two {
             }
             true
         }
-    }
 
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.num_valid = utils::parse_input_file(self, filename);
+        fn set_num_valid(&mut self, num_valid: u32) {
+            self.num_valid = num_valid;
         }
     }
 

@@ -4,12 +4,21 @@ use crate::utils::Day;
 const DAY: Day = crate::utils::Day { year: 2017, day: 2};
 
 mod utils {
-    use crate::utils::io_utils;
+    use crate::utils::{io_utils, solution::Solution};
 
-    pub fn parse_input_file(filename: &str) -> Vec<Vec<i32>> {
-        io_utils::file_to_lines(filename)
-            .map(|line| parse_line(&line))
-            .collect()
+    pub trait Year2017Day02Solution {
+        fn set_nums(&mut self, nums: Vec<Vec<i32>>);
+    }
+
+    pub fn parse_input_file<T>(soln: &mut T, filename: &str)
+    where
+        T: Solution + Year2017Day02Solution 
+    {
+        soln.set_nums(
+            io_utils::file_to_lines(filename)
+                .map(|line| parse_line(&line))
+                .collect()
+        );
     }
     
     fn parse_line(line: &str) -> Vec<i32> {
@@ -21,8 +30,6 @@ mod utils {
 
     #[cfg(test)]
     mod tests {
-        use crate::utils::io_utils::{InputFileType, input_filename};
-        use super::super::DAY;
         use super::*;    
 
         #[test]
@@ -40,24 +47,12 @@ mod utils {
         fn parse_line_panics() {
             parse_line("1 2 a\n");
         }
-
-        #[test]
-        fn parse_input_file_is_correct() {
-            assert_eq!(
-                parse_input_file(&input_filename(&DAY, InputFileType::Example(1))),
-                vec![
-                    vec![5, 1, 9, 5],
-                    vec![7, 5, 3],
-                    vec![2, 4, 6, 8],
-                ]
-            );
-        }
     }
 }
 
 pub mod part_one {
     use crate::utils::solution::{Solution, Answer};
-    use super::utils;
+    use super::utils::{self, Year2017Day02Solution};
 
     #[derive(Default)]
     pub struct Soln {
@@ -66,7 +61,7 @@ pub mod part_one {
 
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
+            utils::parse_input_file(self, filename);
             Answer::I32(self.nums
                 .iter()
                 .map(|row| row_range(row).expect("Row should not be empty."))
@@ -75,9 +70,9 @@ pub mod part_one {
         }
     }
 
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.nums = utils::parse_input_file(filename);
+    impl Year2017Day02Solution for Soln {
+        fn set_nums(&mut self, nums: Vec<Vec<i32>>) {
+            self.nums = nums;
         }
     }
 
@@ -122,7 +117,7 @@ pub mod part_one {
 
 pub mod part_two {
     use crate::utils::solution::{Solution, Answer};
-    use super::utils;
+    use super::utils::{self, Year2017Day02Solution};
 
     #[derive(Default)]
     pub struct Soln {
@@ -131,7 +126,7 @@ pub mod part_two {
 
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
+            utils::parse_input_file(self, filename);
             Answer::I32(self.nums
                 .iter()
                 .map(|row| row_division(row).expect("Row should have a divisible pair."))
@@ -140,9 +135,9 @@ pub mod part_two {
         }
     }
 
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.nums = utils::parse_input_file(filename);
+    impl Year2017Day02Solution for Soln {
+        fn set_nums(&mut self, nums: Vec<Vec<i32>>) {
+            self.nums = nums;            
         }
     }
 

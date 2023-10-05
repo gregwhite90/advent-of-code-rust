@@ -4,37 +4,28 @@ use crate::utils::Day;
 const DAY: Day = crate::utils::Day { year: 2017, day: 3};
 
 mod utils {
-    use crate::utils::io_utils;
+    use crate::utils::{io_utils, solution::Solution};
 
-    pub fn parse_input_file(filename: &str) -> u32 {
-        io_utils::file_to_string(filename)
-            .parse::<u32>()
-            .expect("File should be a single unsigned integer.")
+    pub trait Year2017Day03Solution {
+        fn set_num(&mut self, num: u32);
     }
-    
-    #[cfg(test)]
-    mod tests {
-        use test_case::test_case;
-        use crate::utils::io_utils::{InputFileType, input_filename};
-        use super::*;    
-        use super::super::DAY;
 
-        #[test_case(1, 1; "example_1")]
-        #[test_case(2, 12; "example_2")]
-        #[test_case(3, 23; "example_3")]
-        #[test_case(4, 1024; "example_4")]
-        fn parse_input_file_is_correct(example_key: u8, input_value: u32) {
-            assert_eq!(
-                parse_input_file(&input_filename(&DAY, InputFileType::Example(example_key))),
-                input_value
-            );
-        }
+    pub fn parse_input_file<T>(soln: &mut T, filename: &str)
+    where
+        T: Solution + Year2017Day03Solution
+    {
+        soln.set_num(
+            io_utils::file_to_string(filename)
+                .parse::<u32>()
+                .expect("File should be a single unsigned integer.")
+        );
     }
+    // TODO: test    
 }
 
 pub mod part_one {
     use crate::utils::solution::{Solution, Answer};
-    use super::utils;
+    use super::utils::{self, Year2017Day03Solution};
 
     #[derive(Default)]
     pub struct Soln {
@@ -43,7 +34,7 @@ pub mod part_one {
  
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
+            utils::parse_input_file(self, filename);
             let sqrt = (self.num as f64).sqrt().ceil() as u32;
             let shortest_distance_from_layer = sqrt / 2;
             let step_shortest_dist_multiplier = 2;
@@ -74,9 +65,9 @@ pub mod part_one {
         }
     }
 
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.num = utils::parse_input_file(filename);
+    impl Year2017Day03Solution for Soln {
+        fn set_num(&mut self, num: u32) {
+            self.num = num;
         }
     }
 
@@ -106,7 +97,7 @@ pub mod part_two {
     use std::collections::{HashSet, HashMap};
     use itertools::Itertools;
     use crate::utils::solution::{Solution, Answer};
-    use super::utils;
+    use super::utils::{self, Year2017Day03Solution};
 
     #[derive(PartialEq, Eq, Hash, Debug, Default, Clone, Copy)]
     struct Point {
@@ -172,7 +163,7 @@ pub mod part_two {
  
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
+            utils::parse_input_file(self, filename);
             self.point = Point { x: 0, y: 0};
             self.point_values.insert(self.point, 1);
             self.next_point();
@@ -197,11 +188,13 @@ pub mod part_two {
         }
     }
 
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.num = utils::parse_input_file(filename);
+    impl Year2017Day03Solution for Soln {
+        fn set_num(&mut self, num: u32) {
+            self.num = num;
         }
+    }
 
+    impl Soln {
         fn next_point(&mut self) {
             self.point = self.point.next_point(&self.direction);
         }
