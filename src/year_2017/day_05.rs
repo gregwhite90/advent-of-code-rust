@@ -1,7 +1,7 @@
 #[cfg(test)]
 use crate::utils::Day;
 #[cfg(test)]
-const DAY: Day = crate::utils::Day { year: 2017, day: 5};
+const DAY: Day = crate::utils::Day { year: 2017, day: 5 };
 
 mod utils {
     use crate::utils::{solution::Solution, io_utils};
