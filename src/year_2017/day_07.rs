@@ -6,7 +6,7 @@ const DAY: Day = crate::utils::Day { year: 2017, day: 7};
 mod utils {
     use regex::Regex;
     use std::collections::HashMap;
-    use crate::utils::io_utils;
+    use crate::utils::{io_utils, solution::Solution};
 
     pub struct Program { // TODO: use borrowed references to strings and lifetimes to avoid unecessary copies.
         pub name: String,
@@ -16,12 +16,19 @@ mod utils {
     }
 
     // TODO: implement DaySolution Trait and use it for parse_input_file.
+    pub trait Year2017Day07Solution {
+        fn get_mut_programs(&mut self) -> &mut HashMap<String, Program>;
+        fn get_mut_held_by(&mut self) -> &mut HashMap<String, String>;
+        fn get_programs(&self) -> &HashMap<String, Program>;
+    }
 
-    pub fn parse_input_file(
-        programs: &mut HashMap<String, Program>,
-        held_by: &mut HashMap<String, String>,
-        filename: &str
-    ) {
+    pub fn parse_input_file<T>(
+        soln: &mut T,
+        filename: &str,
+    )
+    where
+        T: Solution + Year2017Day07Solution
+    {
         let re = Regex::new(r"(?<name>[a-z]+) \((?<weight>[0-9]+)\)( -> (?<holding>[a-z ,]+))?")
             .unwrap();
         io_utils::file_to_lines(filename).for_each(|line| {
@@ -33,14 +40,15 @@ mod utils {
                 None => vec![],
             };
             for program_held in holding.iter() {
-                if programs.contains_key(program_held) {
-                    programs.entry(String::from(program_held))
+                if soln.get_programs().contains_key(program_held) {
+                    soln.get_mut_programs().entry(String::from(program_held))
                         .and_modify(|program| program.held_by = Some(String::from(name)));
                 } else {
-                    held_by.insert(String::from(program_held), String::from(name));
+                    soln.get_mut_held_by().insert(String::from(program_held), String::from(name));
                 }
             }
-            programs.insert(
+            let held_by = soln.get_mut_held_by().remove(name);
+            soln.get_mut_programs().insert(
                 String::from(name),
                 Program {
                     name: String::from(name),
@@ -50,14 +58,17 @@ mod utils {
                         .parse()
                         .expect("Weight should be convertible to an unsigned integer."),
                     holding: holding,
-                    held_by: held_by.remove(name)
+                    held_by: held_by,
                 }
             );
         });
     }
 
-    pub fn base_program(programs: &HashMap<String, Program>) -> &Program {
-        let base_programs: Vec<&Program> = programs
+    pub fn base_program<T>(soln: &T) -> &Program
+    where
+        T: Solution + Year2017Day07Solution
+    {
+        let base_programs: Vec<&Program> = soln.get_programs()
             .iter()
             .filter(|(_name, program)| program.held_by == None)
             .map(|(_name, program)| program)
@@ -72,7 +83,7 @@ mod utils {
 pub mod part_one {
     use std::collections::HashMap;
     use crate::utils::solution::{Solution, Answer};
-    use super::utils::{self, Program};
+    use super::utils::{self, Program, Year2017Day07Solution};
 
     #[derive(Default)]
     pub struct Soln {
@@ -82,8 +93,22 @@ pub mod part_one {
  
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            utils::parse_input_file(&mut self.programs, &mut self.held_by, filename);
-            Answer::String(utils::base_program(&self.programs).name.clone())
+            utils::parse_input_file(self, filename);
+            Answer::String(utils::base_program(self).name.clone())
+        }
+    }
+
+    impl Year2017Day07Solution for Soln {
+        fn get_mut_programs(&mut self) -> &mut HashMap<String, Program> {
+            &mut self.programs
+        }
+
+        fn get_mut_held_by(&mut self) -> &mut HashMap<String, String> {
+            &mut self.held_by
+        }
+
+        fn get_programs(&self) -> &HashMap<String, Program> {
+            &self.programs
         }
     }
 
@@ -109,7 +134,7 @@ pub mod part_one {
 pub mod part_two {
     use std::collections::HashMap;
     use crate::utils::solution::{Solution, Answer};
-    use super::utils::{self, Program};
+    use super::utils::{self, Program, Year2017Day07Solution};
 
     #[derive(Default)]
     pub struct Soln {
@@ -119,8 +144,8 @@ pub mod part_two {
  
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            utils::parse_input_file(&mut self.programs, &mut self.held_by, filename);
-            let program = utils::base_program(&self.programs);
+            utils::parse_input_file(self, filename);
+            let program = utils::base_program(self);
             let mut weights_incl_holding = HashMap::new();
             self.weight_incl_holding(
                 &mut weights_incl_holding,
@@ -129,6 +154,20 @@ pub mod part_two {
             let new_weight: u32 = self.find_misweighted_program(&weights_incl_holding, program.name.clone(), 0);
             Answer::U32(new_weight) 
         }        
+    }
+
+    impl Year2017Day07Solution for Soln {
+        fn get_mut_programs(&mut self) -> &mut HashMap<String, Program> {
+            &mut self.programs
+        }
+
+        fn get_mut_held_by(&mut self) -> &mut HashMap<String, String> {
+            &mut self.held_by
+        }
+
+        fn get_programs(&self) -> &HashMap<String, Program> {
+            &self.programs
+        }
     }
 
     impl Soln {
