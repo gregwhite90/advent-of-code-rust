@@ -8,15 +8,21 @@ mod utils {
     use crate::utils::{solution::Solution, io_utils};
 
     // TODO: test
-    pub fn parse_input_file(filename: &str) -> Vec<u32> {
-        io_utils::file_to_string(filename)
-            .split_whitespace()
-            .map(|num| num.parse().expect("Each part of the input should be an unsigned integer."))
-            .collect()
+    pub fn parse_input_file<T>(soln: &mut T, filename: &str) 
+    where
+        T: Solution + Year2017Day06Solution
+    {
+        soln.set_banks(
+            io_utils::file_to_string(filename)
+                .split_whitespace()
+                .map(|num| num.parse().expect("Each part of the input should be an unsigned integer."))
+                .collect()
+        );
     }
 
     pub trait Year2017Day06Solution {
         // Don't have shared/default implementation because needs to access fields on Soln struct
+        fn set_banks(&mut self, banks: Vec<u32>);
         fn get_banks(&self) -> &Vec<u32>;
         fn get_seen(&self) -> &HashMap<Vec<u32>, u32>;
         fn increment_bank(&mut self, idx: usize);
@@ -58,12 +64,16 @@ pub mod part_one {
  
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
+            utils::parse_input_file(self, filename);
             Answer::U32(utils::steps(self))
         }
     }
 
     impl Year2017Day06Solution for Soln {
+        fn set_banks(&mut self, banks: Vec<u32>) {
+            self.banks = banks;
+        }
+
         fn get_banks(&self) -> &Vec<u32> {
             &self.banks
         }
@@ -82,12 +92,6 @@ pub mod part_one {
 
         fn insert_into_seen(&mut self, banks: Vec<u32>, steps: u32) {
             self.seen.insert(banks, steps);
-        }
-    }
-
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.banks = utils::parse_input_file(filename);
         }
     }
 
@@ -123,7 +127,7 @@ pub mod part_two {
  
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
+            utils::parse_input_file(self, filename);
             Answer::U32(
                 utils::steps(self) - self.seen.get(&self.banks).expect("Current banks should have been seen previously.")
             )
@@ -131,6 +135,10 @@ pub mod part_two {
     }
 
     impl Year2017Day06Solution for Soln {
+        fn set_banks(&mut self, banks: Vec<u32>) {
+            self.banks = banks;
+        }
+
         fn get_banks(&self) -> &Vec<u32> {
             &self.banks
         }
@@ -152,12 +160,6 @@ pub mod part_two {
         }
     }
     
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.banks = utils::parse_input_file(filename);
-        }
-    }
-
     #[cfg(test)]
     mod tests {
         use test_case::test_case;

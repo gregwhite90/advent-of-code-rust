@@ -118,7 +118,12 @@ pub mod part_one {
  
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
+            let mut _max_register_value = i32::MIN;
+            utils::parse_input_file(
+                &mut self.registers,
+                &mut _max_register_value,
+                filename
+            );
             Answer::I32(
                 self.registers
                     .iter()
@@ -126,17 +131,6 @@ pub mod part_one {
                     .max()
                     .expect("There should be at least one register.")
             )
-        }
-    }
-
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            let mut _max_register_value = i32::MIN;
-            utils::parse_input_file(
-                &mut self.registers,
-                &mut _max_register_value,
-                filename
-            );
         }
     }
 
@@ -172,14 +166,8 @@ pub mod part_two {
  
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
-            Answer::I32(self.max_register_value)
-        }
-    }
-
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
             utils::parse_input_file(&mut self.registers, &mut self.max_register_value, filename);
+            Answer::I32(self.max_register_value)
         }
     }
 
