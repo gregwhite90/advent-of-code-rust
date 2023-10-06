@@ -12,6 +12,7 @@ pub mod solution {
         String(String),
         I32(i32),
         U32(u32),
+        U16(u16),
     }
 
     impl fmt::Display for Answer {
@@ -20,6 +21,7 @@ pub mod solution {
                 Answer::String(string) => write!(f, "{}", string),
                 Answer::I32(num) => write!(f, "{}", num),
                 Answer::U32(num) => write!(f, "{}", num),
+                Answer::U16(num) => write!(f, "{}", num),
             }
         }
     }
