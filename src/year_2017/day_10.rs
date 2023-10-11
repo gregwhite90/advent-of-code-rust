@@ -3,13 +3,62 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2017, day: 10 };
 
+mod utils {
+    use crate::utils::solution::Solution;
+
+    pub fn range_vec_max(max: u8) -> Vec<u8> {
+        (0..=max).collect()
+    }
+
+    pub trait Year2017Day10Solution {
+        fn set_nums(&mut self, nums: Vec<u8>);
+        fn get_nums(&self) -> &Vec<u8>;
+        fn get_mut_nums(&mut self) -> &mut Vec<u8>;
+        fn get_length(&self) -> usize;
+        fn increment_length_idx(&mut self);
+        fn get_position(&self) -> usize;
+        fn set_position(&mut self, position: usize);
+        fn get_skip_size(&self) -> usize;
+        fn increment_skip_size(&mut self);
+    }
+
+    pub fn step<T>(soln: &mut T) 
+    where
+        T: Solution + Year2017Day10Solution 
+    {
+        let position = soln.get_position();
+        let nums_len = soln.get_nums().len();
+        let length = soln.get_length();
+        if position + length < nums_len {
+            soln.get_mut_nums()[position..position + length].reverse();
+        } else {
+            // Circularity applies and requires a special case
+            let mut full_reversal_region: Vec<u8> = soln.get_nums()[position..nums_len]
+                .to_vec();
+            full_reversal_region.append(
+                    &mut soln.get_nums()[0..(position + length - nums_len)].to_vec()
+                );
+            full_reversal_region.reverse();
+            soln.get_mut_nums().splice(position..nums_len, full_reversal_region[..nums_len - position].to_vec());
+            soln.get_mut_nums().splice(0..position + length - nums_len, full_reversal_region[nums_len - position..].to_vec());
+        }
+        soln.set_position((position + length + soln.get_skip_size()) % nums_len);
+        soln.increment_skip_size();
+        soln.increment_length_idx();
+    }
+
+}
+
 pub mod part_one {
     use crate::utils::{io_utils, solution::{Solution, Answer}};
+
+    use super::utils::{self, Year2017Day10Solution};
 
     #[derive(PartialEq, Eq, Debug)]
     pub struct Soln {
         nums: Vec<u8>,
         lengths: Vec<usize>,
+        length_idx: usize,
         position: usize,
         skip_size: usize,
     }
@@ -20,11 +69,48 @@ pub mod part_one {
         }
     }
 
+    impl Year2017Day10Solution for Soln {
+        fn set_nums(&mut self, nums: Vec<u8>) {
+            self.nums = nums;
+        }
+
+        fn get_nums(&self) -> &Vec<u8> {
+            &self.nums
+        }
+        fn get_mut_nums(&mut self) -> &mut Vec<u8> {
+            &mut self.nums
+        }
+
+        fn get_length(&self) -> usize {
+            *self.lengths.get(self.length_idx).expect("Should be able to get the length at the current index.")
+        }
+
+        fn increment_length_idx(&mut self) {
+            self.length_idx = (self.length_idx + 1) % self.lengths.len();
+        }
+
+        fn get_position(&self) -> usize {
+            self.position
+        }
+
+        fn set_position(&mut self, position: usize) {
+            self.position = position;
+        }
+
+        fn get_skip_size(&self) -> usize {
+            self.skip_size
+        }
+
+        fn increment_skip_size(&mut self) {
+            self.skip_size += 1;
+        }
+    }
+
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
             self.parse_input_file(filename);
-            for length_idx in 0..self.lengths.len() {
-                self.step(*self.lengths.get(length_idx).unwrap())
+            for _length_idx in 0..self.lengths.len() {
+                utils::step(self);
             }
             Answer::U16(self.check())
         }
@@ -33,8 +119,9 @@ pub mod part_one {
     impl Soln {
         fn with_max(max: u8) -> Self {
             Soln {
-                nums: (0..=max).collect(),
+                nums: utils::range_vec_max(max),
                 lengths: vec![],
+                length_idx: 0,
                 position: 0,
                 skip_size: 0,
             }
@@ -49,24 +136,6 @@ pub mod part_one {
                 .collect();
         }
     
-        fn step(&mut self, length: usize) {
-            if self.position + length < self.nums.len() {
-                self.nums[self.position..self.position + length].reverse();
-            } else {
-                // Circularity applies and requires a special case
-                let mut full_reversal_region: Vec<u8> = self.nums[self.position..self.nums.len()]
-                    .to_vec();
-                full_reversal_region.append(
-                        &mut self.nums[0..(self.position + length - self.nums.len())].to_vec()
-                    );
-                full_reversal_region.reverse();
-                self.nums.splice(self.position..self.nums.len(), full_reversal_region[..self.nums.len() - self.position].to_vec());
-                self.nums.splice(0..self.position + length - self.nums.len(), full_reversal_region[self.nums.len() - self.position..].to_vec());
-            }
-            self.position = (self.position + length + self.skip_size) % self.nums.len();
-            self.skip_size += 1;
-        }
-
         fn check(&self) -> u16 {
             self.nums[..2].iter().fold(1, |acc, num| acc * *num as u16)
         }
@@ -81,43 +150,51 @@ pub mod part_one {
 
         #[test]
         fn step_is_correct() {
-            let mut soln = Soln::with_max(4);
-            soln.step(0);
+            let mut soln = Soln {
+                nums: utils::range_vec_max(4),
+                lengths: vec![0, 1, 5, 4],
+                ..Soln::default()
+            };
+            utils::step(&mut soln);
             assert_eq!(
                 soln,
                 Soln {
                     nums: vec![0, 1, 2, 3, 4],
-                    lengths: vec![],
+                    lengths: vec![0, 1, 5, 4],
+                    length_idx: 1,
                     position: 0,
                     skip_size: 1,
                 },
             );
-            soln.step(1);
+            utils::step(&mut soln);
             assert_eq!(
                 soln,
                 Soln {
                     nums: vec![0, 1, 2, 3, 4],
-                    lengths: vec![],
+                    lengths: vec![0, 1, 5, 4],
+                    length_idx: 2,
                     position: 2,
                     skip_size: 2,
                 },
             );
-            soln.step(5);
+            utils::step(&mut soln);
             assert_eq!(
                 soln,
                 Soln {
                     nums: vec![3, 2, 1, 0, 4],
-                    lengths: vec![],
+                    lengths: vec![0, 1, 5, 4],
+                    length_idx: 3,
                     position: 4,
                     skip_size: 3,
                 },
             );
-            soln.step(4);
+            utils::step(&mut soln);
             assert_eq!(
                 soln,
                 Soln {
                     nums: vec![2, 3, 4, 0, 1],
-                    lengths: vec![],
+                    lengths: vec![0, 1, 5, 4],
+                    length_idx: 0,
                     position: 1,
                     skip_size: 4,
                 },
@@ -142,6 +219,8 @@ pub mod part_two {
 
     use crate::utils::{io_utils, solution::{Solution, Answer}};
 
+    use super::utils::{self, Year2017Day10Solution};
+
     const ROUNDS: u8 = 64;
     const DENSE_HASH_CHUNK_SIZE: usize = 16;
 
@@ -149,14 +228,51 @@ pub mod part_two {
     pub struct Soln {
         nums: Vec<u8>,
         lengths: Vec<usize>,
+        length_idx: usize,
         position: usize,
         skip_size: usize,
     }
 
-    // TODO: refactor to shared functionality?
     impl Default for Soln {
         fn default() -> Self {
             Self::with_max(u8::MAX)
+        }
+    }
+    
+    impl Year2017Day10Solution for Soln {
+        fn set_nums(&mut self, nums: Vec<u8>) {
+            self.nums = nums;
+        }
+
+        fn get_nums(&self) -> &Vec<u8> {
+            &self.nums
+        }
+        fn get_mut_nums(&mut self) -> &mut Vec<u8> {
+            &mut self.nums
+        }
+
+        fn get_length(&self) -> usize {
+            *self.lengths.get(self.length_idx).expect("Should be able to get the length at the current index.")
+        }
+        
+        fn increment_length_idx(&mut self) {
+            self.length_idx = (self.length_idx + 1) % self.lengths.len();
+        }
+
+        fn get_position(&self) -> usize {
+            self.position
+        }
+
+        fn set_position(&mut self, position: usize) {
+            self.position = position;
+        }
+
+        fn get_skip_size(&self) -> usize {
+            self.skip_size
+        }
+
+        fn increment_skip_size(&mut self) {
+            self.skip_size += 1;
         }
     }
 
@@ -164,8 +280,8 @@ pub mod part_two {
         fn solve(&mut self, filename: &str) -> Answer {
             self.parse_input_file(filename);
             for _round in 0..ROUNDS {
-                for length_idx in 0..self.lengths.len() {
-                    self.step(*self.lengths.get(length_idx).unwrap())
+                for _length_idx in 0..self.lengths.len() {
+                    utils::step(self);
                 }
             }
             Answer::String(self.knot_hash())
@@ -173,11 +289,11 @@ pub mod part_two {
     }
 
     impl Soln {
-        // TODO: refactor shared functionality?
         fn with_max(max: u8) -> Self {
             Soln {
-                nums: (0..=max).collect(),
+                nums: utils::range_vec_max(max),
                 lengths: vec![],
+                length_idx:0,
                 position: 0,
                 skip_size: 0,
             }
@@ -191,26 +307,7 @@ pub mod part_two {
             self.lengths.append(&mut vec![17usize, 31, 73, 47, 23]);
         }
     
-        // TODO: split into shared functionality?
-        fn step(&mut self, length: usize) {
-            if self.position + length < self.nums.len() {
-                self.nums[self.position..self.position + length].reverse();
-            } else {
-                // Circularity applies and requires a special case
-                let mut full_reversal_region: Vec<u8> = self.nums[self.position..self.nums.len()]
-                    .to_vec();
-                full_reversal_region.append(
-                        &mut self.nums[0..(self.position + length - self.nums.len())].to_vec()
-                    );
-                full_reversal_region.reverse();
-                self.nums.splice(self.position..self.nums.len(), full_reversal_region[..self.nums.len() - self.position].to_vec());
-                self.nums.splice(0..self.position + length - self.nums.len(), full_reversal_region[self.nums.len() - self.position..].to_vec());
-            }
-            self.position = (self.position + length + self.skip_size) % self.nums.len();
-            self.skip_size += 1;
-        }
-
-        fn knot_hash(&mut self) -> String {
+        fn knot_hash(&self) -> String {
             let nums: [u8; 256] = self.nums.clone().try_into().expect("Should be exactly 256 numbers.");
             nums
                 .into_iter()
@@ -234,43 +331,51 @@ pub mod part_two {
 
         #[test]
         fn step_is_correct() {
-            let mut soln = Soln::with_max(4);
-            soln.step(0);
+            let mut soln = Soln {
+                nums: utils::range_vec_max(4),
+                lengths: vec![0, 1, 5, 4],
+                ..Soln::default()
+            };
+            utils::step(&mut soln);
             assert_eq!(
                 soln,
                 Soln {
                     nums: vec![0, 1, 2, 3, 4],
-                    lengths: vec![],
+                    lengths: vec![0, 1, 5, 4],
+                    length_idx: 1,
                     position: 0,
                     skip_size: 1,
                 },
             );
-            soln.step(1);
+            utils::step(&mut soln);
             assert_eq!(
                 soln,
                 Soln {
                     nums: vec![0, 1, 2, 3, 4],
-                    lengths: vec![],
+                    lengths: vec![0, 1, 5, 4],
+                    length_idx: 2,
                     position: 2,
                     skip_size: 2,
                 },
             );
-            soln.step(5);
+            utils::step(&mut soln);
             assert_eq!(
                 soln,
                 Soln {
                     nums: vec![3, 2, 1, 0, 4],
-                    lengths: vec![],
+                    lengths: vec![0, 1, 5, 4],
+                    length_idx: 3,
                     position: 4,
                     skip_size: 3,
                 },
             );
-            soln.step(4);
+            utils::step(&mut soln);
             assert_eq!(
                 soln,
                 Soln {
                     nums: vec![2, 3, 4, 0, 1],
-                    lengths: vec![],
+                    lengths: vec![0, 1, 5, 4],
+                    length_idx: 0,
                     position: 1,
                     skip_size: 4,
                 },
