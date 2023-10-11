@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["InputFileType"],"fn":["file_to_lines","file_to_string","input_filename"]};

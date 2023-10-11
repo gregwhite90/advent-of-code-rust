@@ -182,10 +182,30 @@
 <a href="#182" id="182">182</a>
 <a href="#183" id="183">183</a>
 <a href="#184" id="184">184</a>
-</pre></div><pre class="rust"><code><span class="doccomment">/// Defines utilities shared by both parts of 2017-01 solution.
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+</pre></div><pre class="rust"><code><span class="attr">#[cfg(test)]
+</span><span class="kw">use </span><span class="kw">crate</span>::utils::Day;
+<span class="attr">#[cfg(test)]
+</span><span class="kw">const </span>DAY: Day = <span class="kw">crate</span>::utils::Day { year: <span class="number">2017</span>, day: <span class="number">1 </span>};
+
+<span class="doccomment">/// Defines utilities shared by both parts of 2017-01 solution.
 </span><span class="kw">mod </span>utils {
     <span class="kw">pub use </span>unicode_segmentation::UnicodeSegmentation;
     <span class="kw">use </span>regex::Regex;
+    <span class="kw">use </span><span class="kw">crate</span>::utils::{solution::Solution, io_utils};
+
+    <span class="kw">pub trait </span>Year2017Day01Solution {
+        <span class="kw">fn </span>set_text(<span class="kw-2">&amp;mut </span><span class="self">self</span>, text: String);
+    }
+
+    <span class="kw">pub fn </span>parse_input_file&lt;T&gt;(soln: <span class="kw-2">&amp;mut </span>T, filename: <span class="kw-2">&amp;</span>str)
+    <span class="kw">where
+        </span>T: Solution + Year2017Day01Solution
+    {
+        soln.set_text(io_utils::file_to_string(filename));
+    }
 
     <span class="doccomment">/// Creates a vector of integers from a string slice of numerical digits.
     /// Collects into a vector to satisfy shared requirements of client code
@@ -194,36 +214,46 @@
     /// # Arguments
     /// 
     /// * `text` A string slice of ASCII numerical digits
-    /// 
-    /// # Examples
-    /// ```
-    /// use crate::year_2017::day_01::utils::digits;
-    /// assert_eq!(digits(&quot;1234&quot;), vec![1, 2, 3, 4]);
-    /// ```
-    /// ```should_panic
-    /// use crate::year_2017::day_01::utils::digits;
-    /// let panicky_call = digits(&quot;abc&quot;);
-    /// ```
-    </span><span class="kw">pub fn </span>digits(text: <span class="kw-2">&amp;</span>str) -&gt; Vec&lt;i32&gt; {
-
+    </span><span class="kw">pub fn </span>digits(text: <span class="kw-2">&amp;</span>str) -&gt; Vec&lt;u32&gt; {
         <span class="comment">// Confirm that text is made up of ASCII numerical digits
         </span><span class="kw">let </span>re = Regex::new(<span class="string">r&quot;^[0-9]+$&quot;</span>).unwrap();
         <span class="macro">assert!</span>(re.is_match(text));
 
         text
             .graphemes(<span class="bool-val">true</span>)
-            .map(|digit| digit.parse::&lt;i32&gt;().unwrap())
+            .map(|digit| digit.parse::&lt;u32&gt;().unwrap())
             .collect()
     }
+
+    <span class="attr">#[cfg(test)]
+    </span><span class="kw">mod </span>tests {
+        <span class="kw">use super</span>::<span class="kw-2">*</span>;
+
+        <span class="attr">#[test]
+        </span><span class="kw">fn </span>parses_numerical_digits() {
+            <span class="macro">assert_eq!</span>(digits(<span class="string">&quot;1234&quot;</span>), <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>]);
+        }
+
+        <span class="attr">#[test]
+        #[should_panic]
+        </span><span class="kw">fn </span>panics_empty_input() {
+            digits(<span class="string">&quot;&quot;</span>);
+        }
+
+        <span class="attr">#[test]
+        #[should_panic]
+        </span><span class="kw">fn </span>panics_with_non_numerical_characters() {
+            digits(<span class="string">&quot;abc&quot;</span>);
+        }
+    }
+
 }
 
-<span class="doccomment">/// Solves 2017-01 part one.
+<span class="doccomment">/// Solves 2017-01 part one
 </span><span class="kw">pub mod </span>part_one {
-    <span class="kw">use </span>std::fs;
     <span class="kw">pub use </span>itertools::Itertools;
-    <span class="kw">pub use </span>either::<span class="kw-2">*</span>;
-    <span class="kw">use </span><span class="kw">crate</span>::year_2017::day_01::utils;
-    <span class="kw">use </span><span class="kw">crate</span>::utils::utils::Solution;
+    <span class="kw">use </span><span class="kw">super</span>::utils::{<span class="self">self</span>, Year2017Day01Solution};
+    <span class="kw">use </span><span class="kw">crate</span>::utils::solution::{Solution, Answer};
 
     <span class="attr">#[derive(Default)]
     </span><span class="kw">pub struct </span>Soln {
@@ -231,19 +261,21 @@
     }
 
     <span class="kw">impl </span>Solution <span class="kw">for </span>Soln {
-        <span class="kw">fn </span>parse_input_file(<span class="kw-2">&amp;mut </span><span class="self">self</span>, filename: <span class="kw-2">&amp;</span>str) {
-            <span class="self">self</span>.text = fs::read_to_string(filename)
-                .expect(<span class="string">&quot;Should be able to read the file to a string.&quot;</span>);
+        <span class="kw">fn </span>solve(<span class="kw-2">&amp;mut </span><span class="self">self</span>, filename: <span class="kw-2">&amp;</span>str) -&gt; Answer {
+            utils::parse_input_file(<span class="self">self</span>, filename);
+            Answer::U32(<span class="self">self</span>.sum_of_repeated_digits())
         }
+    }
 
-        <span class="kw">fn </span>solve(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; Either&lt;i32, <span class="kw-2">&amp;</span>str&gt; {
-            Left(<span class="self">self</span>.sum_of_repeated_digits())
+    <span class="kw">impl </span>Year2017Day01Solution <span class="kw">for </span>Soln {
+        <span class="kw">fn </span>set_text(<span class="kw-2">&amp;mut </span><span class="self">self</span>, text: String) {
+            <span class="self">self</span>.text = text;
         }
     }
     
     <span class="kw">impl </span>Soln {
         <span class="doccomment">/// Finds the sum of all repeated consecutive digits, considered circularly.
-        </span><span class="kw">fn </span>sum_of_repeated_digits(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; i32 {
+        </span><span class="kw">fn </span>sum_of_repeated_digits(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32 {
             <span class="comment">// Collect into a vector and then back to an iterator to satisfy trait bounds in 
             // `circular_tuple_windows
             </span><span class="kw">let </span>digits = utils::digits(<span class="kw-2">&amp;</span><span class="self">self</span>.text);
@@ -253,15 +285,35 @@
                 .fold(<span class="number">0</span>, |acc, (<span class="kw-2">&amp;</span>elem, <span class="kw-2">&amp;</span>next)| acc + <span class="kw">if </span>elem == next { elem } <span class="kw">else </span>{ <span class="number">0 </span>})
         }
     }
+
+    <span class="attr">#[cfg(test)]
+    </span><span class="kw">mod </span>tests {
+        <span class="kw">use </span>test_case::test_case;
+        <span class="kw">use </span><span class="kw">crate</span>::utils::solution::Answer;
+        <span class="kw">use </span><span class="kw">crate</span>::utils::test_utils;
+        <span class="kw">use super</span>::<span class="kw-2">*</span>;    
+        <span class="kw">use </span><span class="kw">super</span>::<span class="kw">super</span>::DAY;
+
+        <span class="attr">#[test_case(<span class="number">1</span>, Answer::U32(<span class="number">3</span>); <span class="string">&quot;example_1&quot;</span>)]
+        #[test_case(<span class="number">2</span>, Answer::U32(<span class="number">4</span>); <span class="string">&quot;example_2&quot;</span>)]
+        #[test_case(<span class="number">3</span>, Answer::U32(<span class="number">0</span>); <span class="string">&quot;example_3&quot;</span>)]
+        #[test_case(<span class="number">4</span>, Answer::U32(<span class="number">9</span>); <span class="string">&quot;example_4&quot;</span>)]
+        </span><span class="kw">fn </span>examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                <span class="kw-2">&amp;mut </span>Soln::default(),
+                example_key,
+                answer,
+                <span class="kw-2">&amp;</span>DAY,
+            );
+        }
+    }
+
 }
 
-<span class="doccomment">/// Solves 20017-01 part two.
+<span class="doccomment">/// Solves 20017-01 part two
 </span><span class="kw">pub mod </span>part_two {
-    <span class="kw">use </span>std::fs;
-    <span class="kw">pub use </span>either::<span class="kw-2">*</span>;
-    <span class="kw">use </span><span class="kw">crate</span>::year_2017::day_01::utils;
-    <span class="kw">use </span><span class="kw">crate</span>::utils::utils::Solution;
-
+    <span class="kw">use </span><span class="kw">super</span>::utils::{<span class="self">self</span>, Year2017Day01Solution};
+    <span class="kw">use </span><span class="kw">crate</span>::utils::solution::{Solution, Answer};
 
     <span class="attr">#[derive(Default)]
     </span><span class="kw">pub struct </span>Soln {
@@ -269,100 +321,54 @@
     }
 
     <span class="kw">impl </span>Solution <span class="kw">for </span>Soln {
-        <span class="kw">fn </span>parse_input_file(<span class="kw-2">&amp;mut </span><span class="self">self</span>, filename: <span class="kw-2">&amp;</span>str) {
-            <span class="self">self</span>.text = fs::read_to_string(filename)
-                .expect(<span class="string">&quot;Should be able to read the file to a string.&quot;</span>);
+        <span class="kw">fn </span>solve(<span class="kw-2">&amp;mut </span><span class="self">self</span>, filename: <span class="kw-2">&amp;</span>str) -&gt; Answer {
+            utils::parse_input_file(<span class="self">self</span>, filename);
+            Answer::U32(<span class="self">self</span>.sum_of_matching_halfway_around_digits())
         }
+    }
 
-        <span class="kw">fn </span>solve(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; Either&lt;i32, <span class="kw-2">&amp;</span>str&gt; {
-            Left(<span class="self">self</span>.sum_of_matching_halfway_around_digits())
+    <span class="kw">impl </span>Year2017Day01Solution <span class="kw">for </span>Soln {
+        <span class="kw">fn </span>set_text(<span class="kw-2">&amp;mut </span><span class="self">self</span>, text: String) {
+            <span class="self">self</span>.text = text;
         }
     }
     
     <span class="kw">impl </span>Soln {    
         <span class="doccomment">/// Finds the sum of the digits halfway around the string (considered circularly)
         /// that match.
-        </span><span class="kw">pub fn </span>sum_of_matching_halfway_around_digits(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; i32 {
+        </span><span class="kw">fn </span>sum_of_matching_halfway_around_digits(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u32 {
             <span class="comment">// Collect into a vector and then back into an iterator to allow enumeration and indexing
             </span><span class="kw">let </span>digits = utils::digits(<span class="kw-2">&amp;</span><span class="self">self</span>.text);
-            <span class="kw">let </span><span class="kw-2">mut </span>sum: i32 = <span class="number">0</span>;
+            <span class="macro">assert!</span>(digits.len() % <span class="number">2 </span>== <span class="number">0</span>);
+            <span class="kw">let </span><span class="kw-2">mut </span>sum: u32 = <span class="number">0</span>;
             <span class="kw">for </span>(i, <span class="kw-2">&amp;</span>digit) <span class="kw">in </span>digits.iter().enumerate() {
                 <span class="kw">if </span>digit == digits[(i + (digits.len() / <span class="number">2</span>)) % digits.len()] {
-                    sum = sum + digit;
+                    sum += digit;
                 }
             }
             sum
         }
     }
-}
 
-<span class="attr">#[cfg(test)]
-</span><span class="kw">mod </span>tests {
+    <span class="attr">#[cfg(test)]
+    </span><span class="kw">mod </span>tests {
+        <span class="kw">use </span>test_case::test_case;
+        <span class="kw">use </span><span class="kw">crate</span>::utils::{test_utils, solution::Answer};    
+        <span class="kw">use super</span>::<span class="kw-2">*</span>;
+        <span class="kw">use </span><span class="kw">super</span>::<span class="kw">super</span>::DAY;
 
-    <span class="kw">mod </span>utils {
-        <span class="kw">use </span><span class="kw">crate</span>::year_2017::day_01::utils;
-
-        <span class="attr">#[test]
-        </span><span class="kw">fn </span>parses_numerical_digits() {
-            <span class="macro">assert_eq!</span>(utils::digits(<span class="string">&quot;1234&quot;</span>), <span class="macro">vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>]);
-        }
-
-        <span class="attr">#[test]
-        #[should_panic]
-        </span><span class="kw">fn </span>panics_empty_input() {
-            utils::digits(<span class="string">&quot;&quot;</span>);
-        }
-
-        <span class="attr">#[test]
-        #[should_panic]
-        </span><span class="kw">fn </span>panics_with_non_numerical_characters() {
-            utils::digits(<span class="string">&quot;abc&quot;</span>);
-        }
-    }
-    <span class="kw">mod </span>part_one {
-        <span class="kw">use </span>std::collections::HashMap;
-        <span class="kw">use </span><span class="kw">crate</span>::utils::utils::Solution;    
-        <span class="kw">use </span><span class="kw">crate</span>::year_2017::day_01::part_one::Soln;
-
-        <span class="attr">#[test]
-        </span><span class="kw">fn </span>examples_are_correct() {
-            <span class="kw">let </span>cases = HashMap::from([
-                (<span class="number">1</span>, <span class="number">3</span>),
-                (<span class="number">2</span>, <span class="number">4</span>),
-                (<span class="number">3</span>, <span class="number">0</span>),
-                (<span class="number">4</span>, <span class="number">9</span>),
-            ]);
-            <span class="kw">for </span>(<span class="kw-2">&amp;</span>example_key, <span class="kw-2">&amp;</span>answer) <span class="kw">in </span><span class="kw-2">&amp;</span>cases {
-                <span class="kw">let </span><span class="kw-2">mut </span>soln = Soln::default();
-                soln.parse_input_file(
-                    <span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;input/year_2017/day_01/test_examples/example_{example_key}.txt&quot;</span>)
-                );
-                <span class="macro">assert_eq!</span>(answer, soln.solve().expect_left(<span class="string">&quot;Solution should be an integer.&quot;</span>));    
-            }
-        }
-    }
-
-    <span class="kw">mod </span>part_two {
-        <span class="kw">use </span>std::collections::HashMap;
-        <span class="kw">use </span><span class="kw">crate</span>::utils::utils::Solution;    
-        <span class="kw">use </span><span class="kw">crate</span>::year_2017::day_01::part_two::Soln;
-
-        <span class="attr">#[test]
-        </span><span class="kw">fn </span>examples_are_correct() {
-            <span class="kw">let </span>cases = HashMap::from([
-                (<span class="number">5</span>, <span class="number">6</span>),
-                (<span class="number">6</span>, <span class="number">0</span>),
-                (<span class="number">7</span>, <span class="number">4</span>),
-                (<span class="number">8</span>, <span class="number">12</span>),
-                (<span class="number">9</span>, <span class="number">4</span>),
-            ]);
-            <span class="kw">for </span>(<span class="kw-2">&amp;</span>example_key, <span class="kw-2">&amp;</span>answer) <span class="kw">in </span><span class="kw-2">&amp;</span>cases {
-                <span class="kw">let </span><span class="kw-2">mut </span>soln = Soln::default();
-                soln.parse_input_file(
-                    <span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;input/year_2017/day_01/test_examples/example_{example_key}.txt&quot;</span>)
-                );
-                <span class="macro">assert_eq!</span>(answer, soln.solve().expect_left(<span class="string">&quot;Solution should be an integer.&quot;</span>));    
-            }
+        <span class="attr">#[test_case(<span class="number">5</span>, Answer::U32(<span class="number">6</span>); <span class="string">&quot;example_5&quot;</span>)]
+        #[test_case(<span class="number">6</span>, Answer::U32(<span class="number">0</span>); <span class="string">&quot;example_6&quot;</span>)]
+        #[test_case(<span class="number">7</span>, Answer::U32(<span class="number">4</span>); <span class="string">&quot;example_7&quot;</span>)]
+        #[test_case(<span class="number">8</span>, Answer::U32(<span class="number">12</span>); <span class="string">&quot;example_8&quot;</span>)]
+        #[test_case(<span class="number">9</span>, Answer::U32(<span class="number">4</span>); <span class="string">&quot;example_9&quot;</span>)]
+        </span><span class="kw">fn </span>examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                <span class="kw-2">&amp;mut </span>Soln::default(),
+                example_key,
+                answer,
+                <span class="kw-2">&amp;</span>DAY,
+            );
         }    
     }
 }</code></pre></div></section></main></body></html>

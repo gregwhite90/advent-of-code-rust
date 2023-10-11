@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Either"],"macro":["for_both","try_left","try_right"],"struct":["Soln"],"trait":["Itertools"]};
+window.SIDEBAR_ITEMS = {"struct":["Soln"],"trait":["Itertools"]};

@@ -1,8 +1,10 @@
+//! Utilities to take command line arguments and run the specified solution. 
 use std::collections::{HashMap, HashSet};
 use crate::{Args, Part};
 use advent_of_code_rust::utils::{solution::Solution, io_utils::{self, InputFileType}, Day};
 use advent_of_code_rust::year_2017;
 
+/// Runs the solution(s) specified by the command line arguments.
 pub fn run_solution(args: &Args) {
 
     let day = Day { year: args.year, day: args.day };
@@ -31,11 +33,14 @@ pub fn run_solution(args: &Args) {
     }
 }
 
+/// A day's solutions can include a solution to part one and/or a solution to part two,
+/// or neither.
 struct DailySolutions {
     part_one: Option<Box<dyn Solution>>,
     part_two: Option<Box<dyn Solution>>,
 }
 
+/// Gets the daily solutions for the specified day.
 fn get_solns(day: &Day) -> DailySolutions {
     // Mutable because we will later move out the daily solutions to be able to return them.
     let mut daily_solutions: HashMap<Day, DailySolutions> = HashMap::from([
