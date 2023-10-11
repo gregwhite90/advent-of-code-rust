@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["utils"]};
+window.SIDEBAR_ITEMS = {"mod":["io_utils","solution"],"struct":["Day"]};

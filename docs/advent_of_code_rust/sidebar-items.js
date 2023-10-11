@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Part"],"fn":["main"],"mod":["router","utils","year_2017"],"struct":["Args"]};
+window.SIDEBAR_ITEMS = {"mod":["utils","year_2017"]};

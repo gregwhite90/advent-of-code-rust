@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"advent_of_code_rust":[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.72.1/core/fmt/trait.Display.html\" title=\"trait core::fmt::Display\">Display</a> for <a class=\"enum\" href=\"advent_of_code_rust/utils/solution/enum.Answer.html\" title=\"enum advent_of_code_rust::utils::solution::Answer\">Answer</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
