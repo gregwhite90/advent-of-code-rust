@@ -22,9 +22,13 @@ pub mod utils {
         fn range_vec_max(max: u8) -> Vec<u8> {
             (0..=max).collect()
         }
-    
+        
         fn parse_input_file(&mut self, filename: &str) {
-            let mut lengths: Vec<usize> = io_utils::file_to_string(filename)
+            self.parse_key(&io_utils::file_to_string(filename));
+        }
+
+        fn parse_key(&mut self, key: &str) {
+            let mut lengths: Vec<usize> = key
                 .chars()
                 .map(|ch| ch as usize)
                 .collect();
@@ -76,4 +80,6 @@ pub mod utils {
                 .join("")
         }
     }
+
+    // TODO: test here
 }
