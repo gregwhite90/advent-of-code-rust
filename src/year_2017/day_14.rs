@@ -1,7 +1,7 @@
 #[cfg(test)]
 use crate::utils::Day;
 #[cfg(test)]
-const DAY: Day = crate::utils::Day { year: 2017, day: 15 };
+const DAY: Day = crate::utils::Day { year: 2017, day: 14 };
 
 const ROWS: usize = 128;
 

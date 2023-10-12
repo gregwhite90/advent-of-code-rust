@@ -4,7 +4,7 @@ pub mod utils {
     use crate::utils::io_utils;
 
     /// A trait for solutions or parts of solutions that require knot hashing
-    /// (days 10 and 15).
+    /// (days 10 and 14).
     /// 
     /// # Examples
     /// ```
