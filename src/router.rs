@@ -115,6 +115,13 @@ fn get_solns(day: &Day) -> DailySolutions {
             },
         ),
         (
+            Day { year: 2017, day: 11 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2017::day_11::part_one::Soln::default())),
+                part_two: None,
+            },
+        ),
+        (
             Day { year: 2017, day: 14 },
             DailySolutions { 
                 part_one: Some(Box::new(year_2017::day_14::part_one::Soln::default())),
