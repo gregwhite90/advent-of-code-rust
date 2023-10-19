@@ -6,8 +6,10 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2017, day: 11 };
 
-pub mod part_one {
-    use crate::utils::{io_utils, solution::{Solution, Answer}};
+mod utils {
+    use std::cmp;
+
+    use crate::utils::io_utils;
 
     enum Step {
         N,
@@ -34,20 +36,14 @@ pub mod part_one {
 
     /// A position reached by a sequence of steps is uniquely determined by two coordinates. Moves directly N/S move 2 steps
     #[derive(PartialEq, Eq, Debug, Default)]
-    pub struct Soln {
+    pub struct HexPath {
         net_n: i32,
         net_e: i32,
+        max_steps: i32,
     }
 
-    impl Solution for Soln {
-        fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
-            Answer::I32(self.steps())
-        }
-    }
-
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
+    impl HexPath {
+        pub fn parse_input_file(&mut self, filename: &str) {
             io_utils::file_to_string(filename)
                 .split(",")
                 .for_each(|step| self.step(step));
@@ -63,10 +59,32 @@ pub mod part_one {
                 Step::SW => { self.net_n -= 1; self.net_e -= 1; },
                 Step::NW => { self.net_n += 1; self.net_e -= 1; },
             }
+            self.max_steps = cmp::max(self.max_steps, self.steps());
         }
 
-        fn steps(&self) -> i32 {
+        pub fn steps(&self) -> i32 {
             self.net_e.abs() + (self.net_n.abs() - self.net_e.abs()) / 2
+        }
+
+        pub fn max_steps(&self) -> i32 {
+            self.max_steps
+        }
+    }
+}
+
+pub mod part_one {
+    use crate::utils::solution::{Solution, Answer};
+    use super::utils::HexPath;
+
+    #[derive(PartialEq, Eq, Debug, Default)]
+    pub struct Soln {
+        hex_path: HexPath,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.hex_path.parse_input_file(filename);
+            Answer::I32(self.hex_path.steps())
         }
     }
  
@@ -95,70 +113,18 @@ pub mod part_one {
 
 
 pub mod part_two {
-    use std::cmp;
+    use crate::utils::solution::{Solution, Answer};
+    use super::utils::HexPath;
 
-    use crate::utils::{io_utils, solution::{Solution, Answer}};
-
-    enum Step {
-        N,
-        NE,
-        SE,
-        S,
-        SW,
-        NW,
-    }
-
-    impl Step {
-        fn from_str(step: &str) -> Self {
-            match step {
-                "n"  => Self::N,
-                "ne" => Self::NE,
-                "se" => Self::SE,
-                "s"  => Self::S,
-                "sw" => Self::SW,
-                "nw" => Self::NW,
-                _ => panic!("Invalid input for step."),
-            }
-        }
-    }
-
-    /// A position reached by a sequence of steps is uniquely determined by two coordinates. Moves directly N/S move 2 steps
     #[derive(PartialEq, Eq, Debug, Default)]
     pub struct Soln {
-        net_n: i32,
-        net_e: i32,
-        max_steps: i32,
+        hex_path: HexPath,
     }
 
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
-            Answer::I32(self.max_steps)
-        }
-    }
-
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            io_utils::file_to_string(filename)
-                .split(",")
-                .for_each(|step| self.step(step));
-        }
-
-        fn step(&mut self, step: &str) {
-            let step = Step::from_str(step);
-            match step {
-                Step::N => self.net_n += 2,
-                Step::NE => { self.net_n += 1; self.net_e += 1; },
-                Step::SE => { self.net_n -= 1; self.net_e += 1; },
-                Step::S => self.net_n -= 2,
-                Step::SW => { self.net_n -= 1; self.net_e -= 1; },
-                Step::NW => { self.net_n += 1; self.net_e -= 1; },
-            }
-            self.max_steps = cmp::max(self.max_steps, self.steps());
-        }
-
-        fn steps(&self) -> i32 {
-            self.net_e.abs() + (self.net_n.abs() - self.net_e.abs()) / 2
+            self.hex_path.parse_input_file(filename);
+            Answer::I32(self.hex_path.max_steps())
         }
     }
  
