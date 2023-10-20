@@ -1,9 +1,11 @@
+//! A collection of utilities used by multiple 2017 days' solutions.
+
+/// A collection of knot hashing utilities (required by solutions to
+/// days 10 and 14).
 pub mod knot_hasher {
-    //! A collection of utilities used by multiple 2017 days' solutions.
     use itertools::Itertools;
     use crate::utils::io_utils;
 
-    // TODO: fix this example
     /// A trait for solutions or parts of solutions that require knot hashing
     /// (days 10 and 14).
     /// 
@@ -99,12 +101,6 @@ pub mod knot_hasher {
                 skip_size
             }
         }
-
-        /// Sets the private `nums` field to the specified vector.
-        /// Takes ownership of the vector.
-        //fn set_nums(&mut self, nums: Vec<u8>) {
-        //   self.nums = nums;
-        //}
 
         /// Gets a reference to the `nums` vector.
         pub fn nums(&self) -> &Vec<u8> {
@@ -241,7 +237,7 @@ pub mod knot_hasher {
         }
     }
 
-    // TODO: fix tests. add other tests
+    // TODO: add other tests
     #[cfg(test)]
     mod tests {
         use super::*;
@@ -298,6 +294,9 @@ pub mod knot_hasher {
     }    
 }
 
+/// A generic implementation of a map with keys mapping to sets of keys. Required
+/// for solutions to days 12 and 14.
+// TODO: add more documentation? add more doctests?
 pub mod map_of_groups {
     use std::cell::RefCell;
     use std::fmt::{Display, Debug};
@@ -325,12 +324,14 @@ pub mod map_of_groups {
     where
         T: Display + Debug + PartialEq + Eq + Hash + Clone + Copy
     {
+        /// Adds `member` to the map, merging it with the other groups specified
+        /// by `mergees` (a vector of other existing or future keys in the map).
         pub fn add_member(&mut self, member: T, mergees: Vec<T>) {
-            // TODO: should this still be here for day 14?
             self.groups.insert(
                 member,
-                Rc::new(RefCell::new(Group { members: HashSet::new() })),
+                Rc::new(RefCell::new(Group { members: HashSet::from([member]) })),
             );
+            // TODO: decide which group to merge into the other?
             mergees.iter().for_each(|mergee| {
                 if *mergee == member {
                     self.groups.get(&member).unwrap().borrow_mut().members.insert(*mergee);
@@ -357,6 +358,7 @@ pub mod map_of_groups {
             });
         }
 
+        /// Returns the length of the specified `member`'s group.
         pub fn group_len(&self, member: T) -> usize {
             self.groups
                 .get(&member)
@@ -366,6 +368,7 @@ pub mod map_of_groups {
                 .len()
         }
 
+        /// Returns the number of groups in the map.
         pub fn groups(&self) -> u32 {
             let mut counted: HashSet<T> = HashSet::new();
             self.groups.values()
@@ -383,8 +386,13 @@ pub mod map_of_groups {
                 })
                 .sum()
         }        
-    }
 
+        /// Returns whether the map contains the specified `member`
+        pub fn contains(&self, member: &T) -> bool {
+            self.groups.contains_key(member)
+        }
+
+    }
 
     #[cfg(test)]
     mod tests {
@@ -413,9 +421,9 @@ pub mod map_of_groups {
         fn add_member_is_correct_int() {
             let mut map_of_groups = MapOfGroups::default();
             map_of_groups.add_member(0,vec![2]);
-            assert_eq!(map_of_groups.group_len(0), 1);
+            assert_eq!(map_of_groups.group_len(0), 2);
             map_of_groups.add_member(1, vec![1]);
-            assert_eq!(map_of_groups.group_len(0), 1);
+            assert_eq!(map_of_groups.group_len(0), 2);
             assert_eq!(map_of_groups.group_len(1), 1);
             map_of_groups.add_member(2, vec![0, 3, 4]);
             assert_eq!(map_of_groups.group_len(0), 4);
