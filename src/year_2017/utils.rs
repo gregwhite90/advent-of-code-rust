@@ -9,113 +9,58 @@ pub mod knot_hasher {
     /// 
     /// # Examples
     /// ```
-    /// use advent_of_code_rust::year_2017::utils::utils::KnotHasher;
+    /// use advent_of_code_rust::year_2017::utils::knot_hasher::KnotHasher;
     /// 
-    /// #[derive(PartialEq, Eq, Debug)]
-    /// struct KnotHasherSoln {
-    ///     nums: Vec<u8>,
-    ///     lengths: Vec<usize>,
-    ///     length_idx: usize,
-    ///     position: usize,
-    ///     skip_size: usize,
-    /// }
-    /// 
-    /// impl KnotHasher for KnotHasherSoln {
-    ///     fn set_nums(&mut self, nums: Vec<u8>) {
-    ///         self.nums = nums;
-    ///     }
-    /// 
-    ///    fn get_nums(&self) -> &Vec<u8> {
-    ///        &self.nums
-    ///    }
-    /// 
-    ///    fn get_mut_nums(&mut self) -> &mut Vec<u8> {
-    ///        &mut self.nums
-    ///    }
-    ///
-    ///    fn set_lengths(&mut self, lengths: Vec<usize>) {
-    ///        self.lengths = lengths;
-    ///    }
-    ///
-    ///    fn get_lengths(&self) -> &Vec<usize> {
-    ///        &self.lengths
-    ///    }
-    ///
-    ///    fn get_length(&self) -> usize {
-    ///        *self.lengths.get(self.length_idx).expect("Should be able to get the length at the current index.")
-    ///    }
-    ///
-    ///    fn increment_length_idx(&mut self) {
-    ///        self.length_idx = (self.length_idx + 1) % self.lengths.len();
-    ///    }
-    ///
-    ///    fn get_position(&self) -> usize {
-    ///        self.position
-    ///    }
-    ///
-    ///    fn set_position(&mut self, position: usize) {
-    ///        self.position = position;
-    ///    }
-    ///
-    ///    fn get_skip_size(&self) -> usize {
-    ///        self.skip_size
-    ///    }
-    ///
-    ///    fn increment_skip_size(&mut self) {
-    ///        self.skip_size += 1;
-    ///    }
-    /// }
-    /// 
-    /// let mut soln = KnotHasherSoln {
-    ///     nums: vec![0, 1, 2, 3, 4],
-    ///     lengths: vec![0, 1, 5, 4],
-    ///     length_idx: 0,
-    ///     position: 0,
-    ///     skip_size: 0,
-    /// };
-    /// soln.step();
-    /// assert_eq!(
-    ///     soln,
-    ///     KnotHasherSoln {
-    ///         nums: vec![0, 1, 2, 3, 4],
-    ///         lengths: vec![0, 1, 5, 4],
-    ///         length_idx: 1,
-    ///         position: 0,
-    ///         skip_size: 1,
-    ///     },
+    /// let mut knot_hasher = KnotHasher::new(
+    ///     vec![0, 1, 2, 3, 4],
+    ///     vec![0, 1, 5, 4],
+    ///     0,
+    ///     0,
+    ///     0,
     /// );
-    /// soln.step();
+    /// knot_hasher.step();
     /// assert_eq!(
-    ///     soln,
-    ///     KnotHasherSoln {
-    ///         nums: vec![0, 1, 2, 3, 4],
-    ///         lengths: vec![0, 1, 5, 4],
-    ///         length_idx: 2,
-    ///         position: 2,
-    ///         skip_size: 2,
-    ///     },
+    ///     knot_hasher,
+    ///     KnotHasher::new(
+    ///         vec![0, 1, 2, 3, 4],
+    ///         vec![0, 1, 5, 4],
+    ///         1,
+    ///         0,
+    ///         1,
+    ///     ),
     /// );
-    /// soln.step();
+    /// knot_hasher.step();
     /// assert_eq!(
-    ///     soln,
-    ///     KnotHasherSoln {
-    ///         nums: vec![3, 2, 1, 0, 4],
-    ///         lengths: vec![0, 1, 5, 4],
-    ///         length_idx: 3,
-    ///         position: 4,
-    ///         skip_size: 3,
-    ///     },
+    ///     knot_hasher,
+    ///     KnotHasher::new(
+    ///         vec![0, 1, 2, 3, 4],
+    ///         vec![0, 1, 5, 4],
+    ///         2,
+    ///         2,
+    ///         2,
+    ///     ),
     /// );
-    /// soln.step();
+    /// knot_hasher.step();
     /// assert_eq!(
-    ///     soln,
-    ///     KnotHasherSoln {
-    ///         nums: vec![2, 3, 4, 0, 1],
-    ///         lengths: vec![0, 1, 5, 4],
-    ///         length_idx: 0,
-    ///         position: 1,
-    ///         skip_size: 4,
-    ///     },
+    ///     knot_hasher,
+    ///     KnotHasher::new(
+    ///         vec![3, 2, 1, 0, 4],
+    ///         vec![0, 1, 5, 4],
+    ///         3,
+    ///         4,
+    ///         3,
+    ///     ),
+    /// );
+    /// knot_hasher.step();
+    /// assert_eq!(
+    ///     knot_hasher,
+    ///     KnotHasher::new(
+    ///         vec![2, 3, 4, 0, 1],
+    ///         vec![0, 1, 5, 4],
+    ///         0,
+    ///         1,
+    ///         4,
+    ///     ),
     /// );
     /// ```
     
@@ -351,4 +296,129 @@ pub mod knot_hasher {
             );
         }
     }    
+}
+
+pub mod map_of_groups {
+    use std::cell::RefCell;
+    use std::fmt::{Display, Debug};
+    use std::hash::Hash;
+    use std::rc::Rc;
+    use std::collections::{HashSet, HashMap};
+
+    #[derive(PartialEq, Eq, Debug)]
+    struct Group<T>
+    where
+        T: Display + Debug + PartialEq + Eq + Hash + Clone + Copy
+    {
+        members: HashSet<T>,
+    }
+
+    #[derive(PartialEq, Eq, Debug, Default)]
+    pub struct MapOfGroups<T> 
+    where
+        T: Display + Debug + PartialEq + Eq + Hash + Clone + Copy
+    {
+        groups: HashMap<T, Rc<RefCell<Group<T>>>>,
+    }
+
+    impl<T> MapOfGroups<T> 
+    where
+        T: Display + Debug + PartialEq + Eq + Hash + Clone + Copy
+    {
+        pub fn add_member(&mut self, member: T, mergees: Vec<T>) {
+            // TODO: should this still be here for day 14?
+            self.groups.insert(
+                member,
+                Rc::new(RefCell::new(Group { members: HashSet::new() })),
+            );
+            mergees.iter().for_each(|mergee| {
+                if *mergee == member {
+                    self.groups.get(&member).unwrap().borrow_mut().members.insert(*mergee);
+                } else {
+                    match self.groups.remove(mergee) {
+                        None => {
+                            self.groups.get(&member).unwrap().borrow_mut().members.insert(*mergee);
+                        },
+                        Some(mergee_group) => {        
+                            let member_group = self.groups.remove(&member).unwrap();
+                            self.groups.insert(member, Rc::clone(&mergee_group));
+                            if member_group != mergee_group {
+                                mergee_group.borrow_mut().members.insert(member);
+                                mergee_group.borrow_mut().members.insert(*mergee);
+                                mergee_group.borrow_mut().members.extend(member_group.borrow().members.iter());
+                                for mem in member_group.borrow().members.iter() {
+                                    self.groups.insert(*mem, Rc::clone(&mergee_group));
+                                }
+                            }
+                            self.groups.insert(*mergee, mergee_group);
+                        },
+                    }    
+                }
+            });
+        }
+
+        pub fn group_len(&self, member: T) -> usize {
+            self.groups
+                .get(&member)
+                .expect("Program should exist.")
+                .borrow()
+                .members
+                .len()
+        }
+
+        pub fn groups(&self) -> u32 {
+            let mut counted: HashSet<T> = HashSet::new();
+            self.groups.values()
+                .map(|group| {
+                    match counted.intersection(&group.borrow().members).count() {
+                        0 => {
+                            counted.extend(&group.borrow().members);
+                            1
+                        },
+                        x => {
+                            assert_eq!(group.borrow().members.len(), x);
+                            0
+                        },
+                    }
+                })
+                .sum()
+        }        
+    }
+
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn group_len_is_correct_int() {
+            let group = Rc::new(RefCell::new(Group { members: HashSet::from([0, 2, 3, 4]) }));
+            let map_of_groups = MapOfGroups {
+                groups: HashMap::from([
+                    (1, Rc::new(RefCell::new(Group { members: HashSet::from([1]) }))),
+                    (2, Rc::clone(&group)),
+                    (3, Rc::clone(&group)),
+                    (4, Rc::clone(&group)),
+                    (0, group),
+                ])
+            };
+            assert_eq!(map_of_groups.group_len(0), 4);
+            assert_eq!(map_of_groups.group_len(1), 1);
+            assert_eq!(map_of_groups.group_len(2), 4);
+            assert_eq!(map_of_groups.group_len(3), 4);
+            assert_eq!(map_of_groups.group_len(4), 4);
+        }
+
+        #[test]
+        fn add_member_is_correct_int() {
+            let mut map_of_groups = MapOfGroups::default();
+            map_of_groups.add_member(0,vec![2]);
+            assert_eq!(map_of_groups.group_len(0), 1);
+            map_of_groups.add_member(1, vec![1]);
+            assert_eq!(map_of_groups.group_len(0), 1);
+            assert_eq!(map_of_groups.group_len(1), 1);
+            map_of_groups.add_member(2, vec![0, 3, 4]);
+            assert_eq!(map_of_groups.group_len(0), 4);
+        }
+    }
 }
