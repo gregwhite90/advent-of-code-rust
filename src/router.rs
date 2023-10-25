@@ -160,7 +160,7 @@ fn get_solns(day: &Day) -> DailySolutions {
             Day { year: 2017, day: 17 },
             DailySolutions { 
                 part_one: Some(Box::new(year_2017::day_17::part_one::Soln::default())),
-                part_two: None,
+                part_two: Some(Box::new(year_2017::day_17::part_two::Soln::default())),
             },
         ),
     ]);
