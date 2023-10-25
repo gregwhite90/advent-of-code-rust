@@ -67,3 +67,42 @@ pub mod part_one {
         }
     }    
 }
+
+
+pub mod part_two {
+    use std::cmp::Ordering;
+
+    use crate::utils::{solution::{Solution, Answer}, io_utils};
+
+    const INSERTIONS: u32 = 50_000_000;
+
+    #[derive(Debug, PartialEq, Eq, Default)]
+    pub struct Soln {
+        steps: usize,
+        position: usize,
+        zero_position: usize,
+        immediately_after_zero: u32,
+    }
+
+    impl Soln {
+        pub fn parse_input_file(&mut self, filename: &str) {
+            self.steps = io_utils::file_to_string(filename).parse().unwrap();
+        }
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.parse_input_file(filename);
+            for insertion in 1..=INSERTIONS {
+                self.position = (self.position + self.steps) % (insertion as usize);
+                match self.position.cmp(&self.zero_position) {
+                    Ordering::Less => self.zero_position += 1,
+                    Ordering::Equal => self.immediately_after_zero = insertion,
+                    Ordering::Greater => (),
+                }
+                self.position += 1;
+            }
+            Answer::U32(self.immediately_after_zero)
+        }
+    }
+}
