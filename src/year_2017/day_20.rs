@@ -214,6 +214,7 @@ pub mod part_two {
 
     use super::utils::{Vector, Axis};
 
+    #[derive(Debug)]
     enum AxisCollides {
         Never,
         Always,
@@ -251,12 +252,13 @@ pub mod part_two {
         // TODO: fix where the comment is.
         fn collision_time(&self, other: &Particle) -> Option<u32> {
             let mut positive_integer_roots = HashSet::new();
-            for axis in [Axis::X, Axis::Y, Axis::Z] {
-                match self.axis_collides(other, axis) {
+            let mut always_count: usize = 0;
+            for (axis_id, axis) in [Axis::X, Axis::Y, Axis::Z].iter().enumerate() {
+                match self.axis_collides(other, *axis) {
                     AxisCollides::Never => return None,
-                    AxisCollides::Always => (),
+                    AxisCollides::Always => always_count += 1,
                     AxisCollides::Once(t) => {
-                        if positive_integer_roots.is_empty() || positive_integer_roots.contains(&t) {
+                        if axis_id == always_count && positive_integer_roots.is_empty() || positive_integer_roots.contains(&t) {
                             positive_integer_roots = HashSet::from([t]);
                         } else {
                             return None;
@@ -264,7 +266,7 @@ pub mod part_two {
                     },
                     AxisCollides::Twice(t1, t2) => {
                         let axis_times = HashSet::from([t1, t2]);
-                        if positive_integer_roots.is_empty() { 
+                        if axis_id == always_count && positive_integer_roots.is_empty() { 
                             positive_integer_roots = axis_times; 
                         } else {
                             positive_integer_roots.retain(|&t| axis_times.contains(&t));
@@ -290,7 +292,7 @@ pub mod part_two {
                 } else {
                     let sqrt = ((b.pow(2) - 4 * a * c) as f64).sqrt();
                     if sqrt.is_nan() { return AxisCollides::Never; }
-                    if sqrt != (sqrt as u32) as f64 { 
+                    if (sqrt.round() - sqrt).abs() >= f64::EPSILON {
                         // sqrt is not an integer
                         return AxisCollides::Never;
                     }
@@ -303,14 +305,15 @@ pub mod part_two {
                     if (-b - sqrt) % (2 * a) == 0 && (-b - sqrt) / (2 * a) >= 0 {
                         non_negative_integer_roots.insert(((-b - sqrt) / (2 * a)).try_into().unwrap());
                     }
-                    match non_negative_integer_roots.len() {
+                    let mut drain = non_negative_integer_roots.drain();
+                    match drain.len() {
                         0 => AxisCollides::Never,
                         1 => AxisCollides::Once(
-                            *non_negative_integer_roots.iter().next().unwrap(),
+                            drain.next().unwrap(),
                         ),
                         2 => AxisCollides::Twice(
-                            *non_negative_integer_roots.iter().next().unwrap(),
-                            *non_negative_integer_roots.iter().next().unwrap(),
+                            drain.next().unwrap(),
+                            drain.next().unwrap(),
                         ),
                         _ => panic!("More than 2 roots found."),
                     }
@@ -371,11 +374,10 @@ pub mod part_two {
                 .iter()
                 .sorted_by_key(|&(_particle_ids, t)| t)
                 .for_each(|(particle_ids, t)| {
-                    if let Some(first_collision_0) = first_collisions.get(&particle_ids[0]) {
-                        if first_collision_0 < t { return; }
-                    }
-                    if let Some(first_collision_1) = first_collisions.get(&particle_ids[1]) {
-                        if first_collision_1 < t { return; }
+                    for particle_id in particle_ids {
+                        if let Some(first_collision) = first_collisions.get(particle_id) {
+                            if first_collision < t { return; }
+                        }    
                     }
                     for particle_id in particle_ids {
                         first_collisions.insert(*particle_id, *t);                        
