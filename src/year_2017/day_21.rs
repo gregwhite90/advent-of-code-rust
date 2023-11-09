@@ -3,22 +3,22 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2017, day: 21 };
 
-const STARTING_PATTERN: [[u8; 3]; 3] = [
+const STARTING_PATTERN: [[u32; 3]; 3] = [
     [0, 1, 0],
     [0, 0, 1],
     [1, 1, 1],
 ];
 
-pub mod part_one {
+mod utils {
     use std::collections::HashMap;
     use ndarray;
 
-    use crate::utils::{solution::{Solution, Answer}, io_utils};
+    use crate::utils::io_utils;
 
     use super::STARTING_PATTERN;
 
-    fn ndarray2_from_str(input: &str) -> ndarray::Array2<u8> {
-        let vec_of_vecs: Vec<Vec<u8>> = input.split("/")
+    fn ndarray2_from_str(input: &str) -> ndarray::Array2<u32> {
+        let vec_of_vecs: Vec<Vec<u32>> = input.split("/")
             .map(|row| {
                 row.chars()
                     .map(|c| {
@@ -34,34 +34,34 @@ pub mod part_one {
         match input.len() {
             5  => {
                 // 2x2
-                let vec_of_arrays: Vec<[u8; 2]> = vec_of_vecs.into_iter().map(|row_vec| {
-                    let array: [u8; 2] = row_vec.try_into().unwrap();
+                let vec_of_arrays: Vec<[u32; 2]> = vec_of_vecs.into_iter().map(|row_vec| {
+                    let array: [u32; 2] = row_vec.try_into().unwrap();
                     array    
                 }).collect();
-                ndarray::Array2::<u8>::from(vec_of_arrays)
+                ndarray::Array2::<u32>::from(vec_of_arrays)
             },
             11 => {
                 // 3x3
-                let vec_of_arrays: Vec<[u8; 3]> = vec_of_vecs.into_iter().map(|row_vec| {
-                    let array: [u8; 3] = row_vec.try_into().unwrap();
+                let vec_of_arrays: Vec<[u32; 3]> = vec_of_vecs.into_iter().map(|row_vec| {
+                    let array: [u32; 3] = row_vec.try_into().unwrap();
                     array    
                 }).collect();
-                ndarray::Array2::<u8>::from(vec_of_arrays)
+                ndarray::Array2::<u32>::from(vec_of_arrays)
             },
             19 => {
                 // 4x4
-                let vec_of_arrays: Vec<[u8; 4]> = vec_of_vecs.into_iter().map(|row_vec| {
-                    let array: [u8; 4] = row_vec.try_into().unwrap();
+                let vec_of_arrays: Vec<[u32; 4]> = vec_of_vecs.into_iter().map(|row_vec| {
+                    let array: [u32; 4] = row_vec.try_into().unwrap();
                     array    
                 }).collect();
-                ndarray::Array2::<u8>::from(vec_of_arrays)
+                ndarray::Array2::<u32>::from(vec_of_arrays)
             },
             _ => panic!("Unrecognized dimensions: should be 2x2 or 3x3 or 4x4.")
         }
     }
 
     /// Rotates in place
-    fn rotate_90_deg_clockwise(input: &mut ndarray::Array2<u8>) {
+    fn rotate_90_deg_clockwise(input: &mut ndarray::Array2<u32>) {
         let (rows, cols) = input.dim();
         assert_eq!(rows, cols);
         match rows {
@@ -89,7 +89,7 @@ pub mod part_one {
     }
 
     /// Flips in place
-    fn flip_over_horizontal(input: &mut ndarray::Array2<u8>) {
+    fn flip_over_horizontal(input: &mut ndarray::Array2<u32>) {
         let (rows, cols) = input.dim();
         assert_eq!(rows, cols);
         for col in 0..cols {
@@ -100,28 +100,22 @@ pub mod part_one {
     }
 
     #[derive(Debug, PartialEq, Eq)]
-    pub struct Soln {
+    pub struct PatternEnhancer {
         iterations: u32,
-        rules: HashMap<ndarray::Array2<u8>, ndarray::Array2<u8>>, // TODO: make the value here a RC<RefCell<String>>? To share outputs.
-        pattern: ndarray::Array2<u8>,
+        rules: HashMap<ndarray::Array2<u32>, ndarray::Array2<u32>>, // TODO: make the value here a RC<RefCell<String>>? To share outputs.
+        pattern: ndarray::Array2<u32>,
     }
 
-    impl Default for Soln {
-        fn default() -> Self {
-            Self::with_iterations(5)
-        }
-    }
-
-    impl Soln {
-        fn with_iterations(iterations: u32) -> Self {
+    impl PatternEnhancer {
+        pub fn with_iterations(iterations: u32) -> Self {
             Self {
                 iterations,
                 rules: HashMap::new(),
-                pattern: ndarray::Array2::<u8>::from(STARTING_PATTERN.into_iter().collect::<Vec<[u8; 3]>>()),
+                pattern: ndarray::Array2::<u32>::from(STARTING_PATTERN.into_iter().collect::<Vec<[u32; 3]>>()),
             }
         }
 
-        fn parse_input_file(&mut self, filename: &str) {
+        pub fn parse_input_file(&mut self, filename: &str) {
             io_utils::file_to_lines(filename)
                 .for_each(|line| {
                     let mut split = line.split(" => ");
@@ -141,7 +135,7 @@ pub mod part_one {
                 });
         }
 
-        fn add_all_rotations(&mut self, input: &ndarray::Array2<u8>, output: &ndarray::Array2<u8>) {
+        fn add_all_rotations(&mut self, input: &ndarray::Array2<u32>, output: &ndarray::Array2<u32>) {
             let mut input = input.clone();
             self.rules.insert(input.clone(), output.clone());
             for _ in 0..3 {
@@ -150,12 +144,18 @@ pub mod part_one {
             }
         }
 
+        pub fn iterate_all(&mut self) {
+            for _ in 0..self.iterations {
+                self.iterate();
+            }
+        }
+
         fn iterate(&mut self) {
             let (rows, cols) = self.pattern.dim();
             assert_eq!(rows, cols);
             let step: usize = if rows % 2 == 0 { 2 } else { 3 };
             let new_dim = (step + 1) * rows / step;
-            let mut new_pattern = ndarray::Array2::<u8>::uninit((new_dim, new_dim));
+            let mut new_pattern = ndarray::Array2::<u32>::uninit((new_dim, new_dim));
             let new_pattern_chunks = new_pattern
                 .exact_chunks_mut((step + 1, step + 1)).into_iter();
             let pattern_chunks = self.pattern
@@ -169,15 +169,9 @@ pub mod part_one {
                 self.pattern = new_pattern.assume_init();
             }
         }
-    }
 
-    impl Solution for Soln {
-        fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
-            for _ in 0..self.iterations {
-                self.iterate();
-            }
-            Answer::U32(self.pattern.sum().into())
+        pub fn sum(&self) -> u32 {
+            self.pattern.sum()
         }
     }
 
@@ -185,9 +179,7 @@ pub mod part_one {
     mod tests {
         use test_case::test_case;
         use ndarray;
-        use crate::utils::{test_utils, solution::Answer};
         use super::*;
-        use super::super::DAY;
 
         #[test_case([
             ndarray::array![[1, 0], [0, 0]],
@@ -205,7 +197,7 @@ pub mod part_one {
             ]; 
             "3x3"
         )]
-        fn rotate_is_correct(seq: [ndarray::Array2<u8>; 4]) {
+        fn rotate_is_correct(seq: [ndarray::Array2<u32>; 4]) {
             let mut input = seq[0].clone();
             rotate_90_deg_clockwise(&mut input);
             assert_eq!(input, seq[1]);
@@ -229,13 +221,55 @@ pub mod part_one {
             ]; 
             "3x3"
         )]
-        fn flip_is_correct(seq: [ndarray::Array2<u8>; 2]) {
+        fn flip_is_correct(seq: [ndarray::Array2<u32>; 2]) {
             let mut input = seq[0].clone();
             flip_over_horizontal(&mut input);
             assert_eq!(input, seq[1]);
             flip_over_horizontal(&mut input);
             assert_eq!(input, seq[0]);
         }
+    }    
+}
+
+
+pub mod part_one {
+    use crate::utils::solution::{Solution, Answer};
+
+    use super::utils::PatternEnhancer;
+
+    #[derive(Debug, PartialEq, Eq)]
+    pub struct Soln {
+        pattern_enhancer: PatternEnhancer,
+    }
+
+    impl Default for Soln {
+        fn default() -> Self {
+            Self::with_iterations(5)
+        }
+    }
+
+    impl Soln {
+        pub fn with_iterations(iterations: u32) -> Self {
+            Self {
+                pattern_enhancer: PatternEnhancer::with_iterations(iterations),
+            }
+        }
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.pattern_enhancer.parse_input_file(filename);
+            self.pattern_enhancer.iterate_all();
+            Answer::U32(self.pattern_enhancer.sum())
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
 
         #[test_case(1, Answer::U32(12), 2; "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer, iterations: u32) {
