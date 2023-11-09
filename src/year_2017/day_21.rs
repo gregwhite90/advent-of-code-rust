@@ -231,7 +231,6 @@ mod utils {
     }    
 }
 
-
 pub mod part_one {
     use crate::utils::solution::{Solution, Answer};
 
@@ -281,4 +280,37 @@ pub mod part_one {
             );
         }
     }    
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Solution, Answer};
+
+    use super::utils::PatternEnhancer;
+
+    #[derive(Debug, PartialEq, Eq)]
+    pub struct Soln {
+        pattern_enhancer: PatternEnhancer,
+    }
+
+    impl Default for Soln {
+        fn default() -> Self {
+            Self::with_iterations(18)
+        }
+    }
+
+    impl Soln {
+        pub fn with_iterations(iterations: u32) -> Self {
+            Self {
+                pattern_enhancer: PatternEnhancer::with_iterations(iterations),
+            }
+        }
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.pattern_enhancer.parse_input_file(filename);
+            self.pattern_enhancer.iterate_all();
+            Answer::U32(self.pattern_enhancer.sum())
+        }
+    }
 }
