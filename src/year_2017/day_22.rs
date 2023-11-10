@@ -3,10 +3,16 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2017, day: 22 };
 
-pub mod part_one {
-    use std::collections::HashSet;
+mod utils {
+    use std::collections::HashMap;
 
-    use crate::utils::{solution::{Solution, Answer}, io_utils};
+    use crate::utils::io_utils;
+
+    #[derive(Debug, PartialEq, Eq)]
+    pub enum Part {
+        One,
+        Two,
+    }
 
     #[derive(Debug, Default, PartialEq, Eq, Hash, Clone, Copy)]
     struct Point {
@@ -62,18 +68,41 @@ pub mod part_one {
     enum TurnDirection {
         Left = -1,
         Right = 1,
+        Reverse = 2,
+        None = 0,
     }
 
-    #[derive(Debug, Default, PartialEq, Eq)]
-    pub struct Soln {
+
+    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+    enum NodeStatus {
+        Weakened,
+        Infected,
+        Flagged,
+    }
+
+    #[derive(Debug, PartialEq, Eq)]
+    pub struct VirusCarrier {
         position: Point,
         direction: Direction,
-        infected: HashSet<Point>,
+        infected: HashMap<Point, NodeStatus>,
         bursts_causing_infection: u32,
+        bursts: u32,
+        part: Part,
     }
 
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
+    impl VirusCarrier {
+        pub fn new(bursts: u32, part: Part)  -> Self {
+            Self {
+                position: Point::default(),
+                direction: Direction::default(),
+                infected: HashMap::default(),
+                bursts_causing_infection: 0,
+                bursts,
+                part,
+            }
+        }
+
+        pub fn parse_input_file(&mut self, filename: &str) {
             let mut rows = 0;
             let mut cols = 0;
             io_utils::file_to_lines(filename)
@@ -89,7 +118,8 @@ pub mod part_one {
                                     Point { 
                                         x: col.try_into().unwrap(),
                                         y: row.try_into().unwrap(),
-                                    }
+                                    },
+                                    NodeStatus::Infected,
                                 ); 
                             }
                         })
@@ -100,28 +130,57 @@ pub mod part_one {
             }
         }
 
+        pub fn burst_all(&mut self) {
+            for _ in 0..self.bursts {
+                self.burst();
+            }
+        }
+        
         fn burst(&mut self) {
             self.turn();
-            match self.infected.contains(&self.position) {
-                true => {
-                    self.infected.remove(&self.position);
+            match self.infected.get(&self.position) {
+                None => {
+                    match self.part {
+                        Part::One => {
+                            self.infected.insert(self.position, NodeStatus::Infected);
+                            self.bursts_causing_infection += 1;                            
+                        },
+                        Part::Two => {
+                            self.infected.insert(self.position, NodeStatus::Weakened);
+                        },
+                    }
                 },
-                false => {
-                    self.infected.insert(self.position);
+                Some(NodeStatus::Weakened) => {
+                    self.infected.insert(self.position, NodeStatus::Infected);
                     self.bursts_causing_infection += 1;
+                },
+                Some(NodeStatus::Infected) => {
+                    match self.part {
+                        Part::One => {
+                            self.infected.remove(&self.position);
+                        },
+                        Part::Two => {
+                            self.infected.insert(self.position, NodeStatus::Flagged);
+                        }
+                    }
+                },
+                Some(NodeStatus::Flagged) => {
+                    self.infected.remove(&self.position);
                 },
             };
             self.forward();
         }
 
-        fn bursts_causing_infection(&self) -> u32 {
+        pub fn bursts_causing_infection(&self) -> u32 {
             self.bursts_causing_infection
         }
 
         fn turn(&mut self) {
-            let turn_direction = match self.infected.contains(&self.position) {
-                true => TurnDirection::Right,
-                false => TurnDirection::Left,
+            let turn_direction = match self.infected.get(&self.position) {
+                None => TurnDirection::Left,
+                Some(NodeStatus::Weakened) => TurnDirection::None,
+                Some(NodeStatus::Infected) => TurnDirection::Right,
+                Some(NodeStatus::Flagged) => TurnDirection::Reverse,
             };
             self.direction = self.direction.turn(turn_direction);
         }
@@ -130,14 +189,31 @@ pub mod part_one {
             self.position.forward(&self.direction);
         }
     }
+}
+
+pub mod part_one {
+    use crate::utils::solution::{Solution, Answer};
+
+    use super::utils::{VirusCarrier, Part};
+
+    #[derive(Debug, PartialEq, Eq)]
+    pub struct Soln {
+        virus_carrier: VirusCarrier,
+    }
+
+    impl Default for Soln {
+        fn default() -> Self {
+            Self {
+                virus_carrier: VirusCarrier::new(10_000, Part::One),
+            }
+        }
+    }
 
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
-            for _ in 0..10000 {
-                self.burst();
-            }
-            Answer::U32(self.bursts_causing_infection())
+            self.virus_carrier.parse_input_file(filename);
+            self.virus_carrier.burst_all();
+            Answer::U32(self.virus_carrier.bursts_causing_infection())
         }
     }
 
@@ -149,6 +225,51 @@ pub mod part_one {
         use super::super::DAY;
 
         #[test_case(1, Answer::U32(5587); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Solution, Answer};
+
+    use super::utils::{VirusCarrier, Part};
+
+    #[derive(Debug, PartialEq, Eq)]
+    pub struct Soln {
+        virus_carrier: VirusCarrier,
+    }
+
+    impl Default for Soln {
+        fn default() -> Self {
+            Self {
+                virus_carrier: VirusCarrier::new(10_000_000, Part::Two),
+            }
+        }
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.virus_carrier.parse_input_file(filename);
+            self.virus_carrier.burst_all();
+            Answer::U32(self.virus_carrier.bursts_causing_infection())
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::U32(2_511_944); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
