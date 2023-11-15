@@ -102,6 +102,8 @@
 <a href="#102" id="102">102</a>
 <a href="#103" id="103">103</a>
 <a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! A collection of utilities used by all or nearly all solutions.
 
 /// Specifies a day for a solution.
@@ -122,6 +124,7 @@
         I32(i32),
         U32(u32),
         U16(u16),
+        I64(i64),
     }
 
     <span class="kw">impl </span>fmt::Display <span class="kw">for </span>Answer {
@@ -132,6 +135,7 @@
                 Answer::I32(num) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;{}&quot;</span>, num),
                 Answer::U32(num) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;{}&quot;</span>, num),
                 Answer::U16(num) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;{}&quot;</span>, num),
+                Answer::I64(num) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;{}&quot;</span>, num),                
             }
         }
     }
