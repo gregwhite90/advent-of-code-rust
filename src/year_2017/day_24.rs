@@ -3,15 +3,15 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2017, day: 24 };
 
-pub mod part_one {
-    use std::collections::BTreeSet;
+mod utils {
+    use std::{collections::BTreeSet, cmp::Ordering};
 
     use regex::Regex;
 
-    use crate::utils::{solution::{Solution, Answer}, io_utils};
+    use crate::utils::io_utils;
 
     #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
-    struct Component {
+    pub struct Component {
         l: u32,
         r: u32,
     }
@@ -31,12 +31,18 @@ pub mod part_one {
     }
 
     #[derive(Debug, PartialEq, Eq, Clone)]
-    struct Bridge {
+    pub struct Bridge {
         used: Vec<Component>,
         unused: BTreeSet<Component>,
     }
 
     impl Bridge {
+        pub fn new(unused: BTreeSet<Component>) -> Self {
+            Self {
+                used: vec![],
+                unused,
+            }
+        }
         pub fn strength(&self) -> u32 {
             self.used.iter().map(|component| {
                 component.strength()
@@ -45,12 +51,15 @@ pub mod part_one {
     }
 
     #[derive(Debug, PartialEq, Eq, Default)]
-    pub struct Soln {
+    pub struct BridgeBuilder {
         components: BTreeSet<Component>,
     }
 
-    fn strongest_bridge(current_bridge: &Bridge, starting_port: u32) -> Bridge {
-        let strongest_sub_bridge: Option<Bridge> = current_bridge.unused.iter()
+    pub fn superlative_bridge<F>(current_bridge: &Bridge, starting_port: u32, compare: &F) -> Bridge
+    where
+        F: Fn(&Bridge, &Bridge) -> Ordering
+    {
+        let superlative_sub_bridge: Option<Bridge> = current_bridge.unused.iter()
             .filter(|unused_component| {
                 unused_component.contains_port(starting_port)
             })
@@ -59,17 +68,17 @@ pub mod part_one {
                 let c = new_bridge.unused.take(nc).unwrap();
                 let next_starting_port = c.next_starting_port(starting_port);
                 new_bridge.used.push(c); 
-                strongest_bridge(&new_bridge, next_starting_port)
+                superlative_bridge(&new_bridge, next_starting_port, compare)
             })
-            .max_by_key(|bridge| bridge.strength());
-        match strongest_sub_bridge {
+            .max_by(compare);
+        match superlative_sub_bridge {
             None => current_bridge.clone(),
             Some(sub_bridge) => sub_bridge,
         }
     }
 
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
+    impl BridgeBuilder {
+        pub fn parse_input_file(&mut self, filename: &str) {
             let re = Regex::new(r"(?<l>\d+)/(?<r>\d+)").unwrap();
             io_utils::file_to_lines(filename)
                 .for_each(|line| {
@@ -82,16 +91,34 @@ pub mod part_one {
                     }
                 });
         }
+
+        pub fn components(&self) -> &BTreeSet<Component> {
+            &self.components
+        }
+    }
+}
+
+pub mod part_one {
+    use std::cmp::Ordering;
+
+    use crate::utils::solution::{Solution, Answer};
+
+    use super::utils::{BridgeBuilder, Bridge, superlative_bridge};
+
+    #[derive(Debug, PartialEq, Eq, Default)]
+    pub struct Soln {
+        bridge_builder: BridgeBuilder,
+    }
+
+    fn compare_by_strength(l: &Bridge, r: &Bridge) -> Ordering {
+        l.strength().cmp(&r.strength())
     }
 
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
-            let bridge = Bridge {
-                used: vec![],
-                unused: self.components.clone(),
-            };
-            let strongest_bridge = strongest_bridge(&bridge, 0);
+            self.bridge_builder.parse_input_file(filename);
+            let bridge = Bridge::new(self.bridge_builder.components().clone());
+            let strongest_bridge = superlative_bridge(&bridge, 0, &compare_by_strength);
             Answer::U32(strongest_bridge.strength())
         }
     }
