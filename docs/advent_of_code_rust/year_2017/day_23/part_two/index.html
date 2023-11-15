@@ -1,0 +1,48 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Actually executing the instructions here is infeasible, so this is a “decompiling” approach to solving the problem. It turns out this is just counting primes in a specific range, stepping by a specific amount."><title>advent_of_code_rust::year_2017::day_23::part_two - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9bb858ba049f1f21.css" id="mainThemeStyle"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="advent_of_code_rust" data-themes="" data-resource-suffix="" data-rustdoc-version="1.72.1 (d5c2e9c34 2023-09-13)" data-channel="1.72.1" data-search-js="search-f6292fe389d70017.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ><script src="../../../../static.files/storage-59fd9b8ccb335783.js"></script><script defer src="../../../../static.files/main-0795b7d26be81095.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../../../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../../../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="logo-container" href="../../../../advent_of_code_rust/index.html"><img class="rust-logo" src="../../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><h2></h2></nav><nav class="sidebar"><a class="logo-container" href="../../../../advent_of_code_rust/index.html"><img class="rust-logo" src="../../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><h2 class="location"><a href="#">Module part_two</a></h2><div class="sidebar-elems"><section><ul class="block"><li><a href="#structs">Structs</a></li></ul></section></div></nav><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Module <a href="../../../index.html">advent_of_code_rust</a>::<wbr><a href="../../index.html">year_2017</a>::<wbr><a href="../index.html">day_23</a>::<wbr><a class="mod" href="#">part_two</a><button id="copy-path" title="Copy item path to clipboard"><img src="../../../../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="srclink" href="../../../../src/advent_of_code_rust/year_2017/day_23.rs.html#182">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Actually executing the instructions here is infeasible, so this is a “decompiling” approach to
+solving the problem. It turns out this is just counting primes in a specific range, stepping
+by a specific amount.</p>
+<p>The decompiling steps to understand that are as follows.
+The solution is the value of the register <code>h</code> when the program terminates. The instructions are:</p>
+<p>| Instruction ID | Instruction | Control flow notes and questions |
+|  0 | set b 79         | |
+|  1 | set c b          | |
+|  2 | jnz a 2          | |
+|  3 | jnz 1 5          | |
+|  4 | mul b 100        | |
+|  5 | sub b -100000    | |
+|  6 | set c b          | |
+|  7 | sub c -17000     | Constant registers: <code>a = 1</code>, <code>c = 124_900</code>. <code>b = 107_900</code> to start, incremented by <code>17</code> at the end of each iteration of Loop 0. |
+|  8 | set f 1          | Loop 0 starts. |
+|  9 | set d 2          | |
+| 10 | set e 2          | Loop 1 starts. |
+| 11 | set g d          | Loop 2 starts. |
+| 12 | mul g e          | |
+| 13 | sub g b          | |
+| 14 | jnz g 2          | Conditional within Loop 2. |
+| 15 | set f 0          | When does <code>f</code> get set to <code>0</code> for the rest of the iteration of Loop 1 and 2 (it gets reset to <code>1</code> at the start of each Loop 0 iteration)? |
+| 16 | sub e -1         | |
+| 17 | set g e          | |
+| 18 | sub g b          | |
+| 19 | jnz g -8         | Loop 2 ends. |
+| 20 | sub d -1         | |
+| 21 | set g d          | |
+| 22 | sub g b          | |
+| 23 | jnz g -13        | Loop 1 ends. |
+| 24 | jnz f 2          | Conditional within Loop 0. |
+| 25 | sub h -1         | <strong>This is the answer.</strong> How many times is this instruction run (<code>f</code> needs to be <code>0</code> in iteration of Loop 0 for this to run)? |
+| 26 | set g b          | <strong>To exit (<code>g == 0</code> at instruction 28), need <code>b == c</code>.</strong> |
+| 27 | sub g c          | |
+| 28 | jnz g 2          | To exit, need <code>g == 0</code> here. |
+| 29 | jnz 1 3          | If this instruction is executed, the program terminates. |
+| 30 | sub b -17        | |
+| 31 | jnz 1 -23        | Loop 0 ends. |</p>
+<p>The answer is the number of times Loop 1 exits with <code>f = 0</code> by the time it exits with values that meet the instructions 26-29 criteria to terminate the program.
+If <code>f</code> is ever set to <code>0</code> at instruction 15 at any point in Loop 2 for any iteration of Loop 1 for a given iteration of Loop 0, it remains <code>0</code>.</p>
+<p>The program terminates if Loop 0 finishes an iteration with <code>b == c</code>. 
+<code>c</code> is <code>17_000</code> higher than <code>b</code>’s starting value (instruction 7), 
+and <code>c</code> does not change and <code>b</code> only changes by being incremented by <code>17</code> at the end of each Loop 0 iteration (instruction 30).</p>
+<p>In Loop 2, we set <code>g = d * e - b</code> (instructions 11-13), and if <code>g == 0</code>, we set <code>f</code> to 1. So as soon as we find <code>d</code> and <code>e</code> such that <code>d * e == b</code>,
+<code>h</code> will be incremented that iteration of Loop 0. For each iteration of Loop 0, <code>d</code> and <code>e</code> each start at <code>2</code> and are incremented at the end of their
+respective loops. So this is really looking for any factorization of <code>b</code> other than <code>1 * b</code>. The answer is the count of the numbers in the sequence of
+<code>b</code> with the specified step that are not prime.</p>
+</div></details><h2 id="structs" class="small-section-header"><a href="#structs">Structs</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.Soln.html" title="struct advent_of_code_rust::year_2017::day_23::part_two::Soln">Soln</a></div></li></ul></section></div></main></body></html>
