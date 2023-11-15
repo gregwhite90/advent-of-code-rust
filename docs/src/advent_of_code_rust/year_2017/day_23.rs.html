@@ -255,6 +255,7 @@
 <a href="#255" id="255">255</a>
 <a href="#256" id="256">256</a>
 <a href="#257" id="257">257</a>
+<a href="#258" id="258">258</a>
 </pre></div><pre class="rust"><code><span class="attr">#[cfg(test)]
 </span><span class="kw">use </span><span class="kw">crate</span>::utils::Day;
 <span class="attr">#[cfg(test)]
@@ -444,39 +445,40 @@
     //! The decompiling steps to understand that are as follows.
     //! The solution is the value of the register `h` when the program terminates. The instructions are:
     //! 
-    //! | Instruction ID | Instruction | Control flow notes and questions |
-    //! |  0 | set b 79         | |
-    //! |  1 | set c b          | |
-    //! |  2 | jnz a 2          | |
-    //! |  3 | jnz 1 5          | |
-    //! |  4 | mul b 100        | |
-    //! |  5 | sub b -100000    | |
-    //! |  6 | set c b          | |
-    //! |  7 | sub c -17000     | Constant registers: `a = 1`, `c = 124_900`. `b = 107_900` to start, incremented by `17` at the end of each iteration of Loop 0. |
-    //! |  8 | set f 1          | Loop 0 starts. |
-    //! |  9 | set d 2          | |
-    //! | 10 | set e 2          | Loop 1 starts. |
-    //! | 11 | set g d          | Loop 2 starts. |
-    //! | 12 | mul g e          | |
-    //! | 13 | sub g b          | |
-    //! | 14 | jnz g 2          | Conditional within Loop 2. |
-    //! | 15 | set f 0          | When does `f` get set to `0` for the rest of the iteration of Loop 1 and 2 (it gets reset to `1` at the start of each Loop 0 iteration)? |
-    //! | 16 | sub e -1         | |
-    //! | 17 | set g e          | |
-    //! | 18 | sub g b          | |
-    //! | 19 | jnz g -8         | Loop 2 ends. |
-    //! | 20 | sub d -1         | |
-    //! | 21 | set g d          | |
-    //! | 22 | sub g b          | |
-    //! | 23 | jnz g -13        | Loop 1 ends. |
-    //! | 24 | jnz f 2          | Conditional within Loop 0. |
-    //! | 25 | sub h -1         | **This is the answer.** How many times is this instruction run (`f` needs to be `0` in iteration of Loop 0 for this to run)? |
-    //! | 26 | set g b          | **To exit (`g == 0` at instruction 28), need `b == c`.** |
-    //! | 27 | sub g c          | |
-    //! | 28 | jnz g 2          | To exit, need `g == 0` here. |
-    //! | 29 | jnz 1 3          | If this instruction is executed, the program terminates. |
-    //! | 30 | sub b -17        | |
-    //! | 31 | jnz 1 -23        | Loop 0 ends. |
+    //! | Instruction ID | Instruction  | Control flow notes and questions |
+    //! |----------------|--------------|----------------------------------|
+    //! |  `0` | `set b 79`             | |
+    //! |  `1` | `set c b`              | |
+    //! |  `2` | `jnz a 2`              | |
+    //! |  `3` | `jnz 1 5`              | |
+    //! |  `4` | `mul b 100`            | |
+    //! |  `5` | `sub b -100000`        | |
+    //! |  `6` | `set c b`              | |
+    //! |  `7` | `sub c -17000`         | Constant registers: `a = 1`, `c = 124_900`. `b = 107_900` to start, incremented by `17` at the end of each iteration of Loop 0. |
+    //! |  `8` | `set f 1`              | Loop 0 starts. |
+    //! |  `9` | `set d 2`              | |
+    //! | `10` | `set e 2`              | Loop 1 starts. |
+    //! | `11` | `set g d`              | Loop 2 starts. |
+    //! | `12` | `mul g e`              | |
+    //! | `13` | `sub g b`              | |
+    //! | `14` | `jnz g 2`              | Conditional within Loop 2. |
+    //! | `15` | `set f 0`              | When does `f` get set to `0` for the rest of the iteration of Loop 1 and 2 (it gets reset to `1` at the start of each Loop 0 iteration)? |
+    //! | `16` | `sub e -1`             | |
+    //! | `17` | `set g e`              | |
+    //! | `18` | `sub g b`              | |
+    //! | `19` | `jnz g -8`             | Loop 2 ends. |
+    //! | `20` | `sub d -1`             | |
+    //! | `21` | `set g d`              | |
+    //! | `22` | `sub g b`              | |
+    //! | `23` | `jnz g -13`            | Loop 1 ends. |
+    //! | `24` | `jnz f 2`              | Conditional within Loop 0. |
+    //! | `25` | `sub h -1`             | **This is the answer.** How many times is this instruction run (`f` needs to be `0` in iteration of Loop 0 for this to run)? |
+    //! | `26` | `set g b`              | **To exit (`g == 0` at instruction 28), need `b == c`.** |
+    //! | `27` | `sub g c`              | |
+    //! | `28` | `jnz g 2`              | To exit, need `g == 0` here. |
+    //! | `29` | `jnz 1 3`              | If this instruction is executed, the program terminates. |
+    //! | `30` | `sub b -17`            | |
+    //! | `31` | `jnz 1 -23`            | Loop 0 ends. |
     //! 
     //! The answer is the number of times Loop 1 exits with `f = 0` by the time it exits with values that meet the instructions 26-29 criteria to terminate the program.
     //! If `f` is ever set to `0` at instruction 15 at any point in Loop 2 for any iteration of Loop 1 for a given iteration of Loop 0, it remains `0`.
