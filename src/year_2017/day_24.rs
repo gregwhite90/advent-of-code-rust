@@ -43,10 +43,15 @@ mod utils {
                 unused,
             }
         }
+
         pub fn strength(&self) -> u32 {
             self.used.iter().map(|component| {
                 component.strength()
             }).sum()
+        }
+
+        pub fn length(&self) -> usize {
+            self.used.len()
         }
     }
 
@@ -118,8 +123,8 @@ pub mod part_one {
         fn solve(&mut self, filename: &str) -> Answer {
             self.bridge_builder.parse_input_file(filename);
             let bridge = Bridge::new(self.bridge_builder.components().clone());
-            let strongest_bridge = superlative_bridge(&bridge, 0, &compare_by_strength);
-            Answer::U32(strongest_bridge.strength())
+            let best_bridge = superlative_bridge(&bridge, 0, &compare_by_strength);
+            Answer::U32(best_bridge.strength())
         }
     }
 
@@ -131,6 +136,55 @@ pub mod part_one {
         use super::super::DAY;
 
         #[test_case(1, Answer::U32(31); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
+
+pub mod part_two {
+    use std::cmp::Ordering;
+
+    use crate::utils::solution::{Solution, Answer};
+
+    use super::utils::{BridgeBuilder, Bridge, superlative_bridge};
+
+    #[derive(Debug, PartialEq, Eq, Default)]
+    pub struct Soln {
+        bridge_builder: BridgeBuilder,
+    }
+
+    fn compare_by_length_then_strength(l: &Bridge, r: &Bridge) -> Ordering {
+        match l.length().cmp(&r.length()) {
+            Ordering::Equal => {
+                l.strength().cmp(&r.strength())
+            },
+            ordering => ordering,
+        }
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.bridge_builder.parse_input_file(filename);
+            let bridge = Bridge::new(self.bridge_builder.components().clone());
+            let best_bridge = superlative_bridge(&bridge, 0, &compare_by_length_then_strength);
+            Answer::U32(best_bridge.strength())
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::U32(19); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
