@@ -237,7 +237,7 @@ fn get_solns(day: &Day) -> DailySolutions {
             Day { year: 2023, day: 3 },
             DailySolutions { 
                 part_one: Some(Box::new(year_2023::day_03::part_one::Soln::default())),
-                part_two: None,
+                part_two: Some(Box::new(year_2023::day_03::part_two::Soln::default())),
             },
         ),
     ]);
