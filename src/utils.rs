@@ -19,6 +19,7 @@ pub mod solution {
         U32(u32),
         U16(u16),
         I64(i64),
+        U64(u64),
     }
 
     impl fmt::Display for Answer {
@@ -29,7 +30,8 @@ pub mod solution {
                 Answer::I32(num) => write!(f, "{}", num),
                 Answer::U32(num) => write!(f, "{}", num),
                 Answer::U16(num) => write!(f, "{}", num),
-                Answer::I64(num) => write!(f, "{}", num),                
+                Answer::I64(num) => write!(f, "{}", num),   
+                Answer::U64(num) => write!(f, "{}", num),             
             }
         }
     }
