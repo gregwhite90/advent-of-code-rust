@@ -92,3 +92,80 @@ pub mod part_one {
         }
     }    
 }
+
+pub mod part_two {
+    use crate::utils::{solution::{Solution, Answer}, io_utils};
+
+    #[derive(Debug, PartialEq, Eq)]
+    struct Record {
+        time: u64,
+        distance: u64,
+    }
+
+    impl Record {
+        /// Let $h$ be the hold time, $t$ be the race time, and $d$ be the record distance.
+        /// The record is beaten if the hold time $h$ (which becomes the speed) times
+        /// $t - h$ is greater than $d$. The record is tied if the following quadratic
+        /// formula is satisfied:
+        /// $$ -h^2 + th - d = 0 $$
+        /// This is true when:
+        /// $$ h = \dfrac{-t \pm \sqrt{t^2 - 4d}}{-2} $$
+        /// We then need the count of all integers within the range of the two roots.
+        fn ways_to_beat(&self) -> u64 {
+            let sqrt = ((self.time as f64).powi(2) - 4.0 * self.distance as f64).sqrt();
+            let max_root = (-(self.time as f64) - sqrt) / - 2.0;
+            let min_root = (-(self.time as f64) + sqrt) / - 2.0;
+            let mut ways = max_root.floor() as u64 - min_root.ceil() as u64 + 1;
+            // if the roots are ints, the need to be excluded as they'd result in a tie with the record.
+            if max_root.round() == max_root { ways -= 1; }
+            if min_root.round() == min_root { ways -= 1; }
+            ways
+        }
+    }
+
+    #[derive(Debug, PartialEq, Eq, Default)]
+    pub struct Soln {
+        ways_to_beat: u64,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.parse_input_file(filename);
+            Answer::U64(self.ways_to_beat)
+        }
+    }
+
+    impl Soln {
+        fn parse_input_file(&mut self, filename: &str) {
+            let mut lines = io_utils::file_to_lines(filename);
+            let mut times = lines.next().unwrap();
+            let time = race_figure(&mut times);
+            let mut distances = lines.next().unwrap();
+            let distance = race_figure(&mut distances);
+            self.ways_to_beat = Record { time, distance }.ways_to_beat()
+        }
+    }
+
+    fn race_figure(input: &mut String) -> u64 {
+        input.retain(|c| c.is_ascii_digit());
+        input.parse().unwrap()        
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::U64(71503); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
