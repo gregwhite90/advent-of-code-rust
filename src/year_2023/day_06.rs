@@ -50,24 +50,28 @@ pub mod part_one {
     impl Soln {
         fn parse_input_file(&mut self, filename: &str) {
             let mut lines = io_utils::file_to_lines(filename);
-            let times_iter = lines.next()
+            let times = lines.next()
                 .unwrap();
-            let times = times_iter
-                .split_whitespace()
-                .skip(1)
-                .map(|time| time.parse::<u32>().unwrap());
-            let distances_iter = lines.next()
+            let times = race_figures(
+                &times
+            );
+            let distances = lines.next()
                 .unwrap();
-            let distances = distances_iter
-                .split_whitespace()
-                .skip(1)
-                .map(|distance| distance.parse::<u32>().unwrap());
+            let distances = race_figures(
+                &distances               
+            );
             self.product_of_ways_to_beat = zip(times, distances)
                 .map(|(time, distance)| {
                     Record { time, distance }.ways_to_beat()
                 })
                 .product()
         }
+    }
+
+    fn race_figures(input: &str) -> impl Iterator<Item = u32> + '_ {
+        input.split_whitespace()
+            .skip(1)
+            .map(|figure| figure.parse::<u32>().unwrap())
     }
 
     #[cfg(test)]
