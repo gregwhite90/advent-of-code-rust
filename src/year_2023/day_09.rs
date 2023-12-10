@@ -3,10 +3,34 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2023, day: 9 };
 
+mod utlis {
+    use crate::utils::io_utils;
+
+    pub trait Year2023Day09Solution {
+        fn set_sum_of_extrapolated_values(&mut self, value: i32);
+        fn extrapolated_value(&self, history: &Vec<i32>) -> i32;
+        
+        fn parse_input_file(&mut self, filename: &str) {
+            self.set_sum_of_extrapolated_values(
+                io_utils::file_to_lines(filename)
+                    .map(|line| {
+                        let history: Vec<i32> = line.split(" ")
+                            .map(|val| val.parse().unwrap())
+                            .collect();
+                        self.extrapolated_value(&history)
+                    })
+                    .sum()
+            );
+        }
+    }
+}
+
 pub mod part_one {
     use itertools::Itertools;
 
-    use crate::utils::{solution::{Solution, Answer}, io_utils};
+    use crate::utils::solution::{Solution, Answer};
+
+    use super::utlis::Year2023Day09Solution;
 
     #[derive(Debug, PartialEq, Eq, Default)]
     pub struct Soln {
@@ -20,27 +44,20 @@ pub mod part_one {
         }
     }
 
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.sum_of_extrapolated_values = io_utils::file_to_lines(filename)
-                .map(|line| {
-                    let history: Vec<i32> = line.split(" ")
-                        .map(|val| val.parse().unwrap())
-                        .collect();
-                    next_value(&history)
-                })
-                .sum();
+    impl Year2023Day09Solution for Soln {
+        fn set_sum_of_extrapolated_values(&mut self, value: i32) {
+            self.sum_of_extrapolated_values = value;
         }
-    }
 
-    fn next_value(history: &Vec<i32>) -> i32 {
-        if history.iter().all(|e| *e == 0) { return 0; }
-        let next_history: Vec<i32> = history.iter().tuple_windows()
-            .map(|(l, r)| {
-                r - l
-            })
-            .collect();
-        history[history.len() - 1] + next_value(&next_history)
+        fn extrapolated_value(&self, history: &Vec<i32>) -> i32 {
+            if history.iter().all(|e| *e == 0) { return 0; }
+            let next_history: Vec<i32> = history.iter().tuple_windows()
+                .map(|(l, r)| {
+                    r - l
+                })
+                .collect();
+            history[history.len() - 1] + self.extrapolated_value(&next_history)
+        }
     }
 
     #[cfg(test)]
@@ -65,7 +82,9 @@ pub mod part_one {
 pub mod part_two {
     use itertools::Itertools;
 
-    use crate::utils::{solution::{Solution, Answer}, io_utils};
+    use crate::utils::solution::{Solution, Answer};
+
+    use super::utlis::Year2023Day09Solution;
 
     #[derive(Debug, PartialEq, Eq, Default)]
     pub struct Soln {
@@ -79,27 +98,20 @@ pub mod part_two {
         }
     }
 
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            self.sum_of_extrapolated_values = io_utils::file_to_lines(filename)
-                .map(|line| {
-                    let history: Vec<i32> = line.split(" ")
-                        .map(|val| val.parse().unwrap())
-                        .collect();
-                    next_value(&history)
-                })
-                .sum();
+    impl Year2023Day09Solution for Soln {
+        fn set_sum_of_extrapolated_values(&mut self, value: i32) {
+            self.sum_of_extrapolated_values = value;   
         }
-    }
 
-    fn next_value(history: &Vec<i32>) -> i32 {
-        if history.iter().all(|e| *e == 0) { return 0; }
-        let next_history: Vec<i32> = history.iter().tuple_windows()
-            .map(|(l, r)| {
-                r - l
-            })
-            .collect();
-        history[0] - next_value(&next_history)
+        fn extrapolated_value(&self, history: &Vec<i32>) -> i32 {
+            if history.iter().all(|e| *e == 0) { return 0; }
+            let next_history: Vec<i32> = history.iter().tuple_windows()
+                .map(|(l, r)| {
+                    r - l
+                })
+                .collect();
+            history[0] - self.extrapolated_value(&next_history)
+        }
     }
 
     #[cfg(test)]
