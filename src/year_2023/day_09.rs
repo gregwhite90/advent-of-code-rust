@@ -3,7 +3,7 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2023, day: 9 };
 
-mod utlis {
+mod utils {
     use crate::utils::io_utils;
 
     pub trait Year2023Day09Solution {
@@ -30,7 +30,7 @@ pub mod part_one {
 
     use crate::utils::solution::{Solution, Answer};
 
-    use super::utlis::Year2023Day09Solution;
+    use super::utils::Year2023Day09Solution;
 
     #[derive(Debug, PartialEq, Eq, Default)]
     pub struct Soln {
@@ -84,7 +84,7 @@ pub mod part_two {
 
     use crate::utils::solution::{Solution, Answer};
 
-    use super::utlis::Year2023Day09Solution;
+    use super::utils::Year2023Day09Solution;
 
     #[derive(Debug, PartialEq, Eq, Default)]
     pub struct Soln {
