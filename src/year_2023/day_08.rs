@@ -133,7 +133,7 @@ pub mod part_one {
 
 pub mod part_two {
     // This solution would work (it works on the small example case), but it is very slow.
-    // It needs to be short-circuited by 
+    // It needs to be short-circuited by finding a repeat loop.
     use std::collections::HashMap;
     use regex::Regex;
 
