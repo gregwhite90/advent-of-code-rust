@@ -230,3 +230,184 @@ pub mod part_one {
         }
     }    
 }
+
+pub mod part_two {
+    use std::collections::HashMap;
+
+    use crate::utils::{solution::{Solution, Answer}, io_utils};
+
+    #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
+    struct Point {
+        row: i32,
+        col: i32,
+    }
+
+    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+    enum Direction {
+        N,
+        S,
+        E,
+        W,
+    }
+
+    impl Direction {
+        fn opposite(&self) -> Self {
+            match *self {
+                Self::N => Self::S,
+                Self::S => Self::N,
+                Self::E => Self::W,
+                Self::W => Self::E,
+            }           
+        }
+    }
+
+    impl Point {
+        fn step(&self, dir: &Direction) -> Self {
+            match *dir {
+                Direction::N => Self { row: self.row - 1, col: self.col },                
+                Direction::S => Self { row: self.row + 1, col: self.col },                
+                Direction::E => Self { row: self.row, col: self.col + 1 },                
+                Direction::W => Self { row: self.row, col: self.col - 1 },                
+            }
+        }
+    }
+
+    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+    enum Pipe {
+        NS,
+        EW,
+        NE,
+        NW,
+        SW,
+        SE,
+    }
+
+    impl Pipe {
+        fn from_char(ch: char) -> Self {
+            match ch {
+                '|' => Self::NS,
+                '-' => Self::EW,
+                'L' => Self::NE,
+                'J' => Self::NW,
+                '7' => Self::SW,
+                'F' => Self::SE,
+                _ => panic!("Unrecognized pipe character."),
+            }
+        }
+
+        fn connects(&self, dir: &Direction) -> bool {
+            match dir {
+                Direction::N => *self == Self::NS || *self == Self::NE || *self == Self::NW,
+                Direction::S => *self == Self::NS || *self == Self::SE || *self == Self::SW,
+                Direction::E => *self == Self::EW || *self == Self::SE || *self == Self::NE,
+                Direction::W => *self == Self::EW || *self == Self::SW || *self == Self::NW,
+            }
+        }
+
+        fn exit_dir(&self, entry_dir: &Direction) -> Direction {
+            match *self {
+                Self::NS | Self::EW => entry_dir.clone(),
+                Self::NW => {
+                    match *entry_dir {
+                        Direction::S => Direction::W,
+                        Direction::E => Direction::N,
+                        _ => panic!("Unrecognized entry direction."),
+                    }
+                },
+                Self::NE => {
+                    match *entry_dir {
+                        Direction::S => Direction::E,
+                        Direction::W => Direction::N,
+                        _ => panic!("Unrecognized entry direction."),
+                    }
+                },
+                Self::SW => {
+                    match *entry_dir {
+                        Direction::N => Direction::W,
+                        Direction::E => Direction::S,
+                        _ => panic!("Unrecognized entry direction."),
+                    }
+                },
+                Self::SE => {
+                    match *entry_dir {
+                        Direction::N => Direction::E,
+                        Direction::W => Direction::S,
+                        _ => panic!("Unrecognized entry direction."),
+                    }
+                },
+            }
+        }
+    }
+
+    #[derive(Debug, PartialEq, Eq)]
+    struct Path {
+        steps: u32,
+        point: Point,
+        dir: Direction,
+    }
+
+    impl Path {
+        fn same_point_as(&self, other: &Self) -> bool {
+            self.point == other.point
+        }
+    }
+
+    #[derive(Debug, PartialEq, Eq, Default)]
+    pub struct Soln {
+        start: Option<Point>,
+        pipes: HashMap<Point, Pipe>,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.parse_input_file(filename);
+            Answer::U32(self.enclosed_tiles())
+        }
+    }
+
+    impl Soln {
+        fn parse_input_file(&mut self, filename: &str) {
+            let mut row: i32 = 0;
+            io_utils::file_to_lines(filename)
+                .for_each(|line| {
+                    for (col, ch) in line.chars().enumerate() {
+                        let col = col as i32;
+                        match ch {
+                            'S' => self.start = Some(Point { row, col }),
+                            '|' | '-' | 'L' | 'J' | '7' | 'F' => {
+                                self.pipes.insert(Point { row, col }, Pipe::from_char(ch));
+                            },
+                            '.' => continue,
+                            _ => panic!("Unrecognized character.")
+                        }
+                    }
+                    row += 1;
+                });
+        }
+
+        fn enclosed_tiles(&self) -> u32 {
+            0 // TODO: implement
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(3, Answer::U32(4); "example_3")]
+        #[test_case(4, Answer::U32(4); "example_4")]
+        #[test_case(5, Answer::U32(8); "example_5")]
+        #[test_case(6, Answer::U32(10); "example_6")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
