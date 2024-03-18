@@ -187,17 +187,16 @@ mod utils {
 /// versions of the same problem, because a brute force solution checking all combinations
 /// of `#` and `.` for each `?` will be $O(2^n)$ for each line, where $n$ is the number of `?`s.
 /// 
-/// Manually solved examples with notes on how this algorithm was developed:
+/// The base cases are (1) if no more contiguous blocks of damaged springs are needed to be placed,
+/// (2) if there is exactly one group of not-known-operational springs remaining. In base case 2,
+/// we can do a simple check for if the needed contiguous blocks of damaged springs can even fit
+/// in the group, then we attempt two strategies and then recurse: (a) put the first needed
+/// contiguous block of damaged springs at the start of the group and (b) make the first spring in the
+/// group operational.
 /// 
-/// | Condition record      | Contiguous groups of `#`  | Size blocks that can house contiguous groups of `#` |
-/// | ----------------      | ------------------------  | --- |
-/// | `???.###`             | `1,1,3`                   | `3 3`  `1,1 3`    |  Last block has to be 3.
-/// | `.??..??...?##.`      | `1,1,3`                   |  Last block has to be 3. each of first 2 blocks has to be 1.     |
-/// | `?#?#?#?#?#?#?#?`     | `1,3,1,6`                 |  All one block. First block has to be solo. Then the 3 needs to be completed. This is fully determined.    |
-/// | `????.#...#...`       | `4,1,1`                   |  Also fully determined. could start from back and know that.     |
-/// | `????.######..#####.` | `1,6,5`                   |  Same as above.     |
-/// | `?###????????`        | `3,2,1`                   |  This becomes 2,1 in 7     |
-/// 
+/// In the recursive case where we have remaining contiguous blocks of damaged springs that need to be placed
+/// and multiple groups of not-known-operational springs remaining, we attempt to assign each possible series of
+/// the needed damaged spring blocks to the first group of not-known-operational springs, and recurse from there.
 pub mod part_one {
     use crate::utils::solution::{Answer, Solution};
 
@@ -255,6 +254,7 @@ pub mod part_one {
     }    
 }
 
+/// The solution for 2023-12 part two is the same algorithm as for part one, the only change is the input parsing.
 pub mod part_two {
     use crate::utils::solution::{Answer, Solution};
 
