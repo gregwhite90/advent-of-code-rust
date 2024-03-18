@@ -21,81 +21,167 @@ const DAY: Day = crate::utils::Day { year: 2023, day: 12 };
 /// | `?###????????`        | `3,2,1`                   |  This becomes 2,1 in 7     |
 /// 
 pub mod part_one {
-    use std::{collections::{HashSet, HashMap}, cell::{RefCell, Ref, RefMut}};
+    use std::collections::{HashMap, VecDeque};
 
-    use crate::utils::solution::{Solution, Answer};
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
 
-    #[derive(Debug, PartialEq, Eq)]
+    #[derive(Debug, PartialEq, Eq, Hash, Clone)]
+    enum Condition {
+        Operational,
+        Damaged,
+        Unknown,
+    }
+
+    impl Condition {
+        fn from_char(input: char) -> Self {
+            match input {
+                '.' => Self::Operational,
+                '#' => Self::Damaged,
+                '?' => Self::Unknown,
+                _ => panic!("Unrecognized spring condition."),
+            }
+        }
+    }
+
+    #[derive(Debug, PartialEq, Eq, Hash, Clone)]
+    struct Group {
+        conditions: Vec<Condition>,
+    }
+
+    #[derive(Debug, PartialEq, Eq, Hash, Clone)]
+    struct ConditionRecord {
+        groups: VecDeque<Group>,
+        needed: VecDeque<u32>,
+    }
+
+    impl ConditionRecord {
+        fn from_str(line: &str) -> Self {
+            let mut parts_iter = line.split(' ');
+            let groups = parts_iter.next().unwrap()
+                .split('.')
+                .filter(|s| !s.is_empty())
+                .map(|s| {
+                    Group {
+                        conditions: s.chars()
+                            .map(|ch| Condition::from_char(ch))
+                            .collect()
+                    }
+                })
+                .collect();
+            Self {
+                groups,
+                needed: VecDeque::from_iter(parts_iter.next().unwrap().split(',').map(|group| group.parse().unwrap()))
+            }
+        }
+    }
+
+
+    #[derive(Debug, Default, PartialEq, Eq)]
     pub struct Soln {
-        empty_cols: HashSet<usize>,
-        empty_rows: HashSet<usize>,
-        galaxies: Vec<Point>,
-        distances: RefCell<HashMap<(Point, Point), usize>>,
-        sum_of_min_distances: Option<usize>,
-        expansion_factor: usize,
+        total_arrangements: u32,
+        cache: HashMap<ConditionRecord, u32>,
     }
 
-    impl Default for Soln {
-        fn default() -> Self {
-            Self::with_expansion_factor(2)
-        }
-    }
-
-    impl Year2023Day11Solution for Soln {
-        fn add_empty_row(&mut self, row: usize) {
-            self.empty_rows.insert(row);
+    impl Soln {
+        fn arrangements_from_str(&mut self, line: &str) -> u32 {
+            let condition_record = ConditionRecord::from_str(line);
+            self.arrangements(condition_record)
         }
 
-        fn add_galaxy(&mut self, galaxy: Point) {
-            self.galaxies.push(galaxy);
+        /// Recursively calculates the number of arrangements for the given condition record
+        /// (set of not-known-to-be operational condition groups and needed contiguous damaged blocks).
+        fn arrangements(&mut self, cr: ConditionRecord) -> u32 {
+            // base case: if no more damaged are needed
+            if cr.needed.is_empty() {
+                if cr.groups.iter().any(|group| {
+                    group.conditions.iter().any(|condition| *condition == Condition::Damaged)
+                }) {
+                    return 0;
+                } else {
+                    return 1;
+                }
+            }
+            match self.cache.get(&cr) {
+                Some(arrangements) => return *arrangements,
+                None => {
+                    // base case: if exactly one group
+                    if cr.groups.len() == 1 {
+                        let mut groups = cr.groups.clone();
+                        let group = groups.pop_back().expect("Should be exactly one group.");
+                        if group.conditions.len() < (cr.needed.iter().sum::<u32>() as usize + cr.needed.len() - 1) {
+                            // not enough room in the group for the needed damaged groups
+                            return 0;
+                        } else {
+                            let mut arr: u32 = 0;
+                            // try making the entire first needed block at the start of the group
+                            let mut new_needed = cr.needed.clone();
+                            let first_needed: usize = new_needed.pop_front().expect("Should be at least one needed.").try_into().unwrap();
+                            if group.conditions.len() == first_needed {
+                                if !new_needed.is_empty() {
+                                    return 0;
+                                } else {
+                                    return 1;
+                                }
+                            }
+                            if *group.conditions.get(first_needed).expect("Conditions should be long enough.") == Condition::Unknown {
+                                let mut new_conditions = group.conditions.clone();
+                                let new_group = Group {
+                                    conditions: new_conditions.split_off(first_needed + 1),
+                                };
+                                let new_cr = ConditionRecord {
+                                    groups: VecDeque::from([new_group]),
+                                    needed: new_needed,
+                                };
+                                arr += self.arrangements(new_cr);
+                            }
+                            // try making the first condition operational
+                            if *group.conditions.get(0).expect("Should be at least one condition.") == Condition::Unknown {
+                                let mut new_conditions = group.conditions.clone();
+                                let new_group = Group {
+                                    conditions: new_conditions.split_off(1),
+                                };
+                                let new_cr = ConditionRecord {
+                                    groups: VecDeque::from([new_group]),
+                                    needed: cr.needed.clone(),
+                                };
+                                arr += self.arrangements(new_cr);
+                            }
+                            self.cache.insert(cr.clone(), arr);                      
+                            return arr;
+                        }                
+                    } else {
+                        // recursive case: more than one group. Take the first group, try to fit all combinations of the needed into it. then recurse.
+                        let mut arr = 0;
+                        for num_needed in 0..=cr.needed.len() {
+                            // first group, x needed. * rest of groups, other needed
+                            let mut groups = cr.groups.clone();
+                            let rem_groups = groups.split_off(1);
+                            let mut needed = cr.needed.clone();
+                            let rem_needed = needed.split_off(num_needed);
+                            arr += self.arrangements(ConditionRecord { groups, needed }) * self.arrangements(ConditionRecord { groups: rem_groups, needed: rem_needed});
+                        }
+                        self.cache.insert(cr.clone(), arr);
+                        return arr;
+                    }
+                }
+            }
         }
 
-        fn galaxies(&self) -> &Vec<Point> {
-            &self.galaxies
+        fn parse_input_file(&mut self, filename: &str) {
+            self.total_arrangements = io_utils::file_to_lines(filename)
+                .map(|line| self.arrangements_from_str(&line))
+                .sum();
         }
 
-        fn set_empty_cols(&mut self, empty_cols: HashSet<usize>) {
-            self.empty_cols = empty_cols;
-        }
-
-        fn empty_cols(&self) -> &HashSet<usize> {
-            &self.empty_cols
-        }
-
-        fn empty_rows(&self) -> &HashSet<usize> {
-            &self.empty_rows
-        }
-
-        fn distances(&self) -> Ref<HashMap<(Point, Point), usize>> {
-            self.distances.borrow()
-        }
-
-        fn distances_mut(&self) -> RefMut<HashMap<(Point, Point), usize>> {
-            self.distances.borrow_mut()
-        }        
-
-        fn expansion_factor(&self) -> usize {
-            self.expansion_factor
+        fn total_arrangements(&self) -> u32 {
+            self.total_arrangements
         }
     }
 
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
             self.parse_input_file(filename);
-            Answer::U32(self.sum_of_min_distances().try_into().unwrap())
-        }
-    }
-
-    impl Soln {
-        fn with_expansion_factor(expansion_factor: usize) -> Self {
-            Self {
-                empty_cols: HashSet::new(),
-                empty_rows: HashSet::new(),
-                galaxies: vec![],
-                distances: RefCell::new(HashMap::new()),
-                sum_of_min_distances: None,
-                expansion_factor,    
-            }    
+            Answer::U32(self.total_arrangements())
         }
     }
 
@@ -106,7 +192,14 @@ pub mod part_one {
         use super::*;
         use super::super::DAY;
 
-        #[test_case(1, Answer::U32(374); "example_1")]
+        #[test_case(1, Answer::U32(21); "example_1")]
+        #[test_case(11, Answer::U32(1); "example_11")]
+        #[test_case(12, Answer::U32(4); "example_12")]
+        #[test_case(13, Answer::U32(1); "example_13")]
+        #[test_case(14, Answer::U32(1); "example_14")]
+        #[test_case(15, Answer::U32(4); "example_15")]
+        #[test_case(16, Answer::U32(10); "example_16")]
+        #[test_case(21, Answer::U32(23); "input_0001")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
