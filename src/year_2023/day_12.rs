@@ -37,14 +37,17 @@ mod utils {
         needed: VecDeque<u64>,
     }
 
+    fn repeat_pattern(pattern: &str, num_repeats: usize, sep: &str) -> String {
+        itertools::join(
+            iter::repeat(pattern).take(num_repeats),
+            sep,
+        )
+    }
+
     impl ConditionRecord {
-        // TODO: refactor shared functionality
         fn from_str(line: &str, num_repeats: usize) -> Self {
             let mut parts_iter = line.split(' ');
-            let groups = parts_iter.next().unwrap();
-            let groups = iter::repeat(groups).take(num_repeats);
-            let groups = itertools::join(groups, "?");
-            let groups = groups
+            let groups = repeat_pattern(parts_iter.next().unwrap(), num_repeats, "?")
                 .split('.')
                 .filter(|s| !s.is_empty())
                 .map(|s| {
@@ -55,12 +58,13 @@ mod utils {
                     }
                 })
                 .collect();
-            let needed = parts_iter.next().unwrap();
-            let needed = iter::repeat(needed).take(num_repeats);
-            let needed = itertools::join(needed, ",");
+            let needed = repeat_pattern(parts_iter.next().unwrap(), num_repeats, ",")
+                .split(',')
+                .map(|group| group.parse().unwrap())
+                .collect();
             Self {
                 groups,
-                needed: VecDeque::from_iter(needed.split(',').map(|group| group.parse().unwrap()))
+                needed,
             }
         }
     }
