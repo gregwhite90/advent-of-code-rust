@@ -310,6 +310,13 @@ fn get_solns(day: &Day) -> DailySolutions {
                 part_two: Some(Box::new(year_2023::day_12::part_two::Soln::default())),
             },
         ),
+        (
+            Day { year: 2023, day: 13 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2023::day_13::part_one::Soln::default())),
+                part_two: None,
+            },
+        ),
     ]);
     let daily_solns = match daily_solutions.remove(day) {
         Some(daily_solns) => daily_solns,
