@@ -14,6 +14,59 @@ pub mod part_one {
 
     use crate::utils::{solution::{Solution, Answer}, io_utils};
 
+    fn push_to_hashmap_value(hm: &mut HashMap<usize, Vec<usize>>, key: usize, val: usize) {
+        hm.entry(key).and_modify(|v| v.push(val)).or_insert(vec![val]);
+    }
+
+    fn invert(invertee: &HashMap<usize, Vec<usize>>) -> HashMap<Vec<usize>, Vec<usize>> {
+        let mut inverted = HashMap::new();
+        for (key, vals) in invertee {
+            inverted.entry(vals.to_vec())
+                .and_modify(|keys: &mut Vec<usize>| {
+                    keys.push(*key);
+                })
+                .or_insert(vec![*key]);
+        }
+        inverted
+    }
+
+    fn reflection_axis(
+        vec_to_vec: &HashMap<Vec<usize>, Vec<usize>>,
+        total: usize,
+        idx_to_vec: &HashMap<usize, Vec<usize>>
+    ) -> Option<usize> {
+        for idxs in vec_to_vec.values() {
+            if idxs.len() >= 2 {
+                'implied_axis: for (idx_0, idx_1) in idxs.iter().tuple_combinations() {
+                    // calculate implied axis
+                    let min_idx = cmp::min(idx_0, idx_1);
+                    let max_idx = cmp::max(idx_0, idx_1);
+                    let implied_axis = min_idx + (max_idx - min_idx) / 2; // intentionally uses integer division rounding to 0.
+                    // check that implied axis works
+                    let start_min_idx = implied_axis;
+                    let start_max_idx = implied_axis + 1;
+                    let max_total_idx = total - 1;
+                    let counting_to_max = max_total_idx - start_max_idx + 1;
+                    let counting_to_zero = start_min_idx + 1;
+                    let count_to_check = cmp::min(counting_to_max, counting_to_zero);
+                    for offset in 0..count_to_check {
+                        if idx_to_vec.get(&(start_min_idx - offset)).unwrap() != idx_to_vec.get(&(start_max_idx + offset)).unwrap() {
+                            continue 'implied_axis;
+                        }
+                    }
+                    return Some(implied_axis);
+                }
+            }
+        }
+        None
+    }
+
+    #[derive(Debug, PartialEq, Eq)]
+    enum Axis {
+        Horizontal,
+        Vertical,
+    }
+
     #[derive(Debug, Default)]
     struct Pattern {
         rows: usize,
@@ -31,13 +84,8 @@ pub mod part_one {
                 .filter(|(_idx, ch)| *ch == '.')
                 .map(|(idx, _ch)| idx)
                 .for_each(|idx| {
-                    // TODO: factor out shared functionality?
-                    self.row_to_ash_cols.entry(self.rows)
-                        .and_modify(|v| v.push(idx))
-                        .or_insert(vec![idx]);
-                    self.col_to_ash_rows.entry(idx)
-                        .and_modify(|v| v.push(self.rows))
-                        .or_insert(vec![self.rows]);
+                    push_to_hashmap_value(&mut self.row_to_ash_cols, self.rows, idx);
+                    push_to_hashmap_value(&mut self.col_to_ash_rows, idx, self.rows);
                 });
             self.rows += 1;
         }
@@ -49,91 +97,36 @@ pub mod part_one {
             let mut note = 0;
             // These reflection axis functions return a 0-indexed result, we need to convert to
             // 1-indexed for the note calculation
-            if let Some(axis) = self.vertical_reflection_axis() {
+            if let Some(axis) = self.reflection_axis(Axis::Vertical) {
                 note += axis + 1;
             }
-            if let Some(axis) = self.horizontal_reflection_axis() {
+            if let Some(axis) = self.reflection_axis(Axis::Horizontal) {
                 note += 100 * (axis + 1);
             }
             note
         }
 
-        // TODO: factor out shared functionality?
         fn invert(&mut self) {
-            for (row, cols) in &self.row_to_ash_cols {
-                self.ash_cols_to_rows.entry(cols.to_vec())
-                    .and_modify(|rows| {
-                        rows.push(*row);
-                    })
-                    .or_insert(vec![*row]);
-            }
-            for (col, rows) in &self.col_to_ash_rows {
-                self.ash_rows_to_cols.entry(rows.to_vec())
-                    .and_modify(|cols| {
-                        cols.push(*col);
-                    })
-                    .or_insert(vec![*col]);
-            }
+            self.ash_cols_to_rows = invert(&self.row_to_ash_cols);
+            self.ash_rows_to_cols = invert(&self.col_to_ash_rows);
         }
 
-        // TODO: share functionality?
         // Return value is 0-indexed.
-        fn vertical_reflection_axis(&self) -> Option<usize> {
-            for cols in self.ash_rows_to_cols.values() {
-                if cols.len() >= 2 {
-                    'implied_axis: for (col_0, col_1) in cols.iter().tuple_combinations() {
-                        // calculate implied axis
-                        let min_col = cmp::min(col_0, col_1);
-                        let max_col = cmp::max(col_0, col_1);
-                        let implied_axis = min_col + (max_col - min_col) / 2; // intentionally uses integer division rounding to 0.
-                        // check that implied axis works
-                        let start_min_col = implied_axis;
-                        let start_max_col = implied_axis + 1;
-                        let max_total_col_idx = self.cols - 1;
-                        let counting_to_max = max_total_col_idx - start_max_col + 1;
-                        let counting_to_zero = start_min_col + 1;
-                        let count_to_check = cmp::min(counting_to_max, counting_to_zero);
-                        for offset in 0..count_to_check {
-                            if self.col_to_ash_rows.get(&(start_min_col - offset)).unwrap() != self.col_to_ash_rows.get(&(start_max_col + offset)).unwrap() {
-                                continue 'implied_axis;
-                            }
-                        }
-                        return Some(implied_axis);
-                    }
-                }
-            }
-            None
+        fn reflection_axis(&self, axis: Axis) -> Option<usize> {
+            let total = match axis { 
+                Axis::Horizontal => self.rows,
+                Axis::Vertical => self.cols,
+            };
+            let vec_to_vec = match axis {
+                Axis::Horizontal => &self.ash_cols_to_rows,
+                Axis::Vertical => &self.ash_rows_to_cols,
+            };
+            let idx_to_vec = match axis {
+                Axis::Horizontal => &self.row_to_ash_cols,
+                Axis::Vertical => &self.col_to_ash_rows,
+            };
+            reflection_axis(vec_to_vec, total, idx_to_vec)
         }
-
-        // TODO: share functionality?
-        // Return-value is 0-indexed.
-        fn horizontal_reflection_axis(&self) -> Option<usize> {
-            for rows in self.ash_cols_to_rows.values() {
-                if rows.len() >= 2 {
-                    'implied_axis: for (row_0, row_1) in rows.iter().tuple_combinations() {
-                        // calculate implied axis
-                        let min_row = cmp::min(row_0, row_1);
-                        let max_row = cmp::max(row_0, row_1);
-                        let implied_axis = min_row + (max_row - min_row) / 2; // intentionally uses integer division rounding to 0.
-                        // check that implied axis works
-                        let start_min_row = implied_axis;
-                        let start_max_row = implied_axis + 1;
-                        let max_total_row_idx = self.rows - 1;
-                        let counting_to_max = max_total_row_idx - start_max_row + 1;
-                        let counting_to_zero = start_min_row + 1;
-                        let count_to_check = cmp::min(counting_to_max, counting_to_zero);
-                        for offset in 0..count_to_check {
-                            if self.row_to_ash_cols.get(&(start_min_row - offset)).unwrap() != self.row_to_ash_cols.get(&(start_max_row + offset)).unwrap() {
-                                continue 'implied_axis;
-                            }
-                        }
-                        return Some(implied_axis);
-                    }
-                }
-            }
-            None
-        }
-
     }
 
     #[derive(Debug, PartialEq, Eq, Default)]
