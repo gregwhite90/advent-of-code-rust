@@ -3,9 +3,6 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2023, day: 14 };
 
-/// Solution to [2023-13 part one](https://adventofcode.com/2023/day/13). The way this is written relies
-/// on a sparse representation of the pictured pattern, and will only work if each row and each column
-/// in each pattern has at least one ash ('.') entry.
 pub mod part_one {
 
     use crate::utils::{solution::{Solution, Answer}, io_utils};
