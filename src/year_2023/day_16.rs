@@ -3,11 +3,10 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2023, day: 16 };
 
-pub mod part_one {
-
+mod utils {
     use std::collections::{HashMap, HashSet, VecDeque};
 
-    use crate::utils::{solution::{Solution, Answer}, io_utils};
+    use crate::utils::io_utils;
 
     #[derive(Debug, Default, PartialEq, Eq, Hash, Clone, Copy)]
     struct Point {
@@ -51,23 +50,14 @@ pub mod part_one {
     }
 
     #[derive(Debug, Default, PartialEq, Eq)]
-    pub struct Soln {
+    pub struct Grid {
         rows: usize,
         cols: usize,
         layout: HashMap<Point, char>,
-        energized: HashMap<Point, HashSet<Direction>>,
     }
 
-    impl Solution for Soln {
-        fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
-            self.energize();
-            Answer::Usize(self.energized())
-        }
-    }
-
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
+    impl Grid {
+        pub fn parse_input_file(&mut self, filename: &str) {
             io_utils::file_to_lines(filename).for_each(|line| {
                 self.cols = line.len();
                 line.char_indices()
@@ -79,7 +69,29 @@ pub mod part_one {
             });
         }
 
-        fn energize(&mut self) {
+        fn going_off_map(&self, beam: &Beam) -> bool {
+            beam.direction == Direction::East && beam.position.col == self.cols - 1
+                || beam.direction == Direction::South && beam.position.row == self.rows - 1
+                || beam.direction == Direction::West && beam.position.col == 0
+                || beam.direction == Direction::North && beam.position.row == 0
+        }
+    }
+
+    #[derive(Debug, PartialEq, Eq)]
+    pub struct GridEnergizer<'a> {
+        grid: &'a Grid,
+        energized: HashMap<Point, HashSet<Direction>>,
+    }
+
+    impl<'a> GridEnergizer<'a> {
+        pub fn new(grid: &'a Grid) -> GridEnergizer<'a> {
+            Self {
+                grid,
+                energized: HashMap::new(),
+            }
+        }
+
+        pub fn energize(&mut self) {
             let mut beams: VecDeque<Beam> = VecDeque::from([Beam::default()]);
             while !beams.is_empty() {
                 let mut beam = beams.pop_back().unwrap();
@@ -93,7 +105,7 @@ pub mod part_one {
                     self.energized.entry(beam.position)
                         .and_modify(|directions| { directions.insert(beam.direction); })
                         .or_insert(HashSet::from([beam.direction]));
-                    match self.layout.get(&beam.position) {
+                    match self.grid.layout.get(&beam.position) {
                         None => {},
                         Some('/') => {
                             match beam.direction {
@@ -116,7 +128,7 @@ pub mod part_one {
                                 Direction::East | Direction::West => {
                                     beam.direction = Direction::North;
                                     let mut new_beam = Beam { position: beam.position, direction: Direction::South };
-                                    if !self.going_off_map(&new_beam) {
+                                    if !self.grid.going_off_map(&new_beam) {
                                         new_beam.advance_position();
                                         beams.push_back(new_beam);
                                     }
@@ -129,7 +141,7 @@ pub mod part_one {
                                 Direction::North | Direction::South => {
                                     beam.direction = Direction::East;
                                     let mut new_beam = Beam { position: beam.position, direction: Direction::West };
-                                    if !self.going_off_map(&new_beam) {
+                                    if !self.grid.going_off_map(&new_beam) {
                                         new_beam.advance_position();
                                         beams.push_back(new_beam);
                                     }
@@ -139,7 +151,7 @@ pub mod part_one {
                         },
                         Some(_) => panic!("Unrecognized layout character."),
                     }
-                    if self.going_off_map(&beam) {
+                    if self.grid.going_off_map(&beam) {
                         break;
                     }
                     beam.advance_position();
@@ -148,15 +160,40 @@ pub mod part_one {
             }
         }
 
-        fn going_off_map(&self, beam: &Beam) -> bool {
-            beam.direction == Direction::East && beam.position.col == self.cols - 1
-                || beam.direction == Direction::South && beam.position.row == self.rows - 1
-                || beam.direction == Direction::West && beam.position.col == 0
-                || beam.direction == Direction::North && beam.position.row == 0
+        pub fn energized(&self) -> usize {
+            self.energized.len()
+        }
+    }
+}
+
+pub mod part_one {
+
+    use crate::utils::solution::{Solution, Answer};
+
+    use super::utils::{Grid, GridEnergizer};
+
+    #[derive(Debug, Default, PartialEq, Eq)]
+    pub struct Soln {
+        grid: Grid,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.parse_input_file(filename);
+            Answer::Usize(self.energized())
+        }
+    }
+
+    impl Soln {
+        fn parse_input_file(&mut self, filename: &str) {
+            self.grid = Grid::default();
+            self.grid.parse_input_file(filename);
         }
 
         fn energized(&self) -> usize {
-            self.energized.len()
+            let mut ge = GridEnergizer::new(&self.grid);
+            ge.energize();
+            ge.energized()
         }
     }
 
