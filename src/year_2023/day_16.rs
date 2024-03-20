@@ -9,13 +9,22 @@ mod utils {
     use crate::utils::io_utils;
 
     #[derive(Debug, Default, PartialEq, Eq, Hash, Clone, Copy)]
-    struct Point {
+    pub struct Point {
         row: usize,
         col: usize,
     }
 
+    impl Point {
+        pub fn new(row: usize, col: usize) -> Self {
+            Self {
+                row,
+                col,
+            }
+        }
+    }
+
     #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
-    enum Direction {
+    pub enum Direction {
         North,
         East,
         South,
@@ -28,13 +37,20 @@ mod utils {
         }
     }
 
-    #[derive(Debug, Default, PartialEq, Eq)]
-    struct Beam {
+    #[derive(Debug, Default, PartialEq, Eq, Clone, Copy)]
+    pub struct Beam {
         position: Point,
         direction: Direction,
     }
 
     impl Beam {
+        pub fn new(position: Point, direction: Direction) -> Self {
+            Self {
+                position,
+                direction,
+            }
+        }
+
         fn next_position(&self) -> Point {
             match self.direction {
                 Direction::North => Point { row: self.position.row - 1, col: self.position.col },
@@ -69,6 +85,14 @@ mod utils {
             });
         }
 
+        pub fn cols(&self) -> usize {
+            self.cols
+        }
+
+        pub fn rows(&self) -> usize {
+            self.rows
+        }
+
         fn going_off_map(&self, beam: &Beam) -> bool {
             beam.direction == Direction::East && beam.position.col == self.cols - 1
                 || beam.direction == Direction::South && beam.position.row == self.rows - 1
@@ -91,8 +115,8 @@ mod utils {
             }
         }
 
-        pub fn energize(&mut self) {
-            let mut beams: VecDeque<Beam> = VecDeque::from([Beam::default()]);
+        pub fn energize(&mut self, start_beam: Beam) {
+            let mut beams: VecDeque<Beam> = VecDeque::from([start_beam]);
             while !beams.is_empty() {
                 let mut beam = beams.pop_back().unwrap();
                 loop {
@@ -170,7 +194,7 @@ pub mod part_one {
 
     use crate::utils::solution::{Solution, Answer};
 
-    use super::utils::{Grid, GridEnergizer};
+    use super::utils::{Beam, Grid, GridEnergizer};
 
     #[derive(Debug, Default, PartialEq, Eq)]
     pub struct Soln {
@@ -192,7 +216,7 @@ pub mod part_one {
 
         fn energized(&self) -> usize {
             let mut ge = GridEnergizer::new(&self.grid);
-            ge.energize();
+            ge.energize(Beam::default());
             ge.energized()
         }
     }
@@ -205,6 +229,75 @@ pub mod part_one {
         use super::super::DAY;
 
         #[test_case(1, Answer::Usize(46); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
+
+pub mod part_two {
+
+    use std::cmp;
+
+    use crate::utils::solution::{Solution, Answer};
+
+    use super::utils::{Beam, Direction, Grid, GridEnergizer, Point};
+
+    #[derive(Debug, Default, PartialEq, Eq)]
+    pub struct Soln {
+        grid: Grid,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.parse_input_file(filename);
+            Answer::Usize(self.max_energized())
+        }
+    }
+
+    impl Soln {
+        fn parse_input_file(&mut self, filename: &str) {
+            self.grid = Grid::default();
+            self.grid.parse_input_file(filename);
+        }
+
+        fn energize(&self, start_beam: Beam) -> usize {
+            let mut ge = GridEnergizer::new(&self.grid);
+            ge.energize(start_beam);
+            ge.energized()
+        }
+
+        fn max_energized(&self) -> usize {
+            let mut max_energized = 0;
+            for col in 0..self.grid.cols() {
+                let beam = Beam::new(Point::new(0, col), Direction::South);
+                max_energized = cmp::max(self.energize(beam), max_energized);
+                let beam = Beam::new(Point::new(self.grid.rows() - 1, col), Direction::North);
+                max_energized = cmp::max(self.energize(beam), max_energized);
+            }
+            for row in 0..self.grid.rows() {
+                let beam = Beam::new(Point::new(row, 0), Direction::East);
+                max_energized = cmp::max(self.energize(beam), max_energized);
+                let beam = Beam::new(Point::new(row, self.grid.cols() - 1), Direction::West);
+                max_energized = cmp::max(self.energize(beam), max_energized);
+            }
+            max_energized
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::Usize(51); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
