@@ -3,16 +3,11 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2023, day: 19 };
 
-pub mod part_one {
-
-    use std::collections::{HashMap, VecDeque};
-
+mod utils {
     use regex::Regex;
 
-    use crate::utils::{io_utils, solution::{Answer, Solution}};
-
     #[derive(Debug, PartialEq, Eq)]
-    enum Category {
+    pub enum Category {
         X,
         M,
         A,
@@ -20,7 +15,7 @@ pub mod part_one {
     }
 
     impl Category {
-        fn from_str(input: &str) -> Self {
+        pub fn from_str(input: &str) -> Self {
             match input {
                 "x" => Self::X,
                 "m" => Self::M,
@@ -30,15 +25,15 @@ pub mod part_one {
             }
         }
     }
-    
-    #[derive(Debug, PartialEq, Eq)]
-    enum Operation {
+
+    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+    pub enum Operation {
         LessThan,
         GreaterThan,
     }
 
     impl Operation {
-        fn from_str(input: &str) -> Self {
+        pub fn from_str(input: &str) -> Self {
             match input {
                 "<" => Self::LessThan,
                 ">" => Self::GreaterThan,
@@ -47,38 +42,15 @@ pub mod part_one {
         }
     }
 
-    #[derive(Debug, PartialEq, Eq)]
-    struct Part {
-        x: u32,
-        m: u32,
-        a: u32,
-        s: u32,
-    }
-
-    impl Part {
-        fn category(&self, category: &Category) -> u32 {
-            match category {
-                Category::X => self.x,
-                Category::M => self.m,
-                Category::A => self.a,
-                Category::S => self.s,
-            }
-        }
-
-        fn sum_of_categories(&self) -> u32 {
-            self.x + self.m + self.a + self.s
-        }
-    }
-
     #[derive(Debug, PartialEq, Eq, Clone)]
-    enum Destination {
+    pub enum Destination {
         A,
         R,
         Workflow(String),
     }
 
     impl Destination {
-        fn from_str(input: &str) -> Self {
+        pub fn from_str(input: &str) -> Self {
             match input {
                 "A" => Self::A,
                 "R" => Self::R,
@@ -88,16 +60,15 @@ pub mod part_one {
     }
 
     #[derive(Debug, PartialEq, Eq)]
-    struct Rule {
-        category: Category,
-        operation: Operation,
-        threshold: u32,
-        destination: Destination,
+    pub struct Rule {
+        pub category: Category,
+        pub operation: Operation,
+        pub threshold: u64,
+        pub destination: Destination,
     }
 
     impl Rule {
-        fn from_str(input: &str) -> Self {
-            // TODO: only create this once?
+        pub fn from_str(input: &str) -> Self {
             let re = Regex::new(r"(?<category>[xmas])(?<operation>[<>])(?<threshold>\d+)\:(?<dest>A|R|[a-z]+)").unwrap();
             let captures = re.captures(input).expect("Should match rule form.");
             let category = Category::from_str(captures.name("category").unwrap().as_str());
@@ -113,6 +84,73 @@ pub mod part_one {
         }
     }
 
+    #[derive(Debug, PartialEq, Eq)]
+    pub struct Workflow {
+        pub rules: Vec<Rule>,
+        pub final_dest: Destination,
+    }
+
+    impl Workflow {
+        pub fn from_str(input: &str) -> Self {
+            let re = Regex::new(r"\{(?<rules>[ARa-z><\:\,\d]+)\,(?<final_dest>A|R|[a-z]+)\}").unwrap();
+            let captures = re.captures(input).unwrap();
+            let rules = captures.name("rules").unwrap().as_str();
+            let final_dest = Destination::from_str(captures.name("final_dest").unwrap().as_str());
+            Self {
+                rules: rules.split(",").map(|rule| Rule::from_str(rule)).collect(),
+                final_dest,
+            }
+        }
+    }
+}
+
+pub mod part_one {
+
+    use std::collections::{HashMap, VecDeque};
+
+    use regex::Regex;
+
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
+    use super::utils::{Category, Operation, Destination, Rule, Workflow};
+
+    #[derive(Debug, PartialEq, Eq)]
+    struct Part {
+        x: u64,
+        m: u64,
+        a: u64,
+        s: u64,
+    }
+
+    impl Part {
+        fn from_str(input: &str) -> Self {
+            let re = Regex::new(r"\{x\=(?<x>\d+)\,m\=(?<m>\d+)\,a\=(?<a>\d+)\,s\=(?<s>\d+)\}").unwrap();
+            let captures = re.captures(&input).unwrap();
+            let x = captures.name("x").unwrap().as_str().parse().unwrap();
+            let m = captures.name("m").unwrap().as_str().parse().unwrap();
+            let a = captures.name("a").unwrap().as_str().parse().unwrap();
+            let s = captures.name("s").unwrap().as_str().parse().unwrap();
+            Self {
+                x,
+                m,
+                a,
+                s,
+            }
+        }
+
+        fn category(&self, category: &Category) -> u64 {
+            match category {
+                Category::X => self.x,
+                Category::M => self.m,
+                Category::A => self.a,
+                Category::S => self.s,
+            }
+        }
+
+        fn sum_of_categories(&self) -> u64 {
+            self.x + self.m + self.a + self.s
+        }
+    }
+
     impl Rule {
         fn test(&self, part: &Part) -> Option<Destination> {
             match self.operation {
@@ -122,20 +160,7 @@ pub mod part_one {
         }
     }
 
-    #[derive(Debug, PartialEq, Eq)]
-    struct Workflow {
-        rules: Vec<Rule>,
-        final_dest: Destination,
-    }
-
     impl Workflow {
-        fn new(rules: &str, final_dest: Destination) -> Self {
-            Self {
-                rules: rules.split(",").map(|rule| Rule::from_str(rule)).collect(),
-                final_dest,
-            }
-        }
-
         fn process(&self, part: &Part) -> Destination {
             for rule in &self.rules {
                 if let Some(dest) = rule.test(part) {
@@ -149,7 +174,7 @@ pub mod part_one {
     #[derive(Debug, Default, PartialEq, Eq)]
     pub struct Soln {
         to_process: VecDeque<(Part, Destination)>,
-        sum_of_accepted: u32,
+        sum_of_accepted: u64,
         workflows: HashMap<String, Workflow>,
     }
 
@@ -157,14 +182,13 @@ pub mod part_one {
         fn solve(&mut self, filename: &str) -> Answer {
             self.parse_input_file(filename);
             self.process_all_parts();
-            Answer::U32(self.sum_of_accepted())
+            Answer::U64(self.sum_of_accepted())
         }
     }
 
     impl Soln {
         fn parse_input_file(&mut self, filename: &str) {
-            let workflow_re = Regex::new(r"(?<name>[a-z]+)\{(?<rules>[ARa-z><\:\,\d]+)\,(?<final_dest>A|R|[a-z]+)\}").unwrap();
-            let part_re = Regex::new(r"\{x\=(?<x>\d+)\,m\=(?<m>\d+)\,a\=(?<a>\d+)\,s\=(?<s>\d+)\}").unwrap();
+            let workflow_re = Regex::new(r"(?<name>[a-z]+)(?<workflow>.+)").unwrap();
             let mut parsing_workflows = true;
             io_utils::file_to_lines(filename)
                 .for_each(|line| {
@@ -173,23 +197,10 @@ pub mod part_one {
                     } else if parsing_workflows {
                         let captures = workflow_re.captures(&line).unwrap();
                         let name = String::from(captures.name("name").unwrap().as_str());
-                        let rules = captures.name("rules").unwrap().as_str();
-                        let final_dest = Destination::from_str(captures.name("final_dest").unwrap().as_str());
-                        let workflow = Workflow::new(rules, final_dest);
+                        let workflow = Workflow::from_str(captures.name("workflow").unwrap().as_str());
                         self.workflows.insert(name, workflow);
                     } else {
-                        let captures = part_re.captures(&line).unwrap();
-                        let x = captures.name("x").unwrap().as_str().parse().unwrap();
-                        let m = captures.name("m").unwrap().as_str().parse().unwrap();
-                        let a = captures.name("a").unwrap().as_str().parse().unwrap();
-                        let s = captures.name("s").unwrap().as_str().parse().unwrap();
-                        let part = Part {
-                            x,
-                            m,
-                            a,
-                            s,
-                        };
-                        self.to_process.push_back((part, Destination::Workflow(String::from("in"))));
+                        self.to_process.push_back((Part::from_str(&line), Destination::Workflow(String::from("in"))));
                     }
                 });
         }
@@ -209,7 +220,7 @@ pub mod part_one {
             }
         }
 
-        fn sum_of_accepted(&self) -> u32 {
+        fn sum_of_accepted(&self) -> u64 {
             self.sum_of_accepted
         }
 
@@ -222,7 +233,7 @@ pub mod part_one {
         use super::*;
         use super::super::DAY;
 
-        #[test_case(1, Answer::U32(19_114); "example_1")]
+        #[test_case(1, Answer::U64(19_114); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
@@ -241,26 +252,7 @@ pub mod part_two {
     use regex::Regex;
 
     use crate::utils::{io_utils, solution::{Answer, Solution}};
-
-    #[derive(Debug, PartialEq, Eq)]
-    enum Category {
-        X,
-        M,
-        A,
-        S,
-    }
-
-    impl Category {
-        fn from_str(input: &str) -> Self {
-            match input {
-                "x" => Self::X,
-                "m" => Self::M,
-                "a" => Self::A,
-                "s" => Self::S,
-                _ => panic!("Unrecognized category"),
-            }
-        }
-    }
+    use super::utils::{Category, Operation, Destination, Rule, Workflow};
 
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]
     enum SplitDestWorkflow {
@@ -344,65 +336,6 @@ pub mod part_two {
         }
     }
     
-    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-    enum Operation {
-        LessThan,
-        GreaterThan,
-    }
-
-    impl Operation {
-        fn from_str(input: &str) -> Self {
-            match input {
-                "<" => Self::LessThan,
-                ">" => Self::GreaterThan,
-                _ => panic!("Unrecognized operation"),
-            }
-        }
-    }
-
-    #[derive(Debug, PartialEq, Eq, Clone)]
-    enum Destination {
-        A,
-        R,
-        Workflow(String),
-    }
-
-    impl Destination {
-        fn from_str(input: &str) -> Self {
-            match input {
-                "A" => Self::A,
-                "R" => Self::R,
-                workflow => Self::Workflow(String::from(workflow)),
-            }
-        }
-    }
-
-    #[derive(Debug, PartialEq, Eq)]
-    struct Rule {
-        category: Category,
-        operation: Operation,
-        threshold: u64,
-        destination: Destination,
-    }
-
-    impl Rule {
-        fn from_str(input: &str) -> Self {
-            // TODO: only create this once?
-            let re = Regex::new(r"(?<category>[xmas])(?<operation>[<>])(?<threshold>\d+)\:(?<dest>A|R|[a-z]+)").unwrap();
-            let captures = re.captures(input).expect("Should match rule form.");
-            let category = Category::from_str(captures.name("category").unwrap().as_str());
-            let operation = Operation::from_str(captures.name("operation").unwrap().as_str());
-            let threshold = captures.name("threshold").unwrap().as_str().parse().unwrap();
-            let destination = Destination::from_str(captures.name("dest").unwrap().as_str());
-            Self {
-                category,
-                operation,
-                threshold,
-                destination,
-            }
-        }
-    }
-
     impl Rule {
         /// Applies the rule to a `PartCombination`. Returns 1-2 new `PartCombination`s, possibly one that should continue
         /// on the current workflow, and possibly one that should have a new workflow as a destination.
@@ -412,21 +345,6 @@ pub mod part_two {
                 .map(|(range, split_dest_workflow)| {
                     (part_combination.clone_with_new_category_range(&self.category, range), split_dest_workflow)
                 }).collect()
-        }
-    }
-
-    #[derive(Debug, PartialEq, Eq)]
-    struct Workflow {
-        rules: Vec<Rule>,
-        final_dest: Destination,
-    }
-
-    impl Workflow {
-        fn new(rules: &str, final_dest: Destination) -> Self {
-            Self {
-                rules: rules.split(",").map(|rule| Rule::from_str(rule)).collect(),
-                final_dest,
-            }
         }
     }
 
@@ -447,16 +365,14 @@ pub mod part_two {
 
     impl Soln {
         fn parse_input_file(&mut self, filename: &str) {
-            let workflow_re = Regex::new(r"(?<name>[a-z]+)\{(?<rules>[ARa-z><\:\,\d]+)\,(?<final_dest>A|R|[a-z]+)\}").unwrap();
+            let workflow_re = Regex::new(r"(?<name>[a-z]+)(?<workflow>.+)").unwrap();
             for line in io_utils::file_to_lines(filename) {
                 if line.is_empty() { 
                     return;
                 } else {
                     let captures = workflow_re.captures(&line).unwrap();
                     let name = String::from(captures.name("name").unwrap().as_str());
-                    let rules = captures.name("rules").unwrap().as_str();
-                    let final_dest = Destination::from_str(captures.name("final_dest").unwrap().as_str());
-                    let workflow = Workflow::new(rules, final_dest);
+                    let workflow = Workflow::from_str(captures.name("workflow").unwrap().as_str());
                     self.workflows.insert(name, workflow);
                 }
             }
