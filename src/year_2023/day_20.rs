@@ -3,28 +3,27 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2023, day: 20 };
 
-pub mod part_one {
-
+mod utils {
     use std::collections::{HashMap, HashSet, VecDeque};
 
     use regex::Regex;
 
-    use crate::utils::{io_utils, solution::{Answer, Solution}};
+    use crate::utils::io_utils;
 
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-    enum Pulse {
+    pub enum Pulse {
         Low,
         High,
     }
 
     #[derive(Debug, PartialEq, Eq)]
-    struct PulseInProcess {
-        pulse: Pulse,
-        sender: String,
-        recipient: String,
+    pub struct PulseInProcess {
+        pub pulse: Pulse,
+        pub sender: String,
+        pub recipient: String,
     }
 
-    trait Module {
+    pub trait Module {
         fn receive(&mut self, pulse: Pulse, sender: &str) -> VecDeque<PulseInProcess>;
         fn is_original_state(&self) -> bool;
         fn destination_modules(&self) -> &Vec<String>;
@@ -32,10 +31,10 @@ pub mod part_one {
     }
 
     #[derive(Debug, PartialEq, Eq)]
-    struct FlipFlopModule {
-        name: String,
-        on: bool,
-        destination_modules: Vec<String>,
+    pub struct FlipFlopModule {
+        pub name: String,
+        pub on: bool,
+        pub destination_modules: Vec<String>,
     }
 
     impl Module for FlipFlopModule {
@@ -71,7 +70,7 @@ pub mod part_one {
     }
 
     impl FlipFlopModule {
-        fn new(name: &str, destination_modules: Vec<String>) -> Self {
+        pub fn new(name: &str, destination_modules: Vec<String>) -> Self {
             Self {
                 name: String::from(name),
                 on: false,
@@ -81,10 +80,10 @@ pub mod part_one {
     }
 
     #[derive(Debug, PartialEq, Eq)]
-    struct ConjunctionModule {
-        name: String,
-        most_recent_pulses: HashMap<String, Pulse>,
-        destination_modules: Vec<String>,
+    pub struct ConjunctionModule {
+        pub name: String,
+        pub most_recent_pulses: HashMap<String, Pulse>,
+        pub destination_modules: Vec<String>,
     }
 
     impl Module for ConjunctionModule {
@@ -116,7 +115,7 @@ pub mod part_one {
     }
 
     impl ConjunctionModule {
-        fn new(name: &str, destination_modules: Vec<String>) -> Self {
+        pub fn new(name: &str, destination_modules: Vec<String>) -> Self {
             Self {
                 name: String::from(name),
                 most_recent_pulses: HashMap::new(),
@@ -126,9 +125,9 @@ pub mod part_one {
     }
 
     #[derive(Debug, PartialEq, Eq)]
-    struct BroadcasterModule {
-        name: String,
-        destination_modules: Vec<String>,
+    pub struct BroadcasterModule {
+        pub name: String,
+        pub destination_modules: Vec<String>,
     }
 
     impl Module for BroadcasterModule {
@@ -154,7 +153,7 @@ pub mod part_one {
     }
 
     impl BroadcasterModule {
-        fn new(destination_modules: Vec<String>) -> Self {
+        pub fn new(destination_modules: Vec<String>) -> Self {
             Self {
                 name: String::from("broadcaster"),
                 destination_modules,
@@ -163,9 +162,9 @@ pub mod part_one {
     }
 
     #[derive(Debug, PartialEq, Eq)]
-    struct EndModule {
-        name: String,
-        destination_modules: Vec<String>,
+    pub struct EndModule {
+        pub name: String,
+        pub destination_modules: Vec<String>,
     }
 
     impl Module for EndModule {
@@ -185,13 +184,78 @@ pub mod part_one {
     }
 
     impl EndModule {
-        fn new(name: &str) -> Self {
+        pub fn new(name: &str) -> Self {
             Self {
                 name: String::from(name),
                 destination_modules: vec![],
             }
         }
     }
+
+    pub fn parse_input_file(filename: &str) -> HashMap<String, Box<dyn Module>> {
+        let mut modules: HashMap<String, Box<dyn Module>> = HashMap::new();
+        let line_re = Regex::new(r"(?<name>.+) \-> (?<dest_names>[a-z ,]+)").unwrap();
+        let name_re = Regex::new(r"(?<type>[%&])(?<name>[a-z]+)").unwrap();
+        let mut conjunction_modules = HashSet::new();
+        let mut dest_to_inputs: HashMap<String, Vec<String>> = HashMap::new();
+        io_utils::file_to_lines(filename).for_each(|line| {
+            let captures = line_re.captures(&line).unwrap();
+            let name = captures.name("name").unwrap().as_str();
+            let dest_names: Vec<String> = captures.name("dest_names").unwrap().as_str()
+                .split(", ")
+                .map(|d| String::from(d))
+                .collect();
+            match name {
+                "broadcaster" => {
+                    for dest_name in dest_names.iter() {
+                        dest_to_inputs.entry(String::from(dest_name)).and_modify(|inputs| inputs.push(String::from(name))).or_insert(vec![String::from(name)]);
+                    }
+                    let module = BroadcasterModule::new(dest_names);
+                    modules.insert(String::from(name), Box::new(module));
+                },
+                _ => {
+                    let captures = name_re.captures(name).unwrap();
+                    let module_type = captures.name("type").unwrap().as_str();
+                    let name = captures.name("name").unwrap().as_str();
+                    for dest_name in dest_names.iter() {
+                        dest_to_inputs.entry(String::from(dest_name)).and_modify(|inputs| inputs.push(String::from(name))).or_insert(vec![String::from(name)]);
+                    }
+                    match module_type {
+                        "%" => {
+                            let module = FlipFlopModule::new(name, dest_names);
+                            modules.insert(String::from(name), Box::new(module));
+                        },
+                        "&" => {
+                            let module = ConjunctionModule::new(name, dest_names);
+                            modules.insert(String::from(name), Box::new(module));
+                            conjunction_modules.insert(String::from(name));
+                        },
+                        _ => panic!("Unrecognized module type"),
+                    }
+                }
+            };
+        });
+        dest_to_inputs.keys()
+            .for_each(|dest| {
+                modules.entry(String::from(dest)).or_insert(Box::new(EndModule::new(dest)));
+            });
+        dest_to_inputs.into_iter()
+            .filter(|(dest, _inputs)| {
+                conjunction_modules.contains(dest)
+            })
+            .for_each(|(dest, inputs)| {
+                modules.get_mut(&dest).unwrap().as_mut().set_input_modules(inputs);
+            });
+        modules
+    }
+}
+
+pub mod part_one {
+
+    use std::collections::{HashMap, VecDeque};
+
+    use crate::utils::solution::{Answer, Solution};
+    use super::utils::{self, Module, Pulse, PulseInProcess};
 
     #[derive(Default)]
     pub struct Soln {
@@ -213,58 +277,7 @@ pub mod part_one {
 
     impl Soln {
         fn parse_input_file(&mut self, filename: &str) {
-            let line_re = Regex::new(r"(?<name>.+) \-> (?<dest_names>[a-z ,]+)").unwrap();
-            let name_re = Regex::new(r"(?<type>[%&])(?<name>[a-z]+)").unwrap();
-            let mut conjunction_modules = HashSet::new();
-            let mut dest_to_inputs: HashMap<String, Vec<String>> = HashMap::new();
-            io_utils::file_to_lines(filename).for_each(|line| {
-                let captures = line_re.captures(&line).unwrap();
-                let name = captures.name("name").unwrap().as_str();
-                let dest_names: Vec<String> = captures.name("dest_names").unwrap().as_str()
-                    .split(", ")
-                    .map(|d| String::from(d))
-                    .collect();
-                match name {
-                    "broadcaster" => {
-                        for dest_name in dest_names.iter() {
-                            dest_to_inputs.entry(String::from(dest_name)).and_modify(|inputs| inputs.push(String::from(name))).or_insert(vec![String::from(name)]);
-                        }
-                        let module = BroadcasterModule::new(dest_names);
-                        self.modules.insert(String::from(name), Box::new(module));
-                    },
-                    _ => {
-                        let captures = name_re.captures(name).unwrap();
-                        let module_type = captures.name("type").unwrap().as_str();
-                        let name = captures.name("name").unwrap().as_str();
-                        for dest_name in dest_names.iter() {
-                            dest_to_inputs.entry(String::from(dest_name)).and_modify(|inputs| inputs.push(String::from(name))).or_insert(vec![String::from(name)]);
-                        }
-                        match module_type {
-                            "%" => {
-                                let module = FlipFlopModule::new(name, dest_names);
-                                self.modules.insert(String::from(name), Box::new(module));
-                            },
-                            "&" => {
-                                let module = ConjunctionModule::new(name, dest_names);
-                                self.modules.insert(String::from(name), Box::new(module));
-                                conjunction_modules.insert(String::from(name));
-                            },
-                            _ => panic!("Unrecognized module type"),
-                        }
-                    }
-                };
-            });
-            dest_to_inputs.keys()
-                .for_each(|dest| {
-                    self.modules.entry(String::from(dest)).or_insert(Box::new(EndModule::new(dest)));
-                });
-            dest_to_inputs.into_iter()
-                .filter(|(dest, _inputs)| {
-                    conjunction_modules.contains(dest)
-                })
-                .for_each(|(dest, inputs)| {
-                    self.modules.get_mut(&dest).unwrap().as_mut().set_input_modules(inputs);
-                });
+            self.modules = utils::parse_input_file(filename);
         }
 
         fn process_button_push(&mut self) {
@@ -451,191 +464,8 @@ pub mod part_two {
 
     use std::collections::{HashMap, HashSet, VecDeque};
 
-    use regex::Regex;
-
-    use crate::utils::{io_utils, solution::{Answer, Solution}};
-
-    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-    enum Pulse {
-        Low,
-        High,
-    }
-
-    #[derive(Debug, PartialEq, Eq)]
-    struct PulseInProcess {
-        pulse: Pulse,
-        sender: String,
-        recipient: String,
-    }
-
-    trait Module {
-        fn receive(&mut self, pulse: Pulse, sender: &str) -> VecDeque<PulseInProcess>;
-        fn is_original_state(&self) -> bool;
-        fn destination_modules(&self) -> &Vec<String>;
-        fn set_input_modules(&mut self, inputs: Vec<String>);
-    }
-
-    #[derive(Debug, PartialEq, Eq)]
-    struct FlipFlopModule {
-        name: String,
-        on: bool,
-        destination_modules: Vec<String>,
-    }
-
-    impl Module for FlipFlopModule {
-        fn receive(&mut self, pulse: Pulse, _sender: &str) -> VecDeque<PulseInProcess> {
-            match pulse {
-                Pulse::High => VecDeque::new(),
-                Pulse::Low => {
-                    self.on = !self.on;
-                    let p = match self.on {
-                        true => Pulse::High,
-                        false => Pulse::Low,
-                    };
-                    self.destination_modules.iter().map(|dest| {
-                        PulseInProcess {
-                            pulse: p,
-                            sender: self.name.clone(),
-                            recipient: dest.clone(),
-                        }
-                    }).collect()
-                },
-            }
-        }
-
-        fn is_original_state(&self) -> bool {
-            self.on == false
-        }
-
-        fn destination_modules(&self) -> &Vec<String> {
-            &self.destination_modules
-        }
-
-        fn set_input_modules(&mut self, _inputs: Vec<String>) {}
-    }
-
-    impl FlipFlopModule {
-        fn new(name: &str, destination_modules: Vec<String>) -> Self {
-            Self {
-                name: String::from(name),
-                on: false,
-                destination_modules,
-            }
-        }
-    }
-
-    #[derive(Debug, PartialEq, Eq)]
-    struct ConjunctionModule {
-        name: String,
-        most_recent_pulses: HashMap<String, Pulse>,
-        destination_modules: Vec<String>,
-    }
-
-    impl Module for ConjunctionModule {
-        fn receive(&mut self, pulse: Pulse, sender: &str) -> VecDeque<PulseInProcess> {
-            self.most_recent_pulses.insert(String::from(sender), pulse);
-            let p = if self.most_recent_pulses.values().all(|p| *p == Pulse::High) { Pulse::Low } else { Pulse::High };
-            self.destination_modules.iter().map(|dest| {
-                PulseInProcess {
-                    pulse: p,
-                    sender: self.name.clone(),
-                    recipient: String::from(dest),
-                }
-            }).collect()
-        }
-
-        fn is_original_state(&self) -> bool {
-            self.most_recent_pulses.values().all(|p| *p == Pulse::Low)
-        }
-
-        fn destination_modules(&self) -> &Vec<String> {
-            &self.destination_modules
-        }
-
-        fn set_input_modules(&mut self, inputs: Vec<String>) {
-            inputs.into_iter().for_each(|input| {
-                self.most_recent_pulses.insert(input, Pulse::Low);
-            })            
-        }
-    }
-
-    impl ConjunctionModule {
-        fn new(name: &str, destination_modules: Vec<String>) -> Self {
-            Self {
-                name: String::from(name),
-                most_recent_pulses: HashMap::new(),
-                destination_modules,
-            }
-        }
-    }
-
-    #[derive(Debug, PartialEq, Eq)]
-    struct BroadcasterModule {
-        name: String,
-        destination_modules: Vec<String>,
-    }
-
-    impl Module for BroadcasterModule {
-        fn receive(&mut self, pulse: Pulse, _sender: &str) -> VecDeque<PulseInProcess> {
-            self.destination_modules.iter().map(|dest| {
-                PulseInProcess {
-                    pulse,
-                    sender: self.name.clone(),
-                    recipient: String::from(dest),
-                }
-            }).collect()
-        }
-
-        fn is_original_state(&self) -> bool {
-            true
-        }
-
-        fn destination_modules(&self) -> &Vec<String> {
-            &self.destination_modules
-        }
-
-        fn set_input_modules(&mut self, _inputs: Vec<String>) {}
-    }
-
-    impl BroadcasterModule {
-        fn new(destination_modules: Vec<String>) -> Self {
-            Self {
-                name: String::from("broadcaster"),
-                destination_modules,
-            }
-        }
-    }
-
-    #[derive(Debug, PartialEq, Eq)]
-    struct EndModule {
-        name: String,
-        destination_modules: Vec<String>,
-    }
-
-    impl Module for EndModule {
-        fn receive(&mut self, _pulse: Pulse, _sender: &str) -> VecDeque<PulseInProcess> {
-            VecDeque::new()
-        }
-
-        fn is_original_state(&self) -> bool {
-            true
-        }
-
-        fn destination_modules(&self) -> &Vec<String> {
-            &self.destination_modules
-        }
-
-        fn set_input_modules(&mut self, _inputs: Vec<String>) {}
-    }
-
-    impl EndModule {
-        fn new(name: &str) -> Self {
-            Self {
-                name: String::from(name),
-                destination_modules: vec![],
-            }
-        }
-    }
+    use crate::utils::solution::{Answer, Solution};
+    use super::utils::{self, Module, Pulse, PulseInProcess};
 
     #[derive(Debug, PartialEq, Eq)]
     struct Period {
@@ -686,59 +516,9 @@ pub mod part_two {
                 low_pulse_periods: HashMap::new(),
             }
         }
+        
         fn parse_input_file(&mut self, filename: &str) {
-            let line_re = Regex::new(r"(?<name>.+) \-> (?<dest_names>[a-z ,]+)").unwrap();
-            let name_re = Regex::new(r"(?<type>[%&])(?<name>[a-z]+)").unwrap();
-            let mut conjunction_modules = HashSet::new();
-            let mut dest_to_inputs: HashMap<String, Vec<String>> = HashMap::new();
-            io_utils::file_to_lines(filename).for_each(|line| {
-                let captures = line_re.captures(&line).unwrap();
-                let name = captures.name("name").unwrap().as_str();
-                let dest_names: Vec<String> = captures.name("dest_names").unwrap().as_str()
-                    .split(", ")
-                    .map(|d| String::from(d))
-                    .collect();
-                match name {
-                    "broadcaster" => {
-                        for dest_name in dest_names.iter() {
-                            dest_to_inputs.entry(String::from(dest_name)).and_modify(|inputs| inputs.push(String::from(name))).or_insert(vec![String::from(name)]);
-                        }
-                        let module = BroadcasterModule::new(dest_names);
-                        self.modules.insert(String::from(name), Box::new(module));
-                    },
-                    _ => {
-                        let captures = name_re.captures(name).unwrap();
-                        let module_type = captures.name("type").unwrap().as_str();
-                        let name = captures.name("name").unwrap().as_str();
-                        for dest_name in dest_names.iter() {
-                            dest_to_inputs.entry(String::from(dest_name)).and_modify(|inputs| inputs.push(String::from(name))).or_insert(vec![String::from(name)]);
-                        }
-                        match module_type {
-                            "%" => {
-                                let module = FlipFlopModule::new(name, dest_names);
-                                self.modules.insert(String::from(name), Box::new(module));
-                            },
-                            "&" => {
-                                let module = ConjunctionModule::new(name, dest_names);
-                                self.modules.insert(String::from(name), Box::new(module));
-                                conjunction_modules.insert(String::from(name));
-                            },
-                            _ => panic!("Unrecognized module type"),
-                        }
-                    }
-                };
-            });
-            dest_to_inputs.keys()
-                .for_each(|dest| {
-                    self.modules.entry(String::from(dest)).or_insert(Box::new(EndModule::new(dest)));
-                });
-            dest_to_inputs.into_iter()
-                .filter(|(dest, _inputs)| {
-                    conjunction_modules.contains(dest)
-                })
-                .for_each(|(dest, inputs)| {
-                    self.modules.get_mut(&dest).unwrap().as_mut().set_input_modules(inputs);
-                });
+            self.modules = utils::parse_input_file(filename);
         }
 
         fn process_button_push(&mut self) {
