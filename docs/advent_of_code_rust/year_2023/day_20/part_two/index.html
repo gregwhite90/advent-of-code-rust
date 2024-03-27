@@ -1,0 +1,131 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="This requires at least a partial decompilation approach,  as a brute force approach sending button pushes has an  infeasible runtime. There are 4 loops that operate in parallel. Each loop feeds into a conjunction module which feeds directly and solely into another conjunction module. Those 4 conjunction modules are the sole inputs to a conjunction module, which has only one destination module: the one we are trying to track when it receives its first low pulse."><title>advent_of_code_rust::year_2023::day_20::part_two - Rust</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9bb858ba049f1f21.css" id="mainThemeStyle"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="advent_of_code_rust" data-themes="" data-resource-suffix="" data-rustdoc-version="1.72.1 (d5c2e9c34 2023-09-13)" data-channel="1.72.1" data-search-js="search-f6292fe389d70017.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ><script src="../../../../static.files/storage-59fd9b8ccb335783.js"></script><script defer src="../../../../static.files/main-0795b7d26be81095.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../../../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../../../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="logo-container" href="../../../../advent_of_code_rust/index.html"><img class="rust-logo" src="../../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><h2></h2></nav><nav class="sidebar"><a class="logo-container" href="../../../../advent_of_code_rust/index.html"><img class="rust-logo" src="../../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><h2 class="location"><a href="#">Module part_two</a></h2><div class="sidebar-elems"><section><ul class="block"><li><a href="#structs">Structs</a></li></ul></section></div></nav><main><div class="width-limiter"><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="main-heading"><h1>Module <a href="../../../index.html">advent_of_code_rust</a>::<wbr><a href="../../index.html">year_2023</a>::<wbr><a href="../index.html">day_20</a>::<wbr><a class="mod" href="#">part_two</a><button id="copy-path" title="Copy item path to clipboard"><img src="../../../../static.files/clipboard-7571035ce49a181d.svg" width="19" height="18" alt="Copy item path"></button></h1><span class="out-of-band"><a class="srclink" href="../../../../src/advent_of_code_rust/year_2023/day_20.rs.html#463">source</a> · <button id="toggle-all-docs" title="collapse all docs">[<span>&#x2212;</span>]</button></span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>This requires at least a partial decompilation approach, 
+as a brute force approach sending button pushes has an 
+infeasible runtime. There are 4 loops that operate in
+parallel. Each loop feeds into a conjunction module
+which feeds directly and solely into another conjunction
+module. Those 4 conjunction modules are the sole inputs
+to a conjunction module, which has only one destination
+module: the one we are trying to track when it receives
+its first low pulse.</p>
+<p>If the 4 independent loops are periodic (there is a calculable
+number of button pushes, after which the conjunction module
+at the end of the loop sends a low pulse, on repeat), the 
+number of button pushes after which all 4 loops will emit a
+low pulse is the least common multiple of the periods of each
+loop.</p>
+<p>This solution actually calculates the product of the periods,
+and will thus only work if the periods share no common denominator
+other than 1. A more generalized improvement on this would
+calculate the least common multiple instead of the product.</p>
+<p>The diagram looks like this:</p>
+<div class="example-wrap"><pre class="language-mermaid"><code>flowchart TD
+    button --&gt; broadcaster
+    broadcaster --&gt; %kr
+    broadcaster --&gt; %zb
+    broadcaster --&gt; %sm
+    broadcaster --&gt; %xd
+    %kr --&gt; %hh
+    %kr --&gt; &amp;vt
+    %hh --&gt; %dh
+    %hh --&gt; &amp;vt
+    %dh --&gt; %kq
+    %kq --&gt; %lm
+    %lm --&gt; %hn
+    %hn --&gt; %qk
+    %hn --&gt; &amp;vt
+    %qk --&gt; %cb
+    %cb --&gt; %hf
+    %cb --&gt; &amp;vt
+    %hf --&gt; %ch
+    %hf --&gt; &amp;vt
+    %ch --&gt; %kd
+    %ch --&gt; &amp;vt
+    %kd --&gt; %nb
+    %kd --&gt; &amp;vt
+    %nb --&gt; &amp;vt
+    &amp;vt --&gt; %dh
+    &amp;vt --&gt; %kr
+    &amp;vt --&gt; %kq
+    &amp;vt --&gt; %lm
+    &amp;vt --&gt; %qk
+    &amp;vt --&gt; &amp;lz
+    &amp;lz --&gt; &amp;bn
+    &amp;bn --&gt; rx
+    %cf --&gt; %hl
+    %cf --&gt; &amp;qt
+    %hm --&gt; %jp
+    %vr --&gt; &amp;qt
+    %vr --&gt; %sl
+    %gq --&gt; %hm
+    %gq --&gt; &amp;nl
+    %sl --&gt; %jx
+    %sl --&gt; &amp;qt
+    &amp;pl --&gt; &amp;bn
+    %kx --&gt; &amp;dq
+    %fr --&gt; %qf
+    %rh --&gt; %vr
+    &amp;dq --&gt; &amp;mz
+    &amp;dq --&gt; %ml
+    &amp;dq --&gt; %xd
+    &amp;dq --&gt; %fb
+    &amp;dq --&gt; %xs
+    &amp;dq --&gt; %rc
+    &amp;dq --&gt; %rt
+    %bv --&gt; &amp;nl
+    %jv --&gt; %rh
+    %jv --&gt; &amp;qt
+    %nd --&gt; %hp
+    %gj --&gt; %bv
+    %gj --&gt; &amp;nl
+    %lv --&gt; %xs
+    %lv --&gt; &amp;dq
+    %sm --&gt; &amp;qt
+    %sm --&gt; %nd
+    %nt --&gt; %jv
+    %jx --&gt; %cf
+    %hl --&gt; &amp;qt
+    %hl --&gt; %ng
+    &amp;qt --&gt; %sm
+    &amp;qt --&gt; %rh
+    &amp;qt --&gt; %nd
+    &amp;qt --&gt; %jx
+    &amp;qt --&gt; %nt
+    &amp;qt --&gt; &amp;pl
+    %bh --&gt; &amp;nl
+    %bh --&gt; %fr
+    %gx --&gt; %mh
+    %gx --&gt; &amp;dq
+    %hp --&gt; %nt
+    %hp --&gt; &amp;qt
+    %rc --&gt; %lv
+    &amp;mz --&gt; &amp;bn
+    %qf --&gt; %rd
+    %qf --&gt; &amp;nl
+    %sk --&gt; &amp;nl
+    %sk --&gt; %bh
+    %rb --&gt; &amp;nl
+    %rb --&gt; %sk
+    %fb --&gt; %rt
+    %mh --&gt; &amp;dq
+    %mh --&gt; %kx
+    %rt --&gt; %mt
+    %xd --&gt; &amp;dq
+    %xd --&gt; %fb
+    %ml --&gt; %ts
+    %mt --&gt; %rc
+    %mt --&gt; &amp;dq
+    %ts --&gt; %gx
+    %ts --&gt; &amp;dq
+    %rd --&gt; &amp;nl
+    %rd --&gt; %gq
+    %zb --&gt; &amp;nl
+    %zb --&gt; %rb
+    &amp;nl --&gt; %fr
+    &amp;nl --&gt; %zb
+    &amp;nl --&gt; %hm
+    &amp;nl --&gt; &amp;zm
+    &amp;zm --&gt; &amp;bn
+    %ng --&gt; &amp;qt
+    %xs --&gt; %ml
+    %jp --&gt; &amp;nl
+    %jp --&gt; %gj</code></pre></div></div></details><h2 id="structs" class="small-section-header"><a href="#structs">Structs</a></h2><ul class="item-table"><li><div class="item-name"><a class="struct" href="struct.Soln.html" title="struct advent_of_code_rust::year_2023::day_20::part_two::Soln">Soln</a></div></li></ul></section></div></main></body></html>

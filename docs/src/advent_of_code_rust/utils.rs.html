@@ -104,6 +104,10 @@
 <a href="#104" id="104">104</a>
 <a href="#105" id="105">105</a>
 <a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! A collection of utilities used by all or nearly all solutions.
 
 /// Specifies a day for a solution.
@@ -125,6 +129,8 @@
         U32(u32),
         U16(u16),
         I64(i64),
+        U64(u64),
+        Usize(usize),
     }
 
     <span class="kw">impl </span>fmt::Display <span class="kw">for </span>Answer {
@@ -135,7 +141,9 @@
                 Answer::I32(num) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;{}&quot;</span>, num),
                 Answer::U32(num) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;{}&quot;</span>, num),
                 Answer::U16(num) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;{}&quot;</span>, num),
-                Answer::I64(num) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;{}&quot;</span>, num),                
+                Answer::I64(num) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;{}&quot;</span>, num),
+                Answer::U64(num) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;{}&quot;</span>, num),
+                Answer::Usize(num) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;{}&quot;</span>, num),
             }
         }
     }
