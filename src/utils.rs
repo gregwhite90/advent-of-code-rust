@@ -31,9 +31,9 @@ pub mod solution {
                 Answer::I32(num) => write!(f, "{}", num),
                 Answer::U32(num) => write!(f, "{}", num),
                 Answer::U16(num) => write!(f, "{}", num),
-                Answer::I64(num) => write!(f, "{}", num),   
-                Answer::U64(num) => write!(f, "{}", num),             
-                Answer::Usize(num) => write!(f, "{}", num),             
+                Answer::I64(num) => write!(f, "{}", num),
+                Answer::U64(num) => write!(f, "{}", num),
+                Answer::Usize(num) => write!(f, "{}", num),
             }
         }
     }
