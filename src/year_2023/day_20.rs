@@ -460,6 +460,7 @@ pub mod part_one {
 ///     %xs --> %ml
 ///     %jp --> &nl
 ///     %jp --> %gj
+/// ```
 pub mod part_two {
 
     use std::collections::{HashMap, HashSet, VecDeque};
