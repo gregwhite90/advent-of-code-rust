@@ -224,6 +224,50 @@
 <a href="#224" id="224">224</a>
 <a href="#225" id="225">225</a>
 <a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a>
+<a href="#243" id="243">243</a>
+<a href="#244" id="244">244</a>
+<a href="#245" id="245">245</a>
+<a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a>
+<a href="#254" id="254">254</a>
+<a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
+<a href="#257" id="257">257</a>
+<a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
 </pre></div><pre class="rust"><code><span class="attr">#[cfg(test)]
 </span><span class="kw">use </span><span class="kw">crate</span>::utils::Day;
 <span class="attr">#[cfg(test)]
@@ -260,10 +304,6 @@
                 l: String::from(l),
                 r: String::from(r),
             }
-        }
-
-        <span class="kw">pub fn </span>val(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>str {
-            <span class="kw-2">&amp;</span><span class="self">self</span>.val
         }
 
         <span class="kw">pub fn </span>next(<span class="kw-2">&amp;</span><span class="self">self</span>, instruction: <span class="kw-2">&amp;</span>Instruction) -&gt; <span class="kw-2">&amp;</span>str {
@@ -363,29 +403,69 @@
     </span><span class="kw">use </span>std::collections::HashMap;
     <span class="kw">use </span>regex::Regex;
 
-    <span class="kw">use </span><span class="kw">crate</span>::utils::{solution::{Solution, Answer}, io_utils};
+    <span class="kw">use </span><span class="kw">crate</span>::utils::{io_utils, math_utils, solution::{Answer, Solution}};
 
     <span class="kw">use </span><span class="kw">super</span>::utils::{Instruction, Node};
+
+    <span class="attr">#[derive(Debug, PartialEq, Eq)]
+    </span><span class="kw">struct </span>Path {
+        start_node: String,
+        current_node: String,
+        ending_condition_statuses: Vec&lt;EndingConditionStatus&gt;,
+        period: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+    }
+
+    <span class="kw">impl </span>Path {
+        <span class="kw">fn </span>new(node: <span class="kw-2">&amp;</span>str) -&gt; <span class="self">Self </span>{
+            <span class="self">Self </span>{
+                start_node: String::from(node),
+                current_node: String::from(node),
+                ending_condition_statuses: Vec::new(),
+                period: <span class="prelude-val">None</span>,
+            }
+        }
+
+        <span class="kw">fn </span>add_ending_condition_status(<span class="kw-2">&amp;mut </span><span class="self">self</span>, ecs: EndingConditionStatus) {
+            <span class="kw">if </span><span class="self">self</span>.period != <span class="prelude-val">None </span>{ <span class="kw">return</span>; }
+            <span class="kw">if let </span><span class="prelude-val">Some</span>(first_ecs) = <span class="self">self</span>.ending_condition_statuses.get(<span class="number">0</span>) {
+                <span class="kw">if </span>first_ecs.node == ecs.node 
+                    &amp;&amp; first_ecs.instructions_idx == ecs.instructions_idx 
+                    &amp;&amp; ecs.steps &gt; first_ecs.steps 
+                    &amp;&amp; ecs.steps % first_ecs.steps == <span class="number">0 </span>{
+                        <span class="self">self</span>.period = <span class="prelude-val">Some</span>(first_ecs.steps);
+                }
+            }
+            <span class="self">self</span>.ending_condition_statuses.push(ecs);
+        }
+    }
+
+    <span class="attr">#[derive(Debug, PartialEq, Eq)]
+    </span><span class="kw">struct </span>EndingConditionStatus {
+        node: String,
+        instructions_idx: usize,
+        steps: u64,
+    }
 
     <span class="attr">#[derive(Debug, PartialEq, Eq, Default)]
     </span><span class="kw">pub struct </span>Soln {
         instructions: Vec&lt;Instruction&gt;,
+        instructions_idx: usize,
         nodes: HashMap&lt;String, Node&gt;,
-        starting_node_vals: Vec&lt;String&gt;,
+        paths: Vec&lt;Path&gt;,
+        steps: u64,
     }
 
     <span class="kw">impl </span>Solution <span class="kw">for </span>Soln {
         <span class="kw">fn </span>solve(<span class="kw-2">&amp;mut </span><span class="self">self</span>, filename: <span class="kw-2">&amp;</span>str) -&gt; Answer {
             <span class="self">self</span>.parse_input_file(filename);
-            Answer::U32(<span class="self">self</span>.steps_to_reach_node_val(
-                <span class="number">0</span>,
-            ))
+            Answer::U64(<span class="self">self</span>.steps_to_reach_node_val())
         }
     }
 
     <span class="kw">impl </span>Soln {
         <span class="kw">fn </span>parse_input_file(<span class="kw-2">&amp;mut </span><span class="self">self</span>, filename: <span class="kw-2">&amp;</span>str) {
             <span class="kw">let </span>node_re = Regex::new(<span class="string">r&quot;(?&lt;val&gt;[A-Z0-9]{3}) = \((?&lt;l&gt;[A-Z0-9]{3}), (?&lt;r&gt;[A-Z0-9]{3})\)&quot;</span>).unwrap();
+            <span class="kw">let </span>start_node_val_re = Regex::new(<span class="string">r&quot;[A-Z0-9]{2}A&quot;</span>).unwrap();
             <span class="kw">let </span><span class="kw-2">mut </span>lines = io_utils::file_to_lines(filename);
             <span class="self">self</span>.instructions = lines.next().unwrap()
                 .chars()
@@ -399,36 +479,44 @@
                 <span class="kw">let </span>r = captures.name(<span class="string">&quot;r&quot;</span>).unwrap().as_str();
                 <span class="kw">let </span>node = Node::new(val, l, r);
                 <span class="self">self</span>.nodes.insert(String::from(val), node);
+                <span class="kw">if </span>start_node_val_re.is_match(<span class="kw-2">&amp;</span>val) {
+                    <span class="self">self</span>.paths.push(Path::new(val));
+                }
             });
         }
 
-        <span class="kw">fn </span>steps_to_reach_node_val(
-            <span class="kw-2">&amp;</span><span class="self">self</span>,
-            start_instructions_idx: usize,
-        ) -&gt; u32 {
-            <span class="kw">let </span><span class="kw-2">mut </span>instruction_idx = start_instructions_idx;
-            <span class="kw">let </span><span class="kw-2">mut </span>steps: u32 = <span class="number">0</span>;
-            <span class="kw">let </span>start_node_val_re = Regex::new(<span class="string">r&quot;[A-Z0-9]{2}A&quot;</span>).unwrap();
-            <span class="kw">let </span>end_node_val_re = Regex::new(<span class="string">r&quot;[A-Z0-9]{2}Z&quot;</span>).unwrap();
-            <span class="kw">let </span><span class="kw-2">mut </span>paths: Vec&lt;String&gt; = <span class="self">self</span>.nodes.keys()
-                .filter(|val| {
-                    start_node_val_re.is_match(<span class="kw-2">&amp;</span>val)
-                })
-                .map(|val| val.clone())
-                .collect();
-            <span class="kw">while </span>paths.iter().any(|val| {
-                !end_node_val_re.is_match(<span class="self">self</span>.nodes.get(val).unwrap().val())
-            }) {
-                paths = paths.iter().map(|cur_node_val| {
-                    <span class="kw">let </span>cur_node = <span class="self">self</span>.nodes.get(cur_node_val).unwrap();
-                    String::from(
-                        cur_node.next(<span class="kw-2">&amp;</span><span class="self">self</span>.instructions[instruction_idx])
-                    )
-                }).collect();
-                instruction_idx = (instruction_idx + <span class="number">1</span>) % <span class="self">self</span>.instructions.len();
-                steps += <span class="number">1</span>;
+        <span class="kw">fn </span>steps_to_reach_node_val(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; u64 {
+            <span class="kw">while </span><span class="self">self</span>.paths.iter().any(|path| path.period == <span class="prelude-val">None</span>) {
+                <span class="self">self</span>.steps += <span class="number">1</span>;
+                <span class="self">self</span>.advance_paths();
+                <span class="self">self</span>.instructions_idx = (<span class="self">self</span>.instructions_idx + <span class="number">1</span>) % <span class="self">self</span>.instructions.len();
             }
-            steps
+            <span class="self">self</span>.calculate_shared_period()
+        }
+
+        <span class="kw">fn </span>advance_paths(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
+            <span class="comment">// TODO: could calculate only once
+            </span><span class="kw">let </span>end_node_val_re = Regex::new(<span class="string">r&quot;[A-Z0-9]{2}Z&quot;</span>).unwrap();
+            <span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..<span class="self">self</span>.paths.len() {
+                <span class="kw">let </span>path = <span class="self">self</span>.paths.get_mut(i).unwrap();
+                <span class="kw">let </span>cur_node = <span class="self">self</span>.nodes.get(<span class="kw-2">&amp;</span>path.current_node).unwrap();
+                <span class="kw">let </span>next_node = cur_node.next(<span class="kw-2">&amp;</span><span class="self">self</span>.instructions[<span class="self">self</span>.instructions_idx]);
+                path.current_node = String::from(next_node);
+                <span class="kw">if </span>end_node_val_re.is_match(next_node) {
+                    <span class="kw">let </span>ecs = EndingConditionStatus {
+                        node: String::from(next_node),
+                        instructions_idx: <span class="self">self</span>.instructions_idx,
+                        steps: <span class="self">self</span>.steps,
+                    };
+                    path.add_ending_condition_status(ecs);
+                }
+            }
+        }
+
+        <span class="kw">fn </span>calculate_shared_period(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u64 {
+            <span class="kw">let </span>periods = <span class="self">self</span>.paths.iter()
+                .map(|path| path.period.expect(<span class="string">&quot;Should only be called when all paths have a calculated period.&quot;</span>));
+            math_utils::least_common_multiple(periods)
         }
     }
 
@@ -439,7 +527,7 @@
         <span class="kw">use super</span>::<span class="kw-2">*</span>;
         <span class="kw">use </span><span class="kw">super</span>::<span class="kw">super</span>::DAY;
 
-        <span class="attr">#[test_case(<span class="number">2</span>, Answer::U32(<span class="number">6</span>); <span class="string">&quot;example_2&quot;</span>)]
+        <span class="attr">#[test_case(<span class="number">2</span>, Answer::U64(<span class="number">6</span>); <span class="string">&quot;example_2&quot;</span>)]
         </span><span class="kw">fn </span>examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 <span class="kw-2">&amp;mut </span>Soln::default(),

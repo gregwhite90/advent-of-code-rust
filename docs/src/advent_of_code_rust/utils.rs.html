@@ -108,6 +108,36 @@
 <a href="#108" id="108">108</a>
 <a href="#109" id="109">109</a>
 <a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! A collection of utilities used by all or nearly all solutions.
 
 /// Specifies a day for a solution.
@@ -197,6 +227,36 @@
     <span class="kw">where </span>P: AsRef&lt;Path&gt;, {
         <span class="kw">let </span>file = File::open(filename)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(io::BufReader::new(file).lines())
+    }
+}
+
+<span class="kw">pub mod </span>math_utils {
+    <span class="kw">use </span>std::{cmp, collections::HashMap};
+
+    <span class="kw">use </span>prime_factorization::Factorization;
+
+    <span class="comment">// TODO: make it more generic than u64?
+    </span><span class="kw">pub fn </span>least_common_multiple(inputs: <span class="kw">impl </span>Iterator&lt;Item = u64&gt; + Clone) -&gt; u64 {
+        <span class="kw">let </span>input_factors_count = inputs.clone()
+            .map(|input| {
+                <span class="kw">let </span>factors = Factorization::run(input).factors;
+                <span class="kw">let </span><span class="kw-2">mut </span>factors_count: HashMap&lt;u64, u64&gt; = HashMap::new();
+                <span class="kw">for </span>factor <span class="kw">in </span>factors {
+                    factors_count.entry(factor).and_modify(|count| <span class="kw-2">*</span>count += <span class="number">1</span>).or_insert(<span class="number">1</span>);
+                }
+                factors_count
+            });
+        <span class="kw">let </span>common_divisors = input_factors_count.reduce(|common_divisors, factors_count| {
+            <span class="kw">let </span><span class="kw-2">mut </span>cd = HashMap::new();
+            <span class="kw">for </span>factor <span class="kw">in </span>common_divisors.keys() {
+                <span class="kw">if </span>factors_count.contains_key(factor) {
+                    cd.insert(<span class="kw-2">*</span>factor, <span class="kw-2">*</span>cmp::min(common_divisors.get(factor).unwrap(), factors_count.get(factor).unwrap()));
+                }
+            }
+            cd
+        }).unwrap();
+        <span class="kw">let </span>greatest_common_divisor: u64 = common_divisors.iter().fold(<span class="number">1</span>, |acc, (divisor, count)| acc * divisor.pow((<span class="kw-2">*</span>count).try_into().unwrap()));
+        inputs.map(|period| period / greatest_common_divisor).product::&lt;u64&gt;() * greatest_common_divisor
     }
 }
 

@@ -571,13 +571,6 @@
 <a href="#571" id="571">571</a>
 <a href="#572" id="572">572</a>
 <a href="#573" id="573">573</a>
-<a href="#574" id="574">574</a>
-<a href="#575" id="575">575</a>
-<a href="#576" id="576">576</a>
-<a href="#577" id="577">577</a>
-<a href="#578" id="578">578</a>
-<a href="#579" id="579">579</a>
-<a href="#580" id="580">580</a>
 </pre></div><pre class="rust"><code><span class="attr">#[cfg(test)]
 </span><span class="kw">use </span><span class="kw">crate</span>::utils::Day;
 <span class="attr">#[cfg(test)]
@@ -921,11 +914,6 @@
 /// low pulse is the least common multiple of the periods of each
 /// loop.
 /// 
-/// This solution actually calculates the product of the periods,
-/// and will thus only work if the periods share no common denominator
-/// other than 1. A more generalized improvement on this would
-/// calculate the least common multiple instead of the product.
-/// 
 /// The diagram looks like this:
 /// 
 /// ```mermaid
@@ -1045,7 +1033,7 @@
 
     <span class="kw">use </span>std::collections::{HashMap, HashSet, VecDeque};
 
-    <span class="kw">use </span><span class="kw">crate</span>::utils::solution::{Answer, Solution};
+    <span class="kw">use </span><span class="kw">crate</span>::utils::{math_utils, solution::{Answer, Solution}};
     <span class="kw">use </span><span class="kw">super</span>::utils::{<span class="self">self</span>, Module, Pulse, PulseInProcess};
 
     <span class="attr">#[derive(Debug, PartialEq, Eq)]
@@ -1081,9 +1069,7 @@
             <span class="kw">while </span><span class="self">self</span>.low_pulse_periods.len() &lt; <span class="self">self</span>.critical_modules.len() || <span class="self">self</span>.low_pulse_periods.values().any(|period| !period.confirmed) {
                 <span class="self">self</span>.process_button_push();
             }
-            <span class="comment">// TODO: this should actually calculate the least common multiple, not the product.
-            // This will be incorrect if the periods share a greatest common denominator that is not 1.
-            </span>Answer::U64(<span class="self">self</span>.low_pulse_periods.values().map(|period| period.period).product())
+            Answer::U64(math_utils::least_common_multiple(<span class="self">self</span>.low_pulse_periods.values().clone().map(|period| period.period)))
         }
     }
 
