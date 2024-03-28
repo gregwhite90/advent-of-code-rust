@@ -130,11 +130,10 @@ pub mod part_one {
 pub mod part_two {
     // This solution would work (it works on the small example case), but it is very slow.
     // It needs to be short-circuited by finding a repeat loop.
-    use std::{cmp, collections::HashMap};
+    use std::collections::HashMap;
     use regex::Regex;
-    use prime_factorization::Factorization;
 
-    use crate::utils::{solution::{Solution, Answer}, io_utils};
+    use crate::utils::{io_utils, math_utils, solution::{Answer, Solution}};
 
     use super::utils::{Instruction, Node};
 
@@ -244,31 +243,10 @@ pub mod part_two {
             }
         }
 
-        /// Calculates the least common multiple of the periods of all the paths.
         fn calculate_shared_period(&self) -> u64 {
             let periods = self.paths.iter()
                 .map(|path| path.period.expect("Should only be called when all paths have a calculated period."));
-            let period_factors_count = periods.clone()
-                .map(|period| {
-                    let factors = Factorization::run(period).factors;
-                    let mut factors_count: HashMap<u64, u64> = HashMap::new();
-                    for factor in factors {
-                        factors_count.entry(factor).and_modify(|count| *count += 1).or_insert(1);
-                    }
-                    factors_count
-                });
-            let common_divisors = period_factors_count.reduce(|common_divisors, factors_count| {
-                let mut cd = HashMap::new();
-                for factor in common_divisors.keys() {
-                    if factors_count.contains_key(factor) {
-                        cd.insert(*factor, *cmp::min(common_divisors.get(factor).unwrap(), factors_count.get(factor).unwrap()));
-                    }
-                }
-                cd
-            }).unwrap();
-            // TODO: share functionality.
-            let greatest_common_divisor: u64 = common_divisors.iter().fold(1, |acc, (divisor, count)| acc * divisor.pow((*count).try_into().unwrap()));
-            periods.map(|period| period / greatest_common_divisor).product::<u64>() * greatest_common_divisor
+            math_utils::least_common_multiple(periods)
         }
     }
 

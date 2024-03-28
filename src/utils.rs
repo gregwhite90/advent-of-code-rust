@@ -90,6 +90,36 @@ pub mod io_utils {
     }
 }
 
+pub mod math_utils {
+    use std::{cmp, collections::HashMap};
+
+    use prime_factorization::Factorization;
+
+    // TODO: make it more generic than u64?
+    pub fn least_common_multiple(inputs: impl Iterator<Item = u64> + Clone) -> u64 {
+        let input_factors_count = inputs.clone()
+            .map(|input| {
+                let factors = Factorization::run(input).factors;
+                let mut factors_count: HashMap<u64, u64> = HashMap::new();
+                for factor in factors {
+                    factors_count.entry(factor).and_modify(|count| *count += 1).or_insert(1);
+                }
+                factors_count
+            });
+        let common_divisors = input_factors_count.reduce(|common_divisors, factors_count| {
+            let mut cd = HashMap::new();
+            for factor in common_divisors.keys() {
+                if factors_count.contains_key(factor) {
+                    cd.insert(*factor, *cmp::min(common_divisors.get(factor).unwrap(), factors_count.get(factor).unwrap()));
+                }
+            }
+            cd
+        }).unwrap();
+        let greatest_common_divisor: u64 = common_divisors.iter().fold(1, |acc, (divisor, count)| acc * divisor.pow((*count).try_into().unwrap()));
+        inputs.map(|period| period / greatest_common_divisor).product::<u64>() * greatest_common_divisor
+    }
+}
+
 #[cfg(test)]
 pub mod test_utils {
     //! A collection of testing-oriented utilities.
