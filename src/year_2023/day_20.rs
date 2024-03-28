@@ -341,11 +341,6 @@ pub mod part_one {
 /// low pulse is the least common multiple of the periods of each
 /// loop.
 /// 
-/// This solution actually calculates the product of the periods,
-/// and will thus only work if the periods share no common denominator
-/// other than 1. A more generalized improvement on this would
-/// calculate the least common multiple instead of the product.
-/// 
 /// The diagram looks like this:
 /// 
 /// ```mermaid
@@ -465,7 +460,7 @@ pub mod part_two {
 
     use std::collections::{HashMap, HashSet, VecDeque};
 
-    use crate::utils::solution::{Answer, Solution};
+    use crate::utils::{math_utils, solution::{Answer, Solution}};
     use super::utils::{self, Module, Pulse, PulseInProcess};
 
     #[derive(Debug, PartialEq, Eq)]
@@ -501,9 +496,7 @@ pub mod part_two {
             while self.low_pulse_periods.len() < self.critical_modules.len() || self.low_pulse_periods.values().any(|period| !period.confirmed) {
                 self.process_button_push();
             }
-            // TODO: this should actually calculate the least common multiple, not the product.
-            // This will be incorrect if the periods share a greatest common denominator that is not 1.
-            Answer::U64(self.low_pulse_periods.values().map(|period| period.period).product())
+            Answer::U64(math_utils::least_common_multiple(self.low_pulse_periods.values().clone().map(|period| period.period)))
         }
     }
 
