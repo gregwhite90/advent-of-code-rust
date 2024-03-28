@@ -303,6 +303,69 @@ fn get_solns(day: &Day) -> DailySolutions {
                 part_two: Some(Box::new(year_2023::day_11::part_two::Soln::default())),
             },
         ),
+        (
+            Day { year: 2023, day: 12 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2023::day_12::part_one::Soln::default())),
+                part_two: Some(Box::new(year_2023::day_12::part_two::Soln::default())),
+            },
+        ),
+        (
+            Day { year: 2023, day: 13 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2023::day_13::part_one::Soln::default())),
+                part_two: Some(Box::new(year_2023::day_13::part_two::Soln::default())),
+            },
+        ),
+        (
+            Day { year: 2023, day: 14 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2023::day_14::part_one::Soln::default())),
+                part_two: None,
+            },
+        ),
+        (
+            Day { year: 2023, day: 15 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2023::day_15::part_one::Soln::default())),
+                part_two: Some(Box::new(year_2023::day_15::part_two::Soln::default())),
+            },
+        ),
+        (
+            Day { year: 2023, day: 16 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2023::day_16::part_one::Soln::default())),
+                part_two: Some(Box::new(year_2023::day_16::part_two::Soln::default())),
+            },
+        ),
+        (
+            Day { year: 2023, day: 17 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2023::day_17::part_one::Soln::default())),
+                part_two: Some(Box::new(year_2023::day_17::part_two::Soln::default())),
+            },
+        ),
+        (
+            Day { year: 2023, day: 18 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2023::day_18::part_one::Soln::default())),
+                part_two: None,
+            },
+        ),
+        (
+            Day { year: 2023, day: 19 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2023::day_19::part_one::Soln::default())),
+                part_two: Some(Box::new(year_2023::day_19::part_two::Soln::default())),
+            },
+        ),
+        (
+            Day { year: 2023, day: 20 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2023::day_20::part_one::Soln::default())),
+                part_two: Some(Box::new(year_2023::day_20::part_two::Soln::default())),
+            },
+        ),
     ]);
     let daily_solns = match daily_solutions.remove(day) {
         Some(daily_solns) => daily_solns,
