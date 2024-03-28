@@ -4,7 +4,7 @@ use crate::utils::Day;
 const DAY: Day = crate::utils::Day { year: 2023, day: 5 };
 
 mod utils {
-    #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+    #[derive(Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Clone, Copy)]
     pub enum Category {
         Seed,
         Soil,
@@ -32,28 +32,258 @@ mod utils {
         }
     }
 
+    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+    pub enum PointInRangeComparison {
+        Below,
+        Within(u64), // with the offset into the range
+        Above,
+    }
+
+    #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+    pub struct Range {
+        pub start: u64,
+        pub len: u64,
+    }
+
+    impl Range {
+        pub fn point_comparison(&self, point: u64) -> PointInRangeComparison {
+            if point < self.start {
+                PointInRangeComparison::Below
+            } else if point >= self.start + self.len {
+                PointInRangeComparison::Above
+            } else {
+                PointInRangeComparison::Within(point - self.start)
+            }
+        }
+    }
+
+    #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+    pub struct CategoryRange {
+        pub category: Category,
+        pub range: Range,
+    }
+
+
     #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
     pub struct MapEntry {
-        dest_range_start: u64,
-        source_range_start: u64,
-        range_len: u64,
+        source: Range,
+        dest: Range,
     }
 
     impl MapEntry {
         pub fn new(dest_range_start: u64, source_range_start: u64, range_len: u64) -> Self {
             Self {
-                dest_range_start,
-                source_range_start,
-                range_len,
+                dest: Range { start: dest_range_start, len: range_len },
+                source: Range { start: source_range_start, len: range_len },
             }
         }
 
         pub fn dest(&self, source: u64) -> Option<u64> {
-            if source >= self.source_range_start && source < self.source_range_start + self.range_len {
-                Some(self.dest_range_start + source - self.source_range_start)
+            if source >= self.source.start && source < self.source.start + self.source.len {
+                Some(self.dest.start + source - self.source.start)
             } else {
                 None
             }
+        }
+
+        pub fn overlap(&self, source: CategoryRange, dest_category: Category) -> Vec<CategoryRange> {
+            let start_in_range = self.source.point_comparison(source.range.start);
+            let end_in_range = self.source.point_comparison(source.range.start + source.range.len - 1);
+            match (start_in_range, end_in_range) {
+                (PointInRangeComparison::Above, _) | (_, PointInRangeComparison::Below) => vec![source],
+                (PointInRangeComparison::Below, PointInRangeComparison::Within(offset)) => {
+                    // upper part of source overlaps this map entry
+                    vec![
+                        CategoryRange {
+                            category: source.category,
+                            range: Range {
+                                start: source.range.start,
+                                len: source.range.len - (offset + 1),
+                            }
+                        },
+                        CategoryRange {
+                            category: dest_category,
+                            range: Range {
+                                start: self.dest.start,
+                                len: offset + 1,
+                            }
+                        },
+                    ]
+                },
+                (PointInRangeComparison::Below, PointInRangeComparison::Above) => {
+                    // source fully contains this map entry. Need to split into 3
+                    vec![
+                        CategoryRange {
+                            category: source.category,
+                            range: Range {
+                                start: source.range.start,
+                                len: self.source.start - source.range.start,
+                            }
+                        },
+                        CategoryRange {
+                            category: dest_category,
+                            range: Range {
+                                start: self.dest.start,
+                                len: self.dest.len,
+                            }
+                        },
+                        CategoryRange {
+                            category: source.category,
+                            range: Range {
+                                start: self.source.start + self.source.len,
+                                len: source.range.start + source.range.len - (self.source.start + self.source.len),
+                            }
+                        },
+                    ]
+                },
+                (PointInRangeComparison::Within(_start_offset), PointInRangeComparison::Within(_end_offset)) => {
+                    // this map entry fully contains source. just need the 1 going into dest
+                    vec![
+                        CategoryRange {
+                            category: dest_category,
+                            range: Range {
+                                start: self.dest.start + source.range.start - self.source.start,
+                                len: source.range.len,
+                            }
+                        }
+                    ]
+                },
+                (PointInRangeComparison::Within(offset), PointInRangeComparison::Above) => {
+                    // lower part of source overlaps this map entry
+                    vec![
+                        CategoryRange {
+                            category: dest_category,
+                            range: Range {
+                                start: self.dest.start + offset,
+                                len: self.dest.len - offset,
+                            }
+                        },
+                        CategoryRange {
+                            category: source.category,
+                            range: Range {
+                                start: source.range.start + self.dest.len - offset,
+                                len: source.range.len - (self.dest.len - offset),
+                            }
+                        },
+                    ]
+                },
+            }
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+
+        use super::*;
+
+        const SOURCE_CATEGORY: Category = Category::Seed;
+        const DEST_CATEGORY: Category = Category::Soil;
+
+        #[test_case(
+            Range{start: 11, len: 2}, 
+            vec![
+                CategoryRange {
+                    category: DEST_CATEGORY,
+                    range: Range {
+                        start: 21,
+                        len: 2,
+                    },
+                },
+            ]; "map_entry_contains_source")]
+        #[test_case(
+            Range{start: 9, len: 7}, 
+            vec![
+                CategoryRange {
+                    category: SOURCE_CATEGORY,
+                    range: Range {
+                        start: 9,
+                        len: 1,
+                    },
+                },
+                CategoryRange {
+                    category: DEST_CATEGORY,
+                    range: Range {
+                        start: 20,
+                        len: 5,
+                    },
+                },
+                CategoryRange {
+                    category: SOURCE_CATEGORY,
+                    range: Range {
+                        start: 15,
+                        len: 1,
+                    },
+                },
+            ]; "source_contains_map_entry")]
+        #[test_case(
+            Range{start: 15, len: 7}, 
+            vec![
+                CategoryRange {
+                    category: SOURCE_CATEGORY,
+                    range: Range {
+                        start: 15,
+                        len: 7,
+                    },
+                },
+            ]; "source_above_map_entry")]
+        #[test_case(
+            Range{start: 7, len: 3}, 
+            vec![
+                CategoryRange {
+                    category: SOURCE_CATEGORY,
+                    range: Range {
+                        start: 7,
+                        len: 3,
+                    },
+                },
+            ]; "source_below_map_entry")]
+        #[test_case(
+            Range{start: 12, len: 5}, 
+            vec![
+                CategoryRange {
+                    category: DEST_CATEGORY,
+                    range: Range {
+                        start: 22,
+                        len: 3,
+                    },
+                },
+                CategoryRange {
+                    category: SOURCE_CATEGORY,
+                    range: Range {
+                        start: 15,
+                        len: 2,
+                    },
+                },
+            ]; "lower_part_of_source_overlaps")]
+        #[test_case(
+            Range{start: 8, len: 5}, 
+            vec![
+                CategoryRange {
+                    category: SOURCE_CATEGORY,
+                    range: Range {
+                        start: 8,
+                        len: 2,
+                    },
+                },
+                CategoryRange {
+                    category: DEST_CATEGORY,
+                    range: Range {
+                        start: 20,
+                        len: 3,
+                    },
+                },
+            ]; "upper_part_of_source_overlaps")]
+        fn map_entry_overlap_works(input_range: Range, expected: Vec<CategoryRange>) {
+            let map_entry = MapEntry::new(20, 10, 5);
+            let category_range = CategoryRange {
+                category: SOURCE_CATEGORY,
+                range: input_range,
+            };
+            assert_eq!(
+                map_entry.overlap(category_range, DEST_CATEGORY),
+                expected,
+            )
         }
     }
 }
@@ -205,19 +435,13 @@ pub mod part_one {
 
 /// This implementation assumes that map entries do not overlap.
 pub mod part_two {
-    use std::collections::{HashMap, BTreeSet};
+    use std::{cmp::Reverse, collections::{BTreeSet, BinaryHeap, HashMap, VecDeque}};
     use itertools::Itertools;
     use regex::Regex;
 
     use crate::utils::{solution::{Solution, Answer}, io_utils};
 
-    use super::utils::{Category, MapEntry};
-
-    #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
-    struct Seed {
-        start: u64,
-        range_len: u64,
-    }
+    use super::utils::{Category, MapEntry, CategoryRange, Range};
 
     // TODO: pull into utils?
     #[derive(Debug, PartialEq, Eq, Clone)]
@@ -240,27 +464,42 @@ pub mod part_two {
             self.source_category
         }
 
-        fn dest_category(&self) -> Category {
-            self.dest_category
-        }
-
         fn add_map_entry(&mut self, map_entry: MapEntry) {
             self.map_entries.insert(map_entry);
         }
 
-        fn dest(&self, source: u64) -> u64 {
-            for map_entry in &self.map_entries {
-                if let Some(dst) = map_entry.dest(source) {
-                    return dst;
+        fn all_dest_ranges(&self, range: CategoryRange) -> BinaryHeap<Reverse<CategoryRange>> {
+            let mut processed = BinaryHeap::new();
+            let mut to_process = VecDeque::from([range]);
+            for map_entry in self.map_entries.iter() {
+                for _ in 0..to_process.len() {
+                    let category_range = to_process.pop_front().unwrap();
+                    let overlaps = map_entry.overlap(category_range, self.dest_category);
+                    overlaps.into_iter().for_each(|cr| {
+                        if cr.category == self.dest_category {
+                            processed.push(Reverse(cr));
+                        } else {
+                            to_process.push_back(cr);
+                        }
+                    })
                 }
             }
-            source
+            for cr in to_process.into_iter() {
+                processed.push(Reverse(CategoryRange {
+                    category: self.dest_category,
+                    range: cr.range,
+                }));    
+            }
+            processed
         }
     }
 
-    #[derive(Debug, PartialEq, Eq, Default)]
+    #[derive(Debug, Default)]
     pub struct Soln {
-        seeds: BTreeSet<Seed>,
+        /// Uses `Reverse` because both default implementation of `Ord` for 
+        /// both `Category` and `Range` works the opposite way we want it to
+        /// because `BinaryHeap` defaults to a max-heap.
+        ranges: BinaryHeap<Reverse<CategoryRange>>,
         maps: HashMap<Category, Map>, // maps dest category to its map
     }
 
@@ -272,7 +511,6 @@ pub mod part_two {
     }
 
     impl Soln {
-        // TODO: share functionality
         fn parse_input_file(&mut self, filename: &str) {
             let seeds_re = Regex::new(r"seeds: (?<seeds>[ \d]+)").unwrap();
             let map_start_re = Regex::new(r"(?<source>[a-z]+)\-to\-(?<dest>[a-z]+) map:").unwrap();
@@ -281,7 +519,7 @@ pub mod part_two {
             io_utils::file_to_lines(filename)
                 .for_each(|line| {
                     if seeds_re.is_match(&line) {
-                        self.seeds = seeds_re.captures(&line)
+                        seeds_re.captures(&line)
                             .unwrap()
                             .name("seeds")
                             .unwrap()
@@ -290,13 +528,15 @@ pub mod part_two {
                             .map(|part| part.parse::<u64>().unwrap())
                             .chunks(2)
                             .into_iter()
-                            .map(|mut chunk| {
-                                Seed { 
-                                    start: chunk.next().unwrap(),
-                                    range_len: chunk.next().unwrap(),
-                                }
-                            })
-                            .collect();
+                            .for_each(|mut chunk| {
+                                self.ranges.push(Reverse(CategoryRange {
+                                    category: Category::Seed, 
+                                    range: Range {
+                                        start: chunk.next().unwrap(),
+                                        len: chunk.next().unwrap(),
+                                    },
+                                }));
+                            });
                     } else if map_start_re.is_match(&line) {
                         let captures = map_start_re.captures(&line).unwrap();
                         let source_category = Category::from_str(
@@ -309,7 +549,7 @@ pub mod part_two {
                     } else if line.len() == 0 {
                         if cur_map != None {
                             let c_m = cur_map.clone().unwrap();
-                            self.maps.insert(c_m.dest_category(), c_m);
+                            self.maps.insert(c_m.source_category(), c_m);
                             cur_map = None;
                         }
                     } else {
@@ -327,36 +567,21 @@ pub mod part_two {
                     }
                 });
             let c_m = cur_map.unwrap();
-            self.maps.insert(c_m.dest_category(), c_m);
+            self.maps.insert(c_m.source_category(), c_m);
         }
 
-        fn seed_to_location(&self, seed: u64) -> u64 {
-            // Check that there's no way to get off the maps?
-            // Iterate backward from minimum mapped location number
-            // We know the range, and the source starting point.
-            // Go back to the previous map, find the maximum dest starting point
-            // that is less than or equal to the source starting point. Keep going back.
-            // If not that one, go to the next one up, until the range is exhausted.
-            // 
-            // Might have an offset into the previous map range that we need to incorporate.
-            // 
-            // Once get all the way back to seeds, 
-
-            let mut next_source_category = Category::Seed;
-            let mut next_source = seed;
-            while next_source_category != Category::Location {
-                let map = self.maps.get(&next_source_category).unwrap();
-                next_source = map.dest(next_source);
-                next_source_category = map.dest_category;
+        fn minimum_location_number(&mut self) -> u64 {
+            loop {
+                let Reverse(range) = self.ranges.pop().expect("Should be a range left to analyze");
+                if range.category == Category::Location { return range.range.start; }
+                // generate all ranges in the dest category and push them onto the binary heap.
+                self.ranges.append(&mut self.all_dest_ranges(range));
             }
-            next_source
         }
 
-        fn minimum_location_number(&self) -> u64 {
-            self.seeds.iter()
-                .map(|seed| self.seed_to_location(seed.start)) // TODO: fix
-                .min()
-                .unwrap()
+        fn all_dest_ranges(&self, range: CategoryRange) -> BinaryHeap<Reverse<CategoryRange>> {
+            let map = self.maps.get(&range.category).unwrap();
+            map.all_dest_ranges(range)
         }
     }
 
