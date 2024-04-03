@@ -3,20 +3,16 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2023, day: 23 };
 
-pub mod part_one {
+mod utils {
 
-    use std::collections::{HashMap, HashSet, VecDeque};
-
-    use crate::utils::{io_utils, solution::{Answer, Solution}};
-
-    #[derive(Debug, Default, PartialEq, Eq, Hash, Clone, Copy)]
-    struct Point {
-        row: usize,
-        col: usize,
+    #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+    pub struct Point {
+        pub row: usize,
+        pub col: usize,
     }
 
     impl Point {
-        fn next_position(&self, direction: Direction) -> Point {
+        pub fn next_position(&self, direction: Direction) -> Point {
             match direction {
                 Direction::North => Point { row: self.row - 1, col: self.col },
                 Direction::East => Point { row: self.row, col: self.col + 1},
@@ -26,23 +22,34 @@ pub mod part_one {
         }
     }
 
-    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-    enum Direction {
+    #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+    pub enum Direction {
         North,
         East,
         South,
         West,
     }
 
+    impl Direction {
+        pub fn opposite(&self) -> Direction {
+            match self {
+                Direction::North => Direction::South,
+                Direction::East => Direction::West,
+                Direction::South => Direction::North,
+                Direction::West => Direction::East,
+            }
+        }
+    }
+
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-    enum Tile {
+    pub enum Tile {
         Forest,
         Path,
         Slope(Direction),
     }
 
     impl Tile {
-        fn from_char(input: char) -> Self {
+        pub fn from_char(input: char) -> Self {
             match input {
                 '#' => Self::Forest,
                 '.' => Self::Path,
@@ -54,7 +61,17 @@ pub mod part_one {
             }
         }
     }
+}
 
+pub mod part_one {
+
+    use std::{cmp, collections::{HashMap, HashSet, VecDeque}};
+
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
+
+    use super::utils::{Point, Direction, Tile};
+
+    // TODO: could figure out how to reuse the same `Path`
     #[derive(Debug, PartialEq, Eq)]
     struct Path {
         position: Point,
@@ -101,218 +118,58 @@ pub mod part_one {
                 position: self.start,
                 visited: HashSet::from([self.start]),
             }]);
-            let mut completed_path_lengths: HashSet<usize> = HashSet::new();
+            let mut longest_path: usize = 0;
             while !paths.is_empty() {
                 let path = paths.pop_front().unwrap();
                 if path.position == self.end { 
-                    completed_path_lengths.insert(path.visited.len() - 1); // -1 for the start point which should not be counted in the path len 
+                    longest_path = cmp::max(path.visited.len() - 1, longest_path); // -1 for the start point which should not be counted in the path len 
                     continue;
                 }
                 paths.append(&mut self.valid_paths(path));
             }
-            completed_path_lengths.into_iter().max().expect("Should be at least one completed path.")
+            longest_path
         }
 
         fn valid_paths(&self, path: Path) -> VecDeque<Path> {
             let mut valid_paths = VecDeque::new();
-            if path.position.row != 0 {
-                // check north
-                let next_position = path.position.next_position(Direction::North);
-                match self.map.get(&next_position).unwrap() {
-                    Tile::Forest => {},
-                    Tile::Path => {
-                        if !path.visited.contains(&next_position) {
-                            let mut new_visited = path.visited.clone();
-                            new_visited.insert(next_position);
-                            valid_paths.push_back(Path { position: next_position, visited: new_visited});
-                        }
-                    },
-                    Tile::Slope(Direction::North) => {
-                        // TODO: this should really be a loop. and a function.
-                        if !path.visited.contains(&next_position) {
-                            let second_position = next_position.next_position(Direction::North);
-                            if !path.visited.contains(&second_position) {
-                                let mut new_visited = path.visited.clone();
-                                new_visited.insert(next_position);
-                                new_visited.insert(second_position);
-                                valid_paths.push_back(Path { position: second_position, visited: new_visited});
-                            }
-                        }
-                    },
-                    Tile::Slope(Direction::East) => {
-                        if !path.visited.contains(&next_position) {
-                            let second_position = next_position.next_position(Direction::East);
-                            if !path.visited.contains(&second_position) {
-                                let mut new_visited = path.visited.clone();
-                                new_visited.insert(next_position);
-                                new_visited.insert(second_position);
-                                valid_paths.push_back(Path { position: second_position, visited: new_visited});
-                            }
-                        }
-                    },
-                    Tile::Slope(Direction::South) => {},
-                    Tile::Slope(Direction::West) => {
-                        if !path.visited.contains(&next_position) {
-                            let second_position = next_position.next_position(Direction::West);
-                            if !path.visited.contains(&second_position) {
-                                let mut new_visited = path.visited.clone();
-                                new_visited.insert(next_position);
-                                new_visited.insert(second_position);
-                                valid_paths.push_back(Path { position: second_position, visited: new_visited});
-                            }
-                        }
-                    },
-                }
-            } if path.position.col != 0 {
-                // check west
-                let next_position = path.position.next_position(Direction::West);
-                match self.map.get(&next_position).unwrap() {
-                    Tile::Forest => {},
-                    Tile::Path => {
-                        if !path.visited.contains(&next_position) {
-                            let mut new_visited = path.visited.clone();
-                            new_visited.insert(next_position);
-                            valid_paths.push_back(Path { position: next_position, visited: new_visited});
-                        }
-                    },
-                    Tile::Slope(Direction::North) => {
-                        // TODO: this should really be a loop. and a function.
-                        if !path.visited.contains(&next_position) {
-                            let second_position = next_position.next_position(Direction::North);
-                            if !path.visited.contains(&second_position) {
-                                let mut new_visited = path.visited.clone();
-                                new_visited.insert(next_position);
-                                new_visited.insert(second_position);
-                                valid_paths.push_back(Path { position: second_position, visited: new_visited});
-                            }
-                        }
-                    },
-                    Tile::Slope(Direction::East) => {},
-                    Tile::Slope(Direction::South) => {
-                        if !path.visited.contains(&next_position) {
-                            let second_position = next_position.next_position(Direction::South);
-                            if !path.visited.contains(&second_position) {
-                                let mut new_visited = path.visited.clone();
-                                new_visited.insert(next_position);
-                                new_visited.insert(second_position);
-                                valid_paths.push_back(Path { position: second_position, visited: new_visited});
-                            }
-                        }
-                    },
-                    Tile::Slope(Direction::West) => {
-                        if !path.visited.contains(&next_position) {
-                            let second_position = next_position.next_position(Direction::West);
-                            if !path.visited.contains(&second_position) {
-                                let mut new_visited = path.visited.clone();
-                                new_visited.insert(next_position);
-                                new_visited.insert(second_position);
-                                valid_paths.push_back(Path { position: second_position, visited: new_visited});
-                            }
-                        }
-                    },
-                }
-            }
-            if path.position.row != self.rows - 1 {
-                // check south
-                let next_position = path.position.next_position(Direction::South);
-                match self.map.get(&next_position).unwrap() {
-                    Tile::Forest => {},
-                    Tile::Path => {
-                        if !path.visited.contains(&next_position) {
-                            let mut new_visited = path.visited.clone();
-                            new_visited.insert(next_position);
-                            valid_paths.push_back(Path { position: next_position, visited: new_visited});
-                        }
-                    },
-                    Tile::Slope(Direction::North) => {
-                        // TODO: this should really be a loop. and a function.
-                    },
-                    Tile::Slope(Direction::East) => {
-                        if !path.visited.contains(&next_position) {
-                            let second_position = next_position.next_position(Direction::East);
-                            if !path.visited.contains(&second_position) {
-                                let mut new_visited = path.visited.clone();
-                                new_visited.insert(next_position);
-                                new_visited.insert(second_position);
-                                valid_paths.push_back(Path { position: second_position, visited: new_visited});
-                            }
-                        }
-                    },
-                    Tile::Slope(Direction::South) => {
-                        if !path.visited.contains(&next_position) {
-                            let second_position = next_position.next_position(Direction::South);
-                            if !path.visited.contains(&second_position) {
-                                let mut new_visited = path.visited.clone();
-                                new_visited.insert(next_position);
-                                new_visited.insert(second_position);
-                                valid_paths.push_back(Path { position: second_position, visited: new_visited});
-                            }
-                        }
-                    },
-                    Tile::Slope(Direction::West) => {
-                        if !path.visited.contains(&next_position) {
-                            let second_position = next_position.next_position(Direction::West);
-                            if !path.visited.contains(&second_position) {
-                                let mut new_visited = path.visited.clone();
-                                new_visited.insert(next_position);
-                                new_visited.insert(second_position);
-                                valid_paths.push_back(Path { position: second_position, visited: new_visited});
-                            }
-                        }
-                    },
-                }
-            }
-            if path.position.row != self.cols - 1 {
-                // check east
-                let next_position = path.position.next_position(Direction::East);
-                match self.map.get(&next_position).unwrap() {
-                    Tile::Forest => {},
-                    Tile::Path => {
-                        if !path.visited.contains(&next_position) {
-                            let mut new_visited = path.visited.clone();
-                            new_visited.insert(next_position);
-                            valid_paths.push_back(Path { position: next_position, visited: new_visited});
-                        }
-                    },
-                    Tile::Slope(Direction::North) => {
-                        // TODO: this should really be a loop. and a function.
-                        if !path.visited.contains(&next_position) {
-                            let second_position = next_position.next_position(Direction::North);
-                            if !path.visited.contains(&second_position) {
-                                let mut new_visited = path.visited.clone();
-                                new_visited.insert(next_position);
-                                new_visited.insert(second_position);
-                                valid_paths.push_back(Path { position: second_position, visited: new_visited});
-                            }
-                        }
-                    },
-                    Tile::Slope(Direction::East) => {
-                        if !path.visited.contains(&next_position) {
-                            let second_position = next_position.next_position(Direction::East);
-                            if !path.visited.contains(&second_position) {
-                                let mut new_visited = path.visited.clone();
-                                new_visited.insert(next_position);
-                                new_visited.insert(second_position);
-                                valid_paths.push_back(Path { position: second_position, visited: new_visited});
-                            }
-                        }
-                    },
-                    Tile::Slope(Direction::South) => {
-                        if !path.visited.contains(&next_position) {
-                            let second_position = next_position.next_position(Direction::South);
-                            if !path.visited.contains(&second_position) {
-                                let mut new_visited = path.visited.clone();
-                                new_visited.insert(next_position);
-                                new_visited.insert(second_position);
-                                valid_paths.push_back(Path { position: second_position, visited: new_visited});
-                            }
-                        }
-                    },
-                    Tile::Slope(Direction::West) => {
-                    },
-                }
+            for dir in [Direction::North, Direction::East, Direction::South, Direction::West] {
+                if let Some(new_path) = self.check_direction(&path, dir) {
+                    valid_paths.push_back(new_path);
+                }    
             }
             valid_paths
+        }
+
+        fn check_direction(&self, path: &Path, direction: Direction) -> Option<Path> {
+            match direction {
+                Direction::North => if path.position.row == 0 { return None; },
+                Direction::South => if path.position.row == self.rows - 1 { return None; },
+                Direction::East => if path.position.col == self.cols - 1 { return None; },
+                Direction::West => if path.position.col == 0 { return None; },
+            }
+            let next_position = path.position.next_position(direction);
+            match self.map.get(&next_position).unwrap() {
+                Tile::Forest => {},
+                Tile::Path => {
+                    if !path.visited.contains(&next_position) {
+                        let mut new_visited = path.visited.clone();
+                        new_visited.insert(next_position);
+                        return Some(Path { position: next_position, visited: new_visited });
+                    }
+                },
+                Tile::Slope(slope_dir) => {
+                    if *slope_dir != direction.opposite() && !path.visited.contains(&next_position) {
+                        let second_position = next_position.next_position(*slope_dir);
+                        if !path.visited.contains(&second_position) {
+                            let mut new_visited = path.visited.clone();
+                            new_visited.insert(next_position);
+                            new_visited.insert(second_position);
+                            return Some(Path { position: second_position, visited: new_visited});
+                        }
+                    }
+                },
+            }
+            None
         }
     }
 
@@ -335,46 +192,19 @@ pub mod part_one {
     }    
 }
 
-mod utils {
+/// This solution relies on noticing that the inputs (example and full problem input)
+/// are effectively graphs: there are paths that lead to intersection points.
+/// The "nodes" of the graph are the start point, the end point,
+/// and all of the intersection points where there is actually a choice to make
+/// when traversing the graph. Intersection points has 3-4 path or slope
+/// tiles surrounding it. This uses a brute force approach to finding the longest
+/// path through the graph. It is slow, but it works.
+pub mod part_two {
     use std::{cmp, collections::{HashMap, HashSet, VecDeque}};
 
-    use crate::utils::io_utils;
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
 
-    #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
-    pub struct Point {
-        row: usize,
-        col: usize,
-    }
-
-    impl Point {
-        fn next_position(&self, direction: Direction) -> Point {
-            match direction {
-                Direction::North => Point { row: self.row - 1, col: self.col },
-                Direction::East => Point { row: self.row, col: self.col + 1},
-                Direction::South => Point { row: self.row + 1, col: self.col },
-                Direction::West => Point { row: self.row, col: self.col - 1},
-            }
-        }
-    }
-
-    #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
-    enum Direction {
-        North,
-        East,
-        South,
-        West,
-    }
-
-    impl Direction {
-        fn opposite(&self) -> Direction {
-            match self {
-                Direction::North => Direction::South,
-                Direction::East => Direction::West,
-                Direction::South => Direction::North,
-                Direction::West => Direction::East,
-            }
-        }
-    }
+    use super::utils::{Direction, Point, Tile};
 
     #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
     struct Status {
@@ -391,40 +221,21 @@ mod utils {
         }
     }
 
-    // tODO: to consolidate, could use part_one's version of this
-    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-    enum Tile {
-        Forest,
-        Path,
-        Slope,
-    }
-
-    impl Tile {
-        fn from_char(input: char) -> Self {
-            match input {
-                '#' => Self::Forest,
-                '.' => Self::Path,
-                '^' | '>' | 'v' | '<' => Self::Slope,
-                _ => panic!("Unrecognized tile."),
-            }
-        }
-    }
-
     #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
-    pub struct EdgeOut {
+    struct EdgeOut {
         dest: Point,
         length: u32,
     }
 
     #[derive(Debug, PartialEq, Eq, Clone)]
-    pub struct Path {
+    struct Path {
         position: Point,
         visited: HashSet<Point>,
         length: u32,
     }
 
     impl Path {
-        pub fn new(start: Point) -> Self {
+        fn new(start: Point) -> Self {
             Self {
                 position: start,
                 visited: HashSet::from([start]),
@@ -434,7 +245,7 @@ mod utils {
     }
 
     #[derive(Debug, Default)]
-    pub struct PathBuilder {
+    struct PathBuilder {
         rows: usize,
         cols: usize,
         start: Point,
@@ -528,7 +339,7 @@ mod utils {
                 let next_position = status.position.next_position(direction);
                 match self.map.get(&next_position).unwrap() {
                     Tile::Forest => None,
-                    Tile::Path | Tile::Slope => {
+                    Tile::Path | Tile::Slope(_) => {
                         Some(Status { position: next_position, direction })
                     },
                 }
@@ -569,20 +380,6 @@ mod utils {
             max_path
         }
     }
-}
-
-
-/// This solution relies on noticing that the inputs (example and full problem input)
-/// are effectively graphs: there are paths that lead to intersection points.
-/// The "nodes" of the graph are the start point, the end point,
-/// and all of the intersection points where there is actually a choice to make
-/// when traversing the graph. Intersection points has 3-4 path or slope
-/// tiles surrounding it. This uses a brute force approach to finding the longest
-/// path through the graph. It is slow, but it works.
-pub mod part_two {
-    use crate::utils::solution::{Solution, Answer};
-
-    use super::utils::PathBuilder;
 
     #[derive(Debug, Default)]
     pub struct Soln {
