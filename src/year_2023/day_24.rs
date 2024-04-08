@@ -159,3 +159,229 @@ pub mod part_one {
         }
     }    
 }
+
+/// Assumes the intersections occur at integer time intervals.
+pub mod part_two {
+    use std::collections::HashSet;
+
+    use itertools::Itertools;
+    use prime_factorization::Factorization;
+    use regex::Regex;
+    use ndarray::prelude::*;
+    use ndarray_linalg::Solve;
+
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
+
+    const NUM_AXES: usize = 3;
+
+    // Treating as an enum rather than named fields so we can use to index into arrays
+    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+    #[repr(usize)]
+    enum Axis {
+        X = 0,
+        Y,
+        Z,
+    }
+
+    /*
+    #[derive(Debug, PartialEq, Eq)]
+    struct Vector {
+        x: i64,
+        y: i64,
+        z: i64,
+
+    }
+    */
+
+    #[derive(Debug, PartialEq, Eq)]
+    struct Projectile {
+        pos: [i64; NUM_AXES],
+        vel: [i64; NUM_AXES],
+    }
+
+    #[derive(Debug, Default, PartialEq, Eq)]
+    struct Possibilities {
+        possible: HashSet<i64>,
+        impossible: HashSet<i64>,
+    }
+
+    impl Possibilities {
+        fn determined(&self) -> bool {
+            self.possible.len() == 1
+        }
+
+        fn determined_value(&self) -> Option<i64> {
+            if !self.determined() {
+                None
+            } else {
+                Some(*self.possible.iter().next().unwrap())
+            }
+        }
+    }
+
+    /*
+    #[derive(Debug, Default, PartialEq, Eq)]
+    struct PossibilitiesVector {
+        x: Possibilities,
+        y: Possibilities,
+        z: Possibilities,
+    }
+    */
+
+    #[derive(Debug, Default, PartialEq, Eq)]
+    struct PossibleProjectile {
+        pos: [Possibilities; NUM_AXES],
+        vel: [Possibilities; NUM_AXES],
+    }
+
+    impl PossibleProjectile {
+        fn sum_of_pos_coords(&self) -> Option<i64> {
+            if let (Some(x), Some(y), Some(z)) = (
+                self.pos[Axis::X as usize].determined_value(), 
+                self.pos[Axis::Y as usize].determined_value(), 
+                self.pos[Axis::Z as usize].determined_value()
+            ) {
+                Some(x + y + z)
+            } else {
+                None
+            }
+        }
+    }
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        hailstones: Vec<Projectile>,
+        rock: PossibleProjectile,
+    }
+
+    // Todo: The smaller example in the problem is actually less constrained than the full input.
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.parse_input_file(filename);
+            // Find the possible velocities
+            for i in 0..self.hailstones.len() {
+                for j in i + 1..self.hailstones.len() {
+                    for axis_idx in [Axis::X, Axis::Y, Axis::Z].map(|a| a as usize) {
+                        if self.hailstones[i].vel[axis_idx] == self.hailstones[j].vel[axis_idx] {
+                            if self.hailstones[i].pos[axis_idx] != self.hailstones[j].pos[axis_idx] {
+                                self.mark_vel_impossible(axis_idx, self.hailstones[i].vel[axis_idx]);
+                                let max_offset = (self.hailstones[i].pos[axis_idx] - self.hailstones[j].pos[axis_idx]).abs() as u64;
+                                let prime_factors = Factorization::run(max_offset);
+                                let mut possible_offsets: HashSet<u64> = HashSet::new();
+                                for len in 0..=prime_factors.factors.len() {
+                                    for combo in prime_factors.factors.iter().combinations(len) {
+                                        let prod = combo.into_iter().fold(1u64, |prod, factor| prod * *factor);
+                                        possible_offsets.insert(prod);
+                                    }
+                                }
+                                let mut possible_vels: HashSet<i64> = HashSet::new();
+                                possible_offsets.into_iter()
+                                    .for_each(|offset| {
+                                        let offset: i64 = offset.try_into().unwrap();
+                                        possible_vels.insert(self.hailstones[i].vel[axis_idx] - offset);
+                                        possible_vels.insert(self.hailstones[i].vel[axis_idx] + offset);
+                                    }); 
+                                self.mark_vels_possible(axis_idx, possible_vels);
+                            } else {
+                                // does not actually tell us anything
+                            }
+                        }    
+                    }
+                }
+            }
+            /* TODO: track and then use the known time differences corresponding to the same-velocity
+            pairs. can learn the y and z position for any pair where the x velocity is the same, etc.
+
+            Ideal is if we track for each axis: velocity: i, j, delta triple. where delta is such that
+            t_i - t_j = delta and i < j.
+
+            Then once we know the velocity for the other axes, the matrix A is:
+
+            1       rock_vel - hailstone_i_vel      0                                               hailstone_i_pos
+            1       0                               rock_vel - hailstone_j_vel                      hailstone_j_pos
+            0       1                               -1                                              delta
+
+            And the vector b is:
+
+            hailstone_i_pos
+            hailstone_j_pos
+            delta
+
+            Solving yields:
+
+            rock_pos
+            t_i
+            t_j
+
+            */
+            // Determine the positions
+            // TODO: this is just an example to prove that this works.
+            let a: Array2<f64> = array![
+                [1.0, 4.0, 0.0], 
+                [1.0, 0.0, 6.0],
+                [0.0, 1.0, -1.0],
+            ];
+            let b: Array1<f64> = array![30.0, 34.0, 1.0];
+            let x = a.solve_into(b).unwrap();
+            println!("{:#?}", x);        
+            Answer::I64(self.rock.sum_of_pos_coords().expect("Should know the answer by now"))
+        }
+    }
+
+    impl Soln {
+        fn parse_input_file(&mut self, filename: &str) {
+            let re = Regex::new(r"(?<pos_x>\d+)\, +(?<pos_y>\d+)\, +(?<pos_z>\d+) +\@ +(?<vel_x>\-?\d+)\, +(?<vel_y>\-?\d+)\, +(?<vel_z>\-?\d+)").unwrap();
+            self.hailstones = io_utils::file_to_lines(filename)
+                .map(|line| {
+                    let captures = re.captures(&line).unwrap();
+                    Projectile {
+                        pos: [
+                            captures.name("pos_x").unwrap().as_str().parse().unwrap(),
+                            captures.name("pos_y").unwrap().as_str().parse().unwrap(),
+                            captures.name("pos_z").unwrap().as_str().parse().unwrap(),
+                        ],
+                        vel: [
+                            captures.name("vel_x").unwrap().as_str().parse().unwrap(),
+                            captures.name("vel_y").unwrap().as_str().parse().unwrap(),
+                            captures.name("vel_z").unwrap().as_str().parse().unwrap(),
+                        ],
+                    }
+                })
+                .collect();
+        }
+
+        fn mark_vel_impossible(&mut self, axis_idx: usize, vel: i64) {
+            self.rock.vel[axis_idx].possible.remove(&vel);
+            self.rock.vel[axis_idx].impossible.insert(vel);
+        }
+
+        fn mark_vels_possible(&mut self, axis_idx: usize, vels: HashSet<i64>) {
+            let vels: HashSet<i64> = vels.into_iter().filter(|vel| !self.rock.vel[axis_idx].impossible.contains(&vel)).collect();
+            if self.rock.vel[axis_idx].possible.is_empty() {
+                self.rock.vel[axis_idx].possible.extend(vels);
+            } else {
+                self.rock.vel[axis_idx].possible.retain(|vel| vels.contains(&vel));
+                if self.rock.vel[axis_idx].possible.is_empty() { panic!("Emptied possible set"); }
+            }
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::I64(47); "example_1")]
+        #[test_case(2, Answer::I64(47); "example_2")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
