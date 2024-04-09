@@ -56,6 +56,8 @@ pub mod part_one {
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
             self.parse_input_file(filename);
+            self.settle_bricks();
+            Answer::Usize(self.num_safe_to_disintegrate())
         }
     }
 
@@ -67,6 +69,21 @@ pub mod part_one {
                 .map(|(id, line)| (id, Brick::from_str(&line, id, &re)))
                 .collect();
         }
+
+        fn settle_bricks(&mut self) {
+
+        }
+
+        fn num_safe_to_disintegrate(&self) -> usize {
+            self.bricks.values()
+                .filter(|brick| {
+                    // all bricks it supports have at least one other supporting brick
+                    brick.supporting_ids.iter().all(|id| {
+                        self.bricks.get(id).unwrap().supported_by_ids.len() > 1
+                    })
+                })
+                .count()                
+        }
     }
 
     #[cfg(test)]
@@ -76,7 +93,7 @@ pub mod part_one {
         use super::*;
         use super::super::DAY;
 
-        #[test_case(1, Answer::U32(5); "example_1")]
+        #[test_case(1, Answer::Usize(5); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
