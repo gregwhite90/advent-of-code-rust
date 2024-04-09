@@ -11,11 +11,13 @@ pub mod part_one {
 
     use crate::utils::{io_utils, solution::{Answer, Solution}};
 
+    #[derive(Debug, Clone, Copy)]
     struct Range {
         min: u32,
         max: u32,
     }
 
+    #[derive(Debug, Clone)]
     struct Brick {
         id: usize,
         x: Range,
@@ -71,7 +73,17 @@ pub mod part_one {
         }
 
         fn settle_bricks(&mut self) {
+            /* TODO:
+            Go in order of the lowest starting minimum z.
+            Then go through the settled bricks in order of the highest maximum z.
+            Check for collision. Once a collision is found, we know the settled
+            minimum z for the brick. Keep going until we find a brick with a 
+            maximum settled z lower than this brick's settled z (impossible
+            for it to rest on any more of the bricks).
 
+            If not implemented carefully, could result in lots of searching in O(n)
+            or lots of copying of data uneccessarily.
+             */
         }
 
         fn num_safe_to_disintegrate(&self) -> usize {
