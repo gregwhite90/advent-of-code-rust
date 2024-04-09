@@ -183,16 +183,6 @@ pub mod part_two {
         Z,
     }
 
-    /*
-    #[derive(Debug, PartialEq, Eq)]
-    struct Vector {
-        x: i64,
-        y: i64,
-        z: i64,
-
-    }
-    */
-
     #[derive(Debug, PartialEq, Eq)]
     struct Projectile {
         pos: [i64; NUM_AXES],
@@ -230,15 +220,6 @@ pub mod part_two {
         }
     }
 
-    /*
-    #[derive(Debug, Default, PartialEq, Eq)]
-    struct PossibilitiesVector {
-        x: Possibilities,
-        y: Possibilities,
-        z: Possibilities,
-    }
-    */
-
     #[derive(Debug, Default, PartialEq, Eq)]
     struct PossibleProjectile {
         pos: [Possibilities; NUM_AXES],
@@ -266,6 +247,31 @@ pub mod part_two {
     }
 
     // Todo: The smaller example in the problem is actually less constrained than the full input.
+    /// This solution tracks and then uses the known time differences 
+    /// corresponding to the same-velocity pairs. can learn the y and z position 
+    /// for any pair where the x velocity is the same, etc.
+    /// 
+    /// Ideal is if we track for each axis: velocity: i, j, delta triple. where delta is such that
+    /// t_i - t_j = delta and i < j.
+    /// 
+    /// Then once we know the velocity for the other axes, the matrix A is:
+    /// 
+    /// 1       rock_vel - hailstone_i_vel      0                                               hailstone_i_pos
+    /// 1       0                               rock_vel - hailstone_j_vel                      hailstone_j_pos
+    /// 0       1                               -1                                              delta
+    /// 
+    /// And the vector b is:
+    /// 
+    /// hailstone_i_pos
+    /// hailstone_j_pos
+    /// delta
+    /// 
+    /// Solving yields:
+    /// 
+    /// rock_pos
+    /// t_i
+    /// t_j
+    /// 
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
             self.parse_input_file(filename);
@@ -312,41 +318,20 @@ pub mod part_two {
                     }
                 }
             }
-            // This solution assumes. It works on the full input but will fail on the test case.
-            // There is a way to determine the velocities in the test case as well.
+            // This solution assumes we have fully determined the velocities at this point.
+            // It works on the full input but will fail on the test case.
+            // There is a way to determine the velocities in the test case as well:
+            // Basically, we know the x-axis velocity in that case. For each known time_delta
+            // that has to be true for that x-axis velocity, we can find the set of all times
+            // involved in a known time_delta for each possible y-axis velocity and z-axis velocity.
+            // Then the unknown velocity for each axis is the one that yields the same
+            // exact times for each time delta.
+            // 
             // TODO: implement determining velocities for the test case.
             for axis_idx in [Axis::X as usize, Axis::Y as usize, Axis::Z as usize] {
                 assert!(self.rock.vel[axis_idx].determined())
             }
-            /* TODO: track and then use the known time differences corresponding to the same-velocity
-            pairs. can learn the y and z position for any pair where the x velocity is the same, etc.
-
-            Ideal is if we track for each axis: velocity: i, j, delta triple. where delta is such that
-            t_i - t_j = delta and i < j.
-
-            Then once we know the velocity for the other axes, the matrix A is:
-
-            1       rock_vel - hailstone_i_vel      0                                               hailstone_i_pos
-            1       0                               rock_vel - hailstone_j_vel                      hailstone_j_pos
-            0       1                               -1                                              delta
-
-            And the vector b is:
-
-            hailstone_i_pos
-            hailstone_j_pos
-            delta
-
-            Solving yields:
-
-            rock_pos
-            t_i
-            t_j
-
-            */
             // Determine the positions
-            // TODO: this is just an example to prove that this works.
-            // TODO: decide if possible positions should be different data structure from
-            // possible velocities
             for time_delta in self.rock.vel[Axis::X as usize].determined_time_deltas() {
                 if self.rock.pos[Axis::Y as usize].determined() && self.rock.pos[Axis::Z as usize].determined() {
                     break;
