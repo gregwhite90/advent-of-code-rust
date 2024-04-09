@@ -132,8 +132,8 @@ pub mod part_one {
                         }
                     }
                     if brick.lands_on(&b) {
-                        brick.supporting_ids.push(b.id);
-                        b.supported_by_ids.push(brick.id);
+                        brick.supported_by_ids.push(b.id);
+                        b.supporting_ids.push(brick.id);
                         settled_min_z = Some(b.z.max + 1);
                     }
                     checked_bricks.push(b);
