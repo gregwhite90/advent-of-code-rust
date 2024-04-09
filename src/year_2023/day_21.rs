@@ -7,7 +7,9 @@ pub mod part_one {
 
     use std::collections::HashSet;
 
-    use crate::utils::solution::{Answer, Solution};
+    use regex::Regex;
+
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
 
     #[derive(Debug, Default, PartialEq, Eq, Hash, Clone, Copy)]
     struct Point {
@@ -41,7 +43,19 @@ pub mod part_one {
         }
 
         fn parse_input_file(&mut self, filename: &str) {
-
+            let mut row: usize = 0;
+            io_utils::file_to_lines(filename)
+                .for_each(|line| {
+                    self.rocks.extend(
+                        line.char_indices()
+                            .filter(|(_col, ch)| *ch == '#')
+                            .map(|(col, _ch)| Point { row, col })
+                    );
+                    if let Some(col) = line.find('S') {
+                        self.start = Point { row, col };
+                    }
+                    row += 1;
+                });
         }
     }
 
