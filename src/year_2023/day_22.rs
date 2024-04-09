@@ -91,21 +91,17 @@ mod utils {
         }
 
         pub fn settle_bricks(&mut self) {
-            /* TODO:
-            Go in order of the lowest starting minimum z.
+            /*
+            Goes in order of the lowest starting minimum z.
             Then go through the settled bricks in order of the highest maximum z.
             Check for collision. Once a collision is found, we know the settled
             minimum z for the brick. Keep going until we find a brick with a 
             maximum settled z lower than this brick's settled z (impossible
             for it to rest on any more of the bricks).
 
-            If not implemented carefully, could result in lots of searching in O(n)
-            or lots of copying of data uneccessarily.
+            If not implemented carefully, could have resulted in lots of 
+            searching in O(n) or lots of copying of data uneccessarily.
              */
-            // TODO: need to figure out ownership. Either need a data structure to look up
-            // bricks by id like I am using now, or need to save references to other bricks
-            // directly. Or could drain self.bricks then settle the bricks, then insert them
-            // again.
             let mut settled_bricks: BinaryHeap<Brick> = BinaryHeap::new();
             let bricks_by_min_z_asc = self.bricks.clone()
                 .into_iter()
