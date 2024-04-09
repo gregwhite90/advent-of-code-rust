@@ -162,7 +162,7 @@ pub mod part_one {
 
 /// Assumes the intersections occur at integer time intervals.
 pub mod part_two {
-    use std::collections::HashSet;
+    use std::collections::{HashMap, HashSet};
 
     use itertools::Itertools;
     use prime_factorization::Factorization;
@@ -199,9 +199,16 @@ pub mod part_two {
         vel: [i64; NUM_AXES],
     }
 
+    #[derive(Debug, PartialEq, Eq)]
+    struct TimeDelta {
+        i: usize,
+        j: usize,
+        delta: i64,
+    }
+
     #[derive(Debug, Default, PartialEq, Eq)]
     struct Possibilities {
-        possible: HashSet<i64>,
+        possible: HashMap<i64, Vec<TimeDelta>>,
         impossible: HashSet<i64>,
     }
 
@@ -214,8 +221,12 @@ pub mod part_two {
             if !self.determined() {
                 None
             } else {
-                Some(*self.possible.iter().next().unwrap())
+                Some(*self.possible.iter().next().unwrap().0)
             }
+        }
+
+        fn determined_time_deltas(&self) -> impl Iterator<Item = &TimeDelta> {
+            self.possible.get(&self.determined_value().unwrap()).unwrap().iter()
         }
     }
 
@@ -274,20 +285,38 @@ pub mod part_two {
                                         possible_offsets.insert(prod);
                                     }
                                 }
-                                let mut possible_vels: HashSet<i64> = HashSet::new();
+                                let mut possible_vels: HashMap<i64, Vec<TimeDelta>> = HashMap::new();
                                 possible_offsets.into_iter()
                                     .for_each(|offset| {
                                         let offset: i64 = offset.try_into().unwrap();
-                                        possible_vels.insert(self.hailstones[i].vel[axis_idx] - offset);
-                                        possible_vels.insert(self.hailstones[i].vel[axis_idx] + offset);
+                                        possible_vels.insert(
+                                            self.hailstones[i].vel[axis_idx] - offset,
+                                            vec![TimeDelta {
+                                                i,
+                                                j,
+                                                delta: (self.hailstones[i].pos[axis_idx] - self.hailstones[j].pos[axis_idx]) / - offset,
+                                            }],
+                                        );
+                                        possible_vels.insert(
+                                            self.hailstones[i].vel[axis_idx] + offset,
+                                            vec![TimeDelta {
+                                                i,
+                                                j,
+                                                delta: (self.hailstones[i].pos[axis_idx] - self.hailstones[j].pos[axis_idx]) / offset,
+                                            }],
+                                        );
                                     }); 
                                 self.mark_vels_possible(axis_idx, possible_vels);
-                            } else {
-                                // does not actually tell us anything
                             }
                         }    
                     }
                 }
+            }
+            // This solution assumes. It works on the full input but will fail on the test case.
+            // There is a way to determine the velocities in the test case as well.
+            // TODO: implement determining velocities for the test case.
+            for axis_idx in [Axis::X as usize, Axis::Y as usize, Axis::Z as usize] {
+                assert!(self.rock.vel[axis_idx].determined())
             }
             /* TODO: track and then use the known time differences corresponding to the same-velocity
             pairs. can learn the y and z position for any pair where the x velocity is the same, etc.
@@ -316,14 +345,24 @@ pub mod part_two {
             */
             // Determine the positions
             // TODO: this is just an example to prove that this works.
-            let a: Array2<f64> = array![
-                [1.0, 4.0, 0.0], 
-                [1.0, 0.0, 6.0],
-                [0.0, 1.0, -1.0],
-            ];
-            let b: Array1<f64> = array![30.0, 34.0, 1.0];
-            let x = a.solve_into(b).unwrap();
-            println!("{:#?}", x);        
+            // TODO: decide if possible positions should be different data structure from
+            // possible velocities
+            for time_delta in self.rock.vel[Axis::X as usize].determined_time_deltas() {
+                if self.rock.pos[Axis::Y as usize].determined() && self.rock.pos[Axis::Z as usize].determined() {
+                    break;
+                }
+                for axis_idx in [Axis::Y as usize, Axis::Z as usize] {
+                    if let Some(pos) = self.determine_position(time_delta, axis_idx) {
+                        self.rock.pos[axis_idx].possible.insert(pos, vec![]);
+                    }
+                }
+            }
+            for time_delta in self.rock.vel[Axis::Y as usize].determined_time_deltas() {
+                if let Some(pos) = self.determine_position(time_delta, Axis::X as usize) {
+                    self.rock.pos[Axis::X as usize].possible.insert(pos, vec![]);
+                    break;
+                }
+            }
             Answer::I64(self.rock.sum_of_pos_coords().expect("Should know the answer by now"))
         }
     }
@@ -355,13 +394,42 @@ pub mod part_two {
             self.rock.vel[axis_idx].impossible.insert(vel);
         }
 
-        fn mark_vels_possible(&mut self, axis_idx: usize, vels: HashSet<i64>) {
-            let vels: HashSet<i64> = vels.into_iter().filter(|vel| !self.rock.vel[axis_idx].impossible.contains(&vel)).collect();
+        fn mark_vels_possible(&mut self, axis_idx: usize, vels: HashMap<i64, Vec<TimeDelta>>) {
+            let vels: HashMap<i64, Vec<TimeDelta>> = vels.into_iter().filter(|(vel, _tds)| !self.rock.vel[axis_idx].impossible.contains(&vel)).collect();
             if self.rock.vel[axis_idx].possible.is_empty() {
-                self.rock.vel[axis_idx].possible.extend(vels);
+                self.rock.vel[axis_idx].possible = vels;
             } else {
-                self.rock.vel[axis_idx].possible.retain(|vel| vels.contains(&vel));
+                self.rock.vel[axis_idx].possible.retain(|vel, _tds| vels.contains_key(&vel));
                 if self.rock.vel[axis_idx].possible.is_empty() { panic!("Emptied possible set"); }
+                for (vel, mut new_tds) in vels.into_iter() {
+                    self.rock.vel[axis_idx].possible.entry(vel)
+                        .and_modify(|tds| tds.append(&mut new_tds));
+                }
+            }
+        }
+
+        fn determine_position(&self, time_delta: &TimeDelta, axis_idx: usize) -> Option<i64> {
+            if !self.rock.pos[axis_idx].determined() 
+                && self.hailstones[time_delta.i].vel[axis_idx] != self.hailstones[time_delta.j].vel[axis_idx] {
+                    let rock_vel = self.rock.vel[axis_idx].determined_value().unwrap() as f64;
+                    let a: Array2<f64> = array![
+                        [1.0, rock_vel - self.hailstones[time_delta.i].vel[axis_idx] as f64, 0.0], 
+                        [1.0, 0.0, rock_vel - self.hailstones[time_delta.j].vel[axis_idx] as f64],
+                        [0.0, 1.0, -1.0], // t_i - t_j = delta
+                    ];            
+                    let b: Array1<f64> = array![
+                        self.hailstones[time_delta.i].pos[axis_idx] as f64, 
+                        self.hailstones[time_delta.j].pos[axis_idx] as f64, 
+                        time_delta.delta as f64,
+                    ];
+                    let x = a.solve_into(b).unwrap();
+                    if x[0] == (x[0] as i64) as f64 {
+                        Some(x[0].round() as i64)
+                    } else {
+                        None
+                    }
+            } else {
+                None
             }
         }
     }
@@ -374,7 +442,7 @@ pub mod part_two {
         use super::super::DAY;
 
         #[test_case(1, Answer::I64(47); "example_1")]
-        #[test_case(2, Answer::I64(47); "example_2")]
+        #[test_case(2, Answer::I64(646_810_057_104_753); "example_2")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
