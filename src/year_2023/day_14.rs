@@ -73,11 +73,11 @@ pub mod part_one {
 
 pub mod part_two {
 
-    use std::collections::HashSet;
+    use std::collections::{BTreeSet, HashMap, HashSet};
 
     use crate::utils::{solution::{Solution, Answer}, io_utils};
 
-    #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+    #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
     struct Point {
         row: usize,
         col: usize,
@@ -88,7 +88,7 @@ pub mod part_two {
         rows: usize,
         cols: usize,
         square_rocks: HashSet<Point>,
-        round_rocks: HashSet<Point>,
+        round_rocks: BTreeSet<Point>,
     }
 
     impl Solution for Soln {
@@ -121,14 +121,26 @@ pub mod part_two {
         }
 
         fn spin_n_times(&mut self, n: usize) {
-            let prev_rrs = self.round_rocks.clone();
-            // This short-circuits when the same state is reached at the
-            // end of a spin cycle that started the spin cycle.
-            // TODO: If this does not actually short circuit,
-            // may need to update to look for loops of the state instead.
-            for _ in 0..n {
+            // This short-circuits when the same state is reached. We 
+            // then calculate the period on which the states are
+            // repeating, and jump to the end state after the
+            // required (large, infeasible to actually brute-force-calculate)
+            // number of iterations.
+            let mut cache = HashMap::from([(self.round_rocks.clone(), vec![0])]);
+            for i in 0..n {
                 self.spin_once();
-                if self.round_rocks == prev_rrs { break; }
+                cache.entry(self.round_rocks.clone())
+                    .and_modify(|iters| iters.push(i + 1))
+                    .or_insert(vec![i + 1]);
+                let iters = cache.get(&self.round_rocks).unwrap();
+                if iters.len() == 2 {
+                    let period = iters[1] - iters[0];
+                    let remaining_iterations = (n - iters[1]) % period;
+                    for _ in 0..remaining_iterations {
+                        self.spin_once();
+                    }
+                    break;
+                }
             }
         }
 
@@ -140,25 +152,112 @@ pub mod part_two {
         }
 
         fn tilt_north(&mut self) {
-            // TODO: implement
+            let mut northernmost_idx = vec![0; self.cols];
+            let mut new_round_rocks = BTreeSet::new();
+            for row in 0..self.rows {
+                self.square_rocks.iter()
+                    .filter(|pt| pt.row == row)
+                    .for_each(|pt| {
+                        northernmost_idx[pt.col] = row + 1;
+                    });
+                self.round_rocks.iter()
+                    .filter(|pt| pt.row == row)
+                    .for_each(|pt| {
+                        new_round_rocks.insert(Point { row: northernmost_idx[pt.col], col: pt.col });
+                        northernmost_idx[pt.col] += 1;
+                    });
+            }
+            self.round_rocks = new_round_rocks;
         }
 
         fn tilt_west(&mut self) {
-            // TODO: implement
+            let mut westernmost_idx = vec![0; self.rows];
+            let mut new_round_rocks = BTreeSet::new();
+            for col in 0..self.cols {
+                self.square_rocks.iter()
+                    .filter(|pt| pt.col == col)
+                    .for_each(|pt| {
+                        westernmost_idx[pt.row] = col + 1;
+                    });
+                self.round_rocks.iter()
+                    .filter(|pt| pt.col == col)
+                    .for_each(|pt| {
+                        new_round_rocks.insert(Point { row: pt.row, col: westernmost_idx[pt.row] });
+                        westernmost_idx[pt.row] += 1;
+                    });
+            }
+            self.round_rocks = new_round_rocks;
         }
 
         fn tilt_south(&mut self) {
-            // TODO: implement
+            let mut southernmost_idx = vec![self.rows - 1; self.cols];
+            let mut new_round_rocks = BTreeSet::new();
+            for row in (0..self.rows).rev() {
+                if row > 0 {
+                    self.square_rocks.iter()
+                        .filter(|pt| pt.row == row)
+                        .for_each(|pt| {
+                            southernmost_idx[pt.col] = row - 1;
+                        });
+                }
+                self.round_rocks.iter()
+                    .filter(|pt| pt.row == row)
+                    .for_each(|pt| {
+                        new_round_rocks.insert(Point { row: southernmost_idx[pt.col], col: pt.col });
+                        if southernmost_idx[pt.col] != 0 {
+                            southernmost_idx[pt.col] -= 1;
+                        }
+                    });
+            }
+            self.round_rocks = new_round_rocks;
         }
 
         fn tilt_east(&mut self) {
-            // TODO: implement
+            let mut easternmost_idx = vec![self.cols - 1; self.rows];
+            let mut new_round_rocks = BTreeSet::new();
+            for col in (0..self.cols).rev() {
+                if col > 0 {
+                    self.square_rocks.iter()
+                        .filter(|pt| pt.col == col)
+                        .for_each(|pt| {
+                            easternmost_idx[pt.row] = col - 1;
+                        });
+                }
+                self.round_rocks.iter()
+                    .filter(|pt| pt.col == col)
+                    .for_each(|pt| {
+                        new_round_rocks.insert(Point { row: pt.row, col: easternmost_idx[pt.row] });
+                        if easternmost_idx[pt.row] != 0 {
+                            easternmost_idx[pt.row] -= 1;
+                        }
+                    });
+            }
+            self.round_rocks = new_round_rocks;
         }
 
         fn total_north_load(&self) -> usize {
             self.round_rocks.iter()
                 .map(|pt| self.rows - pt.row)
                 .sum()
+        }
+    }
+
+    impl std::fmt::Display for Soln {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            let mut repr = String::new();
+            for row in 0..self.rows {
+                for col in 0..self.cols {
+                    if self.round_rocks.contains(&Point { row, col }) {
+                        repr.push('O');
+                    } else if self.square_rocks.contains(&Point{ row, col }) {
+                        repr.push('#');
+                    } else {
+                        repr.push('.');
+                    }
+                }
+                repr.push('\n');
+            }
+            write!(f, "{}", repr)
         }
     }
 
