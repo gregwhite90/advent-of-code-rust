@@ -251,7 +251,7 @@ fn get_solns(day: &Day) -> DailySolutions {
             Day { year: 2023, day: 5 },
             DailySolutions { 
                 part_one: Some(Box::new(year_2023::day_05::part_one::Soln::default())),
-                part_two: None,
+                part_two: Some(Box::new(year_2023::day_05::part_two::Soln::default())),
             },
         ),
         (
@@ -293,7 +293,7 @@ fn get_solns(day: &Day) -> DailySolutions {
             Day { year: 2023, day: 10 },
             DailySolutions { 
                 part_one: Some(Box::new(year_2023::day_10::part_one::Soln::default())),
-                part_two: None,
+                part_two: Some(Box::new(year_2023::day_10::part_two::Soln::default())),
             },
         ),
         (
@@ -321,6 +321,83 @@ fn get_solns(day: &Day) -> DailySolutions {
             Day { year: 2023, day: 14 },
             DailySolutions { 
                 part_one: Some(Box::new(year_2023::day_14::part_one::Soln::default())),
+                part_two: None,
+            },
+        ),
+        (
+            Day { year: 2023, day: 15 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2023::day_15::part_one::Soln::default())),
+                part_two: Some(Box::new(year_2023::day_15::part_two::Soln::default())),
+            },
+        ),
+        (
+            Day { year: 2023, day: 16 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2023::day_16::part_one::Soln::default())),
+                part_two: Some(Box::new(year_2023::day_16::part_two::Soln::default())),
+            },
+        ),
+        (
+            Day { year: 2023, day: 17 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2023::day_17::part_one::Soln::default())),
+                part_two: Some(Box::new(year_2023::day_17::part_two::Soln::default())),
+            },
+        ),
+        (
+            Day { year: 2023, day: 18 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2023::day_18::part_one::Soln::default())),
+                part_two: None,
+            },
+        ),
+        (
+            Day { year: 2023, day: 19 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2023::day_19::part_one::Soln::default())),
+                part_two: Some(Box::new(year_2023::day_19::part_two::Soln::default())),
+            },
+        ),
+        (
+            Day { year: 2023, day: 20 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2023::day_20::part_one::Soln::default())),
+                part_two: Some(Box::new(year_2023::day_20::part_two::Soln::default())),
+            },
+        ),
+        (
+            Day { year: 2023, day: 21 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2023::day_21::part_one::Soln::default())),
+                part_two: None,
+            },
+        ),
+        (
+            Day { year: 2023, day: 22 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2023::day_22::part_one::Soln::default())),
+                part_two: Some(Box::new(year_2023::day_22::part_two::Soln::default())),
+            },
+        ),
+        (
+            Day { year: 2023, day: 23 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2023::day_23::part_one::Soln::default())),
+                part_two: Some(Box::new(year_2023::day_23::part_two::Soln::default())),
+            },
+        ),
+        (
+            Day { year: 2023, day: 24 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2023::day_24::part_one::Soln::default())),
+                part_two: None,
+            },
+        ),
+        (
+            Day { year: 2023, day: 25 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2023::day_25::part_one::Soln::default())),
                 part_two: None,
             },
         ),
