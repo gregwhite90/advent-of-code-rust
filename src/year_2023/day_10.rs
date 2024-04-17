@@ -435,7 +435,7 @@ pub mod part_two {
     #[derive(Debug, Default)]
     struct ConnectedTiles {
         enclosure_status: Option<EnclosureStatus>,       
-        tiles: HashSet<Point>, // TODO: make Location?
+        tiles: HashSet<Point>,
         bounding_box: BoundingBox,
         frontier: VecDeque<Location>,
         explored: HashSet<Location>,        
@@ -489,7 +489,7 @@ pub mod part_two {
             };
             self.tiles.extend(other.tiles.iter());
             self.explored.extend(other.explored.iter());
-            self.frontier.append(&mut other.frontier); // TODO: remove from frontier any in explored or tiles
+            self.frontier.append(&mut other.frontier);
             self.frontier.retain(|location| {
                 if self.explored.contains(location) { return false; }
                 if let Location::Tile(point) = location {
@@ -647,14 +647,7 @@ pub mod part_two {
                 if !absorbed {
                     all_connected_tiles.push_back(connected_tiles);
                 }
-                /* TODOs
-                Expand frontier
-                Update accounting
-                Check if can be merged into any others, otherwise put back into queue.
-                Merge into others can happen if there's overlap in tiles, or in explored. Could also add frontier?
-                 */
             }
-            // TODO: have to figue out how to merge them together. Look back at the other similar problem.
         }
 
         fn update_enclosure_status(&self, connected_tiles: &mut ConnectedTiles) {
@@ -667,12 +660,14 @@ pub mod part_two {
             }
         }
 
-        /* If you're at an intersection you can go on to any of the 4 tiles (with standard tile checks)
-        or to any of 4 points.
-        If you're on a tile, you can go to any of your 4 intersections or to any of 4 tiles.
-        
-        When do we do the checks? */
+        /* 
+        If you're at an intersection you can go on to any of the 4 tiles (as long
+        as they're not in the pipe loop) or to any of 4 intersections (as long
+        as you can cross to them).
 
+        If you're on a tile, you can go to any of your 4 intersections
+        or to any of 4 tiles (as long as they're not in the pipe loop).
+        */
         fn explore_frontier(&self, connected_tiles: &mut ConnectedTiles) {
             let mut new_frontier = VecDeque::new();
             while !connected_tiles.frontier.is_empty() {
