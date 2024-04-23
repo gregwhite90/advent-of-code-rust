@@ -133,6 +133,11 @@ pub mod part_one {
 }
 
 /// This solution is based on [this explanation](https://github.com/villuna/aoc23/wiki/A-Geometric-solution-to-advent-of-code-2023,-day-21).
+/// Ispired by [this comment](https://www.reddit.com/r/adventofcode/comments/18nol3m/comment/ked9am2),
+/// it calculates the even parity corners differently than the original explanation's
+/// simplified (and incorrect, on my version of the full input) calculation. This calculates
+/// the even corners directly, by finding the shortest path to each point in
+/// the input from each of the corners.
 pub mod part_two {
 
     use std::collections::{HashMap, HashSet, VecDeque};
@@ -162,19 +167,11 @@ pub mod part_two {
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
             self.parse_input_file(filename);
-            let mut shortest_paths: HashMap<Point, usize> = HashMap::new();
-            let mut queue = VecDeque::from([
-                Path {
-                    point: self.start,
-                    steps: 0,
-                },
-            ]);
-            while !queue.is_empty() {
-                let path = queue.pop_front().unwrap();
-                if shortest_paths.contains_key(&path.point) { continue; }
-                shortest_paths.insert(path.point, path.steps);
-                queue.append(&mut self.next_paths(&path));
-            }
+            let shortest_paths_start = self.shortest_paths(self.start);
+            let shortest_paths_tl = self.shortest_paths(Point { row: 0, col: 0 });
+            let shortest_paths_tr = self.shortest_paths(Point { row: 0, col: self.cols - 1 });
+            let shortest_paths_bl = self.shortest_paths(Point { row: self.rows - 1, col: 0 });
+            let shortest_paths_br = self.shortest_paths(Point { row: self.rows - 1, col: self.cols - 1 });
             /*  
             This solution relies on the input having these special case
             properties as outlined in the explanation linked at the
@@ -198,18 +195,46 @@ pub mod part_two {
             // Diamond radius is even
             assert_eq!(0, diamond_radius % 2);
 
-            let even_parity_all_spaces = shortest_paths.values()
+            let even_parity_all_spaces = shortest_paths_start.values()
                 .filter(|steps| **steps % 2 == 0)
                 .count();
-            let odd_parity_all_spaces = shortest_paths.values()
+            let odd_parity_all_spaces = shortest_paths_start.values()
                 .filter(|steps| **steps % 2 == 1)
                 .count();
-            let even_parity_corner_spaces = shortest_paths.values()
-                .filter(|steps| **steps % 2 == 0 && **steps > steps_to_edge)
+            let odd_parity_corner_spaces = shortest_paths_start.values()
+                .filter(|steps| {
+                    **steps % 2 == 1
+                    && **steps > steps_to_edge
+                })
                 .count();
-            let odd_parity_corner_spaces = shortest_paths.values()
-                .filter(|steps| **steps % 2 == 1 && **steps > steps_to_edge)
+            let even_parity_tl_corner_spaces = shortest_paths_tl.values()
+                .filter(|steps| {
+                    **steps % 2 == 0 
+                    && **steps <= steps_to_edge
+                })
                 .count();
+            let even_parity_tr_corner_spaces = shortest_paths_tr.values()
+                .filter(|steps| {
+                    **steps % 2 == 0 
+                    && **steps <= steps_to_edge
+                })
+                .count();
+            let even_parity_bl_corner_spaces = shortest_paths_bl.values()
+                .filter(|steps| {
+                    **steps % 2 == 0 
+                    && **steps <= steps_to_edge
+                })
+                .count();
+            let even_parity_br_corner_spaces = shortest_paths_br.values()
+                .filter(|steps| {
+                    **steps % 2 == 0 
+                    && **steps <= steps_to_edge
+                })
+                .count();
+            let even_parity_corner_spaces = even_parity_tl_corner_spaces
+                + even_parity_tr_corner_spaces
+                + even_parity_bl_corner_spaces
+                + even_parity_br_corner_spaces;
 
             Answer::Usize(
                 diamond_radius.pow(2) * even_parity_all_spaces
@@ -221,6 +246,23 @@ pub mod part_two {
     }
 
     impl Soln {
+        fn shortest_paths(&self, start: Point) -> HashMap<Point, usize> {
+            let mut shortest_paths: HashMap<Point, usize> = HashMap::new();
+            let mut queue = VecDeque::from([
+                Path {
+                    point: start,
+                    steps: 0,
+                },
+            ]);
+            while !queue.is_empty() {
+                let path = queue.pop_front().unwrap();
+                if shortest_paths.contains_key(&path.point) { continue; }
+                shortest_paths.insert(path.point, path.steps);
+                queue.append(&mut self.next_paths(&path));
+            }
+            shortest_paths     
+        }
+
         fn next_paths(&self, path: &Path) -> VecDeque<Path> {
             let mut result = VecDeque::new();
             if path.point.row != 0 {
@@ -287,8 +329,7 @@ pub mod part_two {
         use super::*;
         use super::super::DAY;
 
-        // TODO: update for correct answer
-        #[test_case(2, Answer::Usize(0); "full_input")]
+        #[test_case(2, Answer::Usize(604_592_315_958_630); "full_input")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
