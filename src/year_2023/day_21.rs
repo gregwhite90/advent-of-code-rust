@@ -5,7 +5,7 @@ const DAY: Day = crate::utils::Day { year: 2023, day: 21 };
 
 pub mod part_one {
 
-    use std::collections::{HashSet, VecDeque};
+    use std::collections::{HashMap, HashSet, VecDeque};
 
     use crate::utils::{io_utils, solution::{Answer, Solution}};
 
@@ -15,112 +15,102 @@ pub mod part_one {
         col: usize,
     }
 
-    pub struct Soln {
-        steps: u32,
-        start: Point,
-        rocks: HashSet<Point>,
+    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+    struct Path {
+        point: Point,
+        steps: usize,
     }
 
-    impl Default for Soln {
-        fn default() -> Self {
-            Self::with_steps(64)
-        }
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        rows: usize,
+        cols: usize,
+        start: Point,
+        rocks: HashSet<Point>,
     }
 
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
             self.parse_input_file(filename);
-            let mut explored: HashSet<Point> = HashSet::new();
-            let mut queue: VecDeque<Point> = VecDeque::from([self.start]);
-            // Assumes an even number of steps
-            for _ in 0..(self.steps / 2) {
-                let mut new_queue = VecDeque::new();
-                while !queue.is_empty() {
-                    let pt = queue.pop_front().unwrap();
-                    if !explored.contains(&pt) {
-                        new_queue.extend(self.two_steps_away(&pt));
-                        explored.insert(pt);
-                    }
-                }
-                queue = new_queue;
+            let mut shortest_paths: HashMap<Point, usize> = HashMap::new();
+            let mut queue = VecDeque::from([
+                Path {
+                    point: self.start,
+                    steps: 0,
+                },
+            ]);
+            while !queue.is_empty() {
+                let path = queue.pop_front().unwrap();
+                if shortest_paths.contains_key(&path.point) { continue; }
+                shortest_paths.insert(path.point, path.steps);
+                queue.append(&mut self.next_paths(&path));
             }
-            for pt in queue.drain(0..) {
-                explored.insert(pt);
-            }
-            Answer::Usize(explored.len())
+            Answer::Usize(
+                shortest_paths.values()
+                    .filter(|steps| **steps % 2 == 0 && **steps <= 64)
+                    .count()
+            )
         }
     }
 
     impl Soln {
-        fn with_steps(steps: u32) -> Self {
-            Self {
-                steps,
-                start: Point { row: 0, col: 0 },
-                rocks: HashSet::new(),
-            }
-        }
-
-        fn parse_input_file(&mut self, filename: &str) {
-            let mut row: usize = 0;
-            io_utils::file_to_lines(filename)
-                .for_each(|line| {
-                    self.rocks.extend(
-                        line.char_indices()
-                            .filter(|(_col, ch)| *ch == '#')
-                            .map(|(col, _ch)| Point { row, col })
-                    );
-                    if let Some(col) = line.find('S') {
-                        self.start = Point { row, col };
-                    }
-                    row += 1;
-                });
-        }
-
-        fn two_steps_away(&self, pt: &Point) -> VecDeque<Point> {
-            // 8 directions to check.
-            // TODO: DRY
+        fn next_paths(&self, path: &Path) -> VecDeque<Path> {
             let mut result = VecDeque::new();
-            if !self.rocks.contains(&Point { row: pt.row, col: pt.col - 2 })
-                && !self.rocks.contains(&Point { row: pt.row, col: pt.col - 1 }) {
-                    result.push_back(Point { row: pt.row, col: pt.col - 2 });
+            if path.point.row != 0 {
+                let point = Point { 
+                    row: path.point.row - 1,
+                    col: path.point.col,
+                };
+                if !self.rocks.contains(&point) {
+                    result.push_back(Path { point, steps: path.steps + 1 });
+                }
             }
-            if !self.rocks.contains(&Point { row: pt.row, col: pt.col + 2 })
-                && !self.rocks.contains(&Point { row: pt.row, col: pt.col + 1 }) {
-                    result.push_back(Point { row: pt.row, col: pt.col + 2 });
+            if path.point.col != 0 {
+                let point = Point { 
+                    row: path.point.row,
+                    col: path.point.col - 1, 
+                };
+                if !self.rocks.contains(&point) {
+                    result.push_back(Path { point, steps: path.steps + 1 });
+                }
             }
-            if !self.rocks.contains(&Point { row: pt.row - 2, col: pt.col })
-                && !self.rocks.contains(&Point { row: pt.row - 1, col: pt.col }) {
-                    result.push_back(Point { row: pt.row - 2, col: pt.col });
+            if path.point.row != self.rows - 1 {
+                let point = Point { 
+                    row: path.point.row + 1,
+                    col: path.point.col, 
+                };
+                if !self.rocks.contains(&point) {
+                    result.push_back(Path { point, steps: path.steps + 1 });
+                }
             }
-            if !self.rocks.contains(&Point { row: pt.row + 2, col: pt.col })
-                && !self.rocks.contains(&Point { row: pt.row + 1, col: pt.col }) {
-                    result.push_back(Point { row: pt.row + 2, col: pt.col });
-            }
-            if !self.rocks.contains(&Point { row: pt.row + 1, col: pt.col + 1 })
-                && (!self.rocks.contains(&Point { row: pt.row + 1, col: pt.col })
-                    || !self.rocks.contains(&Point { row: pt.row, col: pt.col + 1 })) {
-                        result.push_back(Point { row: pt.row + 1, col: pt.col + 1});
-            }
-            if !self.rocks.contains(&Point { row: pt.row + 1, col: pt.col - 1 })
-                && (!self.rocks.contains(&Point { row: pt.row + 1, col: pt.col })
-                    || !self.rocks.contains(&Point { row: pt.row, col: pt.col - 1 })) {
-                        result.push_back(Point { row: pt.row + 1, col: pt.col - 1});
-            }
-            if !self.rocks.contains(&Point { row: pt.row - 1, col: pt.col - 1 })
-                && (!self.rocks.contains(&Point { row: pt.row - 1, col: pt.col })
-                    || !self.rocks.contains(&Point { row: pt.row, col: pt.col - 1 })) {
-                        result.push_back(Point { row: pt.row - 1, col: pt.col - 1});
-            }
-            if !self.rocks.contains(&Point { row: pt.row - 1, col: pt.col + 1 })
-                && (!self.rocks.contains(&Point { row: pt.row - 1, col: pt.col })
-                    || !self.rocks.contains(&Point { row: pt.row, col: pt.col + 1 })) {
-                        result.push_back(Point { row: pt.row - 1, col: pt.col + 1});
-            }
-            if !result.is_empty() {
-                result.push_back(pt.clone());
+            if path.point.col != self.cols - 1 {
+                let point = Point { 
+                    row: path.point.row,
+                    col: path.point.col + 1, 
+                };
+                if !self.rocks.contains(&point) {
+                    result.push_back(Path { point, steps: path.steps + 1 });
+                }
             }
             result
         }
+
+        fn parse_input_file(&mut self, filename: &str) {
+            io_utils::file_to_lines(filename)
+                .for_each(|line| {
+                    self.cols = line.len();
+                    self.rocks.extend(
+                        line.char_indices()
+                            .filter(|(_col, ch)| *ch == '#')
+                            .map(|(col, _ch)| Point { row: self.rows, col })
+                    );
+                    if let Some(col) = line.find('S') {
+                        self.start = Point { row: self.rows, col };
+                    }
+                    self.rows += 1;
+                });
+        }
+
     }
 
     #[cfg(test)]
@@ -130,10 +120,10 @@ pub mod part_one {
         use super::*;
         use super::super::DAY;
 
-        #[test_case(1, Answer::Usize(16); "example_1")]
+        #[test_case(2, Answer::Usize(3_639); "full_input")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
-                &mut Soln::with_steps(6),
+                &mut Soln::default(),
                 example_key,
                 answer,
                 &DAY,
