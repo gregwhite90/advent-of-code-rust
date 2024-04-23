@@ -556,10 +556,10 @@ pub mod part_two {
         use super::*;
         use super::super::DAY;
 
-        #[test_case(3, "vt", Answer::U64(4_003); "example_3")]
-        #[test_case(4, "qt", Answer::U64(3_797); "example_4")]
-        #[test_case(5, "dq", Answer::U64(3_881); "example_5")]
-        #[test_case(6, "nl", Answer::U64(3_823); "example_6")]
+        #[test_case(3, "vt", Answer::U64(4_003); "vt_loop")]
+        #[test_case(4, "qt", Answer::U64(3_797); "qt_loop")]
+        #[test_case(5, "dq", Answer::U64(3_881); "dq_loop")]
+        #[test_case(6, "nl", Answer::U64(3_823); "nl_loop")]
         fn examples_are_correct(example_key: u8, critical_module: &str, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::with_critical_modules(HashSet::from([String::from(critical_module)])),

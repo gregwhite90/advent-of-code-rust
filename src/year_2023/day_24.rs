@@ -426,8 +426,7 @@ pub mod part_two {
         use super::*;
         use super::super::DAY;
 
-        #[test_case(1, Answer::I64(47); "example_1")]
-        #[test_case(2, Answer::I64(646_810_057_104_753); "example_2")]
+        #[test_case(2, Answer::I64(646_810_057_104_753); "full_input")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),

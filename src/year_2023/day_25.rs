@@ -212,7 +212,7 @@ pub mod part_one {
         use super::super::DAY;
 
         #[test_case(1, Answer::Usize(54); "example_1")]
-        #[test_case(2, Answer::Usize(543_256); "example_2")]
+        #[test_case(2, Answer::Usize(543_256); "full_input")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
