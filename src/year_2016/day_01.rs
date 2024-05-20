@@ -3,19 +3,16 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2016, day: 1 };
 
-pub mod part_one {
-    use regex::Regex;
-
-    use crate::utils::{io_utils, solution::{Answer, Solution}};
+mod utils {
 
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-    enum Turn {
+    pub enum Turn {
         Left = -1,
         Right = 1,
     }
 
     impl Turn {
-        fn from_str(input: &str) -> Self {
+        pub fn from_str(input: &str) -> Self {
             match input {
                 "L" => Self::Left,
                 "R" => Self::Right,
@@ -25,7 +22,7 @@ pub mod part_one {
     }
 
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-    enum Direction {
+    pub enum Direction {
         North,
         East,
         South,
@@ -33,7 +30,7 @@ pub mod part_one {
     }
 
     impl Direction {
-        fn from_discriminant(discriminant: isize) -> Self {
+        pub fn from_discriminant(discriminant: isize) -> Self {
             match discriminant {
                 0 => Self::North,
                 1 => Self::East,
@@ -43,11 +40,18 @@ pub mod part_one {
             }
         }
 
-        fn turn(&self, turn: Turn) -> Self {
+        pub fn turn(&self, turn: Turn) -> Self {
             let offset = turn as isize;
             Self::from_discriminant((((*self as isize + offset) % 4) + 4) % 4)
         }
     }
+}
+
+pub mod part_one {
+    use regex::Regex;
+
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
+    use super::utils::{Turn, Direction};
 
     #[derive(Debug, Default)]
     pub struct Soln {
@@ -109,47 +113,7 @@ pub mod part_two {
     use regex::Regex;
 
     use crate::utils::{io_utils, solution::{Answer, Solution}};
-
-    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-    enum Turn {
-        Left = -1,
-        Right = 1,
-    }
-
-    impl Turn {
-        fn from_str(input: &str) -> Self {
-            match input {
-                "L" => Self::Left,
-                "R" => Self::Right,
-                _ => panic!("Unrecognized Turn input string."),
-            }
-        }
-    }
-
-    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-    enum Direction {
-        North,
-        East,
-        South,
-        West,
-    }
-
-    impl Direction {
-        fn from_discriminant(discriminant: isize) -> Self {
-            match discriminant {
-                0 => Self::North,
-                1 => Self::East,
-                2 => Self::South,
-                3 => Self::West,
-                _ => panic!("Unrecognized Direction discriminant."),
-            }
-        }
-
-        fn turn(&self, turn: Turn) -> Self {
-            let offset = turn as isize;
-            Self::from_discriminant((((*self as isize + offset) % 4) + 4) % 4)
-        }
-    }
+    use super::utils::{Turn, Direction};
 
     #[derive(Debug, Default, PartialEq, Eq, Hash, Clone, Copy)]
     struct Point {
