@@ -3,8 +3,18 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2016, day: 3 };
 
+mod utils {
+    pub fn possible_triangle(sides: &Vec<u32>) -> bool {
+        assert_eq!(sides.len(), 3);
+        let sum: u32 = sides.iter().sum();
+        let max: u32 = *sides.iter().max().unwrap();
+        sum - max > max
+    }
+}
+
 pub mod part_one {
     use crate::utils::{io_utils, solution::{Answer, Solution}};
+    use super::utils;
 
     #[derive(Debug, Default)]
     pub struct Soln {
@@ -22,11 +32,7 @@ pub mod part_one {
         fn parse_input_file(&mut self, filename: &str) {
             io_utils::file_to_lines(filename).for_each(|line| {
                 let sides: Vec<u32> = line.split_whitespace().map(|num| num.parse().unwrap()).collect();
-                let sum: u32 = sides.iter().sum();
-                let max: u32 = *sides.iter().max().unwrap();
-                if sum - max > max {
-                    self.possible_triangles += 1;
-                }
+                if utils::possible_triangle(&sides) { self.possible_triangles += 1; }
             });
         }   
     }
@@ -54,13 +60,7 @@ pub mod part_two {
     use itertools::Itertools;
 
     use crate::utils::{io_utils, solution::{Answer, Solution}};
-
-    fn possible_triangle(sides: Vec<u32>) -> bool {
-        assert_eq!(sides.len(), 3);
-        let sum: u32 = sides.iter().sum();
-        let max: u32 = *sides.iter().max().unwrap();
-        sum - max > max
-    }
+    use super::utils;
 
     #[derive(Debug, Default)]
     pub struct Soln {
@@ -83,7 +83,7 @@ pub mod part_two {
                 .for_each(|chunk| {
                     let rows: Vec<Vec<u32>> = chunk.collect();
                     for col in 0..=2 {
-                        if possible_triangle(vec![rows[0][col], rows[1][col], rows[2][col]]) { self.possible_triangles += 1; }
+                        if utils::possible_triangle(&vec![rows[0][col], rows[1][col], rows[2][col]]) { self.possible_triangles += 1; }
                     }
                 });
         }   
