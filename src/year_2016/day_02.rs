@@ -3,11 +3,9 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2016, day: 2 };
 
-pub mod part_one {
-    use crate::utils::{io_utils, solution::{Answer, Solution}};
-
+mod utils {
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-    enum Direction {
+    pub enum Direction {
         U,
         R,
         D,
@@ -15,7 +13,7 @@ pub mod part_one {
     }
 
     impl Direction {
-        fn from_char(input: char) -> Self {
+        pub fn from_char(input: char) -> Self {
             match input {
                 'U' => Self::U,
                 'R' => Self::R,
@@ -25,6 +23,11 @@ pub mod part_one {
             }
         }
     }
+}
+
+pub mod part_one {
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
+    use super::utils::Direction;
 
     #[derive(Debug, Default, PartialEq, Eq, Hash, Clone, Copy)]
     struct Point {
@@ -96,30 +99,11 @@ pub mod part_one {
 
 pub mod part_two {
     use crate::utils::{io_utils, solution::{Answer, Solution}};
+    use super::utils::Direction;
 
     fn row_length(row: i32) -> u32 {
         let row_abs: u32 = row.abs().try_into().unwrap();
         5 - 2 * row_abs   
-    }
-
-    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-    enum Direction {
-        U,
-        R,
-        D,
-        L,
-    }
-
-    impl Direction {
-        fn from_char(input: char) -> Self {
-            match input {
-                'U' => Self::U,
-                'R' => Self::R,
-                'D' => Self::D,
-                'L' => Self::L,
-                _ => panic!("Unrecognized Direction character."),
-            }
-        }
     }
 
     #[derive(Debug, Default, PartialEq, Eq, Hash, Clone, Copy)]
