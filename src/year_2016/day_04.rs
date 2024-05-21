@@ -76,3 +76,52 @@ pub mod part_one {
         }
     }    
 }
+
+pub mod part_two {
+    use regex::Regex;
+
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
+
+    const ROOM_NAME: &str = "northpole object storage";
+
+    fn decrpyt(name: &str, sector_id: u32) -> String {
+        name.chars().map(|ch| {
+            match ch {
+                '-' => ' ',
+                c => {
+                    let cycled_c = (c as u32 - ('a' as u32) + sector_id) % 26 + ('a' as u32);
+                    let cycled_c: u8 = cycled_c.try_into().unwrap();
+                    cycled_c as char
+                }
+            }
+        })
+            .collect::<String>()
+    }
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        sector_id: u32,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.parse_input_file(filename);
+            Answer::U32(self.sector_id)
+        }
+    }
+
+    impl Soln {
+        fn parse_input_file(&mut self, filename: &str) {
+            let re = Regex::new(r"(?<name>[a-z\-]+)\-(?<sector_id>\d+)\[(?<checksum>[a-z]{5})\]").unwrap();
+            for line in io_utils::file_to_lines(filename) {
+                let captures = re.captures(&line).unwrap();
+                let name = captures.name("name").unwrap().as_str();
+                let sector_id = captures.name("sector_id").unwrap().as_str().parse::<u32>().unwrap();
+                if decrpyt(name, sector_id) == ROOM_NAME {
+                    self.sector_id = sector_id;
+                    return;
+                }
+            }
+        }   
+    }
+}
