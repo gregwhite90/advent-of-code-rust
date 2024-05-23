@@ -106,3 +106,63 @@ pub mod part_one {
         }
     }    
 }
+
+
+pub mod part_two {
+    use regex::Regex;
+
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
+
+    fn decompressed_len(re: &Regex, input: &str) -> usize {
+        if let Some(captures) = re.captures(input) {
+            let len = captures.name("len").unwrap();
+            let before = len.start() - 1;
+            let repeats = captures.name("repeats").unwrap();
+            let after_idx = repeats.end() + 1;
+            let len: usize = len.as_str().parse().unwrap();
+            let repeats: usize = repeats.as_str().parse().unwrap();
+            before + repeats * decompressed_len(re,&input[after_idx..after_idx + len]) + decompressed_len(re, &input[after_idx + len..])
+        } else {
+            input.len()
+        }
+    }
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        length: usize,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.parse_input_file(filename);
+            Answer::Usize(self.length)
+        }
+    }
+
+    impl Soln {
+        fn parse_input_file(&mut self, filename: &str) {
+            let re = Regex::new(r"\((?<len>\d+)x(?<repeats>\d+)\)").unwrap();
+            self.length = decompressed_len(&re, &io_utils::file_to_string(filename));
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+        #[test_case(3, Answer::Usize(9); "example_3")]
+        #[test_case(6, Answer::Usize(20); "example_6")]
+        #[test_case(7, Answer::Usize(241_920); "example_7")]
+        #[test_case(8, Answer::Usize(445); "example_8")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
