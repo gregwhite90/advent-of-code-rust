@@ -27,28 +27,20 @@ pub mod part_one {
             self.data.slice_mut(s![..rows, ..cols]).fill(1);
         }
 
-        fn rotate_row(&mut self, idx: usize, by: usize) {
-            let mut row = self.data.slice_mut(s![idx, ..]);
+        fn rotate(&mut self, axis: &str, idx: usize, by: usize) {
+            let mut slice = match axis {
+                "row" => self.data.slice_mut(s![idx, ..]),
+                "column" => self.data.slice_mut(s![.., idx]),
+                _ => panic!("Unrecognized axis"),
+            };
             let new = ndarray::concatenate(
                 Axis(0),
                 &[
-                    row.slice(s![row.len() - by..]),
-                    row.slice(s![..row.len() - by]),
+                    slice.slice(s![slice.len() - by..]),
+                    slice.slice(s![..slice.len() - by]),
                 ],
             ).unwrap();
-            row.assign(&new);
-        }
-
-        fn rotate_col(&mut self, idx: usize, by: usize) {
-            let mut col = self.data.slice_mut(s![.., idx]);
-            let new = ndarray::concatenate(
-                Axis(0),
-                &[
-                    col.slice(s![col.len() - by..]),
-                    col.slice(s![..col.len() - by]),
-                ],
-            ).unwrap();
-            col.assign(&new);
+            slice.assign(&new);
         }
 
         fn lit_pixels(&self) -> u32 {
@@ -88,11 +80,7 @@ pub mod part_one {
                         let axis = parameters.name("axis").unwrap().as_str();
                         let idx: usize = parameters.name("idx").unwrap().as_str().parse().unwrap();
                         let by: usize = parameters.name("by").unwrap().as_str().parse().unwrap();
-                        match axis {
-                            "row" => self.screen.rotate_row(idx, by),
-                            "column" => self.screen.rotate_col(idx, by),
-                            _ => panic!("Unrecognized axis"),
-                        }
+                        self.screen.rotate(axis, idx, by);
                     },
                     _ => panic!("Unrecognized operation"),
                 }
