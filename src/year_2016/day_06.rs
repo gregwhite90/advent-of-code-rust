@@ -49,40 +49,30 @@ mod utils {
 pub mod part_one {
     use std::collections::HashMap;
 
-    use crate::utils::{io_utils, solution::{Answer, Solution}};
+    use crate::utils::solution::{Answer, Solution};
 
-    #[derive(Debug, Default)]
+    use super::utils::RepetitionDecoder;
+
+    fn least_frequent_char(char_frequency: &HashMap<char, u32>) -> char {
+        *char_frequency.iter().max_by_key(|(_, count)| *count).unwrap().0
+    }
+
     pub struct Soln {
-        most_frequent_chars: Vec<HashMap<char, u32>>,
+        repetition_decoder: RepetitionDecoder,
+    }
+
+    impl Default for Soln {
+        fn default() -> Self {
+            Self {
+                repetition_decoder: RepetitionDecoder::new(Box::new(least_frequent_char)),
+            }
+        }
     }
 
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
-            Answer::String(self.most_frequent_string())
-        }
-    }
-
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
-            for line in io_utils::file_to_lines(filename) {
-                if self.most_frequent_chars.is_empty() {
-                    for ch in line.chars() {
-                        self.most_frequent_chars.push(HashMap::from([(ch, 1)]));
-                    }
-                } else {
-                    for (idx, ch) in line.char_indices() {
-                        *self.most_frequent_chars[idx].entry(ch).or_insert(0) += 1;
-                    }
-                }
-            }
-        }   
-
-        fn most_frequent_string(&self) -> String {
-            assert!(!self.most_frequent_chars.is_empty());
-            self.most_frequent_chars.iter().map(|mfc| {
-                mfc.iter().max_by_key(|(_, count)| *count).unwrap().0
-            }).collect::<String>()
+            self.repetition_decoder.parse_input_file(filename);
+            Answer::String(self.repetition_decoder.frequencies_to_string())
         }
     }
 
