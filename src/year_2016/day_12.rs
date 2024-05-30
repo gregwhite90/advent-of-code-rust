@@ -3,22 +3,30 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2016, day: 12 };
 
-pub mod part_one {
+mod utils {
     use std::collections::HashMap;
 
     use regex::Regex;
 
-    use crate::utils::{io_utils, solution::{Answer, Solution}};
+    use crate::utils::io_utils;
 
     #[derive(Debug, Default)]
-    struct AssembunnyComputer {
+    pub struct AssembunnyComputer {
         instruction_ptr: i64,
         registers: HashMap<char, i64>,
         instructions: Vec<Instruction>,
     }
 
     impl AssembunnyComputer {
-        fn parse_input_file(&mut self, filename: &str) {
+        pub fn with_registers(registers: HashMap<char, i64>) -> Self {
+            Self {
+                instruction_ptr: 0,
+                registers,
+                instructions: Vec::new(),
+            }
+        }
+
+        pub fn parse_input_file(&mut self, filename: &str) {
             let re = Regex::new(r"(?<instruction>(cpy)|(inc)|(dec)|(jnz)) (?<x>[a-d]|\d+)( (?<y>[a-d]|(\-?\d+)))?").unwrap();
             self.instructions = io_utils::file_to_lines(filename).map(|line| {
                 let captures = re.captures(&line).unwrap();
@@ -86,14 +94,14 @@ pub mod part_one {
             }
         }
 
-        fn execute_all(&mut self) {
+        pub fn execute_all(&mut self) {
             while self.instruction_ptr < self.instructions.len() as i64 {
                 let idx: usize = self.instruction_ptr.try_into().unwrap();
                 self.execute(self.instructions[idx]);
             }
         }
 
-        fn register_value(&self, register: char) -> i64 {
+        pub fn register_value(&self, register: char) -> i64 {
             self.registers.get(&register).cloned().unwrap_or_default()
         }
     }
@@ -111,6 +119,12 @@ pub mod part_one {
         Value(i64),
         Register(char),
     }
+}
+
+pub mod part_one {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::AssembunnyComputer;
 
     #[derive(Debug, Default)]
     pub struct Soln {
