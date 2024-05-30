@@ -115,17 +115,6 @@ pub mod part_two {
             let potential_key_re = Regex::new(r"(\h)\1{2}").unwrap();
             let matched_key_re = Regex::new(r"(\h)\1{4}").unwrap();
             let mut index: usize = 0;
-            /* TODO:
-            Decide if we need to be more thoughtful about the "order" in which we consider the
-            key indices. This counts the 64th key found as the 64th key confirmed. It is still
-            possible that other indices before the index of the 64th key found will also be keys.
-
-            If we need to be more careful about this, will have to do something like:
-            Once we reach n keys, stop adding new potential ones, just check another 1000 (or fewer,
-            we could look at all the values in the potential keys hashsets to find the maximum one
-            that is less than our current nth index and add 1000 to that to get the stopping index).
-            Then pop off the binary heap until it has len == n and peek the result.
-             */
             let mut potential_keys: HashMap<char, HashSet<usize>> = HashMap::new();
             let mut keys: BinaryHeap<usize> = BinaryHeap::new();
             while keys.len() < n {
@@ -145,6 +134,36 @@ pub mod part_two {
                     potential_keys.entry(m.as_str().chars().next().unwrap()).or_default().insert(index);
                 }
                 index += 1;
+            }
+            // TODO: refactor to DRY
+            /* 
+            We have found `n` keys, but it is still possible that other indices before the
+            index of the `n`th key found will also be keys.
+
+            We stop adding new potential ones, and just check another 1000 for if they
+            verify any formerly found potential keys. We could further optimize by checking fewer:
+            we could look at all the values in the potential keys hashsets to find the maximum one
+            that is less than our current nth index and add 1000 to that to get the stopping index.
+
+            Then we pop off the binary heap until it has len == n and peek the result.
+             */
+            for _ in 0..1000 {
+                let hex = hash(&self.salt, index, 2016);
+                if !potential_keys.is_empty() {
+                    for res in matched_key_re.find_iter(&hex) {
+                        if let Ok(m) = res {
+                            let ch = m.as_str().chars().next().unwrap();
+                            if let Some(indices) = potential_keys.get_mut(&ch) {
+                                indices.iter().filter(|idx| **idx + 1000 >= index).for_each(|idx| keys.push(*idx));
+                                indices.clear();
+                            }
+                        }
+                    }
+                }
+                index += 1;
+            }
+            while keys.len() > n {
+                keys.pop();
             }
             *keys.peek().unwrap()
         }
