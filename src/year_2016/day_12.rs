@@ -157,3 +157,32 @@ pub mod part_one {
         }
     }    
 }
+
+pub mod part_two {
+    use std::collections::HashMap;
+
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::AssembunnyComputer;
+
+    #[derive(Debug)]
+    pub struct Soln {
+        assembunny_computer: AssembunnyComputer,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer{
+            self.assembunny_computer.parse_input_file(filename);
+            self.assembunny_computer.execute_all();
+            Answer::I64(self.assembunny_computer.register_value('a'))
+        }
+    }
+
+    impl Default for Soln {
+        fn default() -> Self {
+            Self {
+                assembunny_computer: AssembunnyComputer::with_registers(HashMap::from([('c', 1)])),
+            }
+        }
+    }
+}
