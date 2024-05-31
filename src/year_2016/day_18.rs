@@ -3,8 +3,8 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2016, day: 18 };
 
-pub mod part_one {
-    use crate::utils::{io_utils, solution::{Answer, Solution}};
+mod utils {
+    use crate::utils::io_utils;
 
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]
     enum Tile {
@@ -22,27 +22,36 @@ pub mod part_one {
         }
     }
 
+    /*
+    TODO: there are at least two potential optimizations we could do here.
+    Neither is necessary for the parameters of this problem though.
+
+    Memory optimization: only track what we actually need:
+        - How many rows we've processed
+        - The running tally of safe tiles
+        - The most recent row
+
+    Runtime optimization (maybe): Search for cycles. There are 2^row_length
+    possible combinations, so the larger the row gets the less likely we are to run
+    into cycles. As soon as we found a repeat row, we could know the rest of the
+    rows and how many safe tiles they had. We'd need a hashmap of the row vec to
+    the row index, and a running vec of number of safe tiles in each row.
+    */
     #[derive(Debug)]
-    struct Room {
+    pub struct Room {
         tiles: Vec<Vec<Tile>>,
         rows: usize,
     }
 
-    impl Default for Room {
-        fn default() -> Self {
-            Self::with_rows(40)
-        }
-    }
-
     impl Room {
-        fn with_rows(rows: usize) -> Self {
+        pub fn with_rows(rows: usize) -> Self {
             Self {
                 tiles: Vec::new(),
                 rows,
             }
         }
 
-        fn parse_input_file(&mut self, filename: &str) {
+        pub fn parse_input_file(&mut self, filename: &str) {
             self.tiles.push(io_utils::file_to_string(filename).chars().map(|ch| Tile::from_char(ch)).collect());
         }
 
@@ -74,22 +83,34 @@ pub mod part_one {
             self.tiles.push(new_row);
         }
 
-        fn complete_rows(&mut self) {
+        pub fn complete_rows(&mut self) {
             while self.tiles.len() < self.rows {
                 self.add_row();
             }
         }
 
-        fn safe_tiles(&self) -> usize {
+        pub fn safe_tiles(&self) -> usize {
             self.tiles.iter().map(|row| {
                 row.iter().filter(|tile| **tile == Tile::Safe).count()
             }).sum()
         }
     }
+}
 
-    #[derive(Debug, Default)]
+pub mod part_one {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::Room;
+
+    #[derive(Debug)]
     pub struct Soln {
         room: Room,
+    }
+    
+    impl Default for Soln {
+        fn default() -> Self {
+            Self::with_rows(40)
+        }
     }
 
     impl Solution for Soln {
@@ -101,7 +122,6 @@ pub mod part_one {
     }
 
     impl Soln {
-        #[cfg(test)]
         fn with_rows(rows: usize) -> Self {
             Self {
                 room: Room::with_rows(rows),
@@ -127,4 +147,37 @@ pub mod part_one {
             );
         }
     }    
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::Room;
+
+    #[derive(Debug)]
+    pub struct Soln {
+        room: Room,
+    }
+    
+    impl Default for Soln {
+        fn default() -> Self {
+            Self::with_rows(400_000)
+        }
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.room.parse_input_file(filename);
+            self.room.complete_rows();
+            Answer::Usize(self.room.safe_tiles())
+        }
+    }
+
+    impl Soln {
+        fn with_rows(rows: usize) -> Self {
+            Self {
+                room: Room::with_rows(rows),
+            }
+        }
+    }
 }
