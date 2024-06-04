@@ -119,6 +119,30 @@ mod utils {
         pub fn password(&self) -> String {
             self.password.clone()
         }
+
+        #[cfg(test)]
+        pub fn scramble_to_vec(&mut self) -> Vec<String> {
+            let mut steps = vec![self.password()];
+            let mut chars: Vec<char> = self.password.chars().collect();
+            for instruction in self.instructions.iter() {
+                perform_instruction(&mut chars, instruction, false);
+                steps.push(chars.iter().collect());
+            }
+            self.password = chars.into_iter().collect();
+            steps   
+        }
+
+        #[cfg(test)]
+        pub fn unscramble_to_vec(&mut self) -> Vec<String> {
+            let mut steps = vec![self.password()];
+            let mut chars: Vec<char> = self.password.chars().collect();
+            for instruction in self.instructions.iter().rev() {
+                perform_instruction(&mut chars, instruction, true);
+                steps.push(chars.iter().collect());
+            }
+            self.password = chars.into_iter().collect();
+            steps   
+        }
     }
 
     fn perform_instruction(chars: &mut Vec<char>, instruction: &Instruction, reverse: bool) {
@@ -134,16 +158,53 @@ mod utils {
             },
             // TODO: reverse
             Instruction::RotateLeft(steps) => {
-                rotate(chars, steps);
+                match reverse {
+                    false => rotate(chars, steps),
+                    true => rotate(chars, chars.len() - steps),
+                }
             },
             Instruction::RotateRight(steps) => {
                 let steps = steps % chars.len();
-                rotate(chars, chars.len() - steps);
+                match reverse {
+                    false => rotate(chars, chars.len() - steps),
+                    true => rotate(chars, steps),
+                }
             },
             Instruction::RotateBasedOnPosition(letter) => {
                 let position = chars.iter().position(|l| *l == letter).unwrap();
-                let steps = (1 + position + if position >= 4 { 1 } else { 0 }) % chars.len();
-                rotate(chars, chars.len() - steps);
+                match reverse {
+                    false => {
+                        let steps = (1 + position + if position >= 4 { 1 } else { 0 }) % chars.len();
+                        rotate(chars, chars.len() - steps);
+                    },
+                    true => {
+                        // Reverse scrambling details are dependent on the string length. This
+                        // solution works for the puzzle input length of 8.
+                        assert_eq!(chars.len(), 8);
+                        let end_position = match position % 2 {
+                            0 => {
+                                let mut end_position = position;
+                                while end_position <= chars.len() {
+                                    end_position += chars.len();
+                                }
+                                end_position -= 2;
+                                end_position /= 2;
+                                end_position 
+                            },
+                            1 => {
+                                (position - 1) / 2
+                            },
+                            _ => unreachable!(),
+                        };
+                        if end_position >= position {
+                            let steps = end_position - position;
+                            rotate(chars, chars.len() - steps);
+                        } else {
+                            let steps = position - end_position;
+                            rotate(chars, steps);
+                        }
+                    },
+                }
             },
             Instruction::ReversePositions(start, end) => {
                 chars[start..=end].reverse();
@@ -166,6 +227,43 @@ mod utils {
     fn rotate(chars: &mut Vec<char>, steps: usize) {
         *chars = [&chars[steps..], &chars[..steps]].concat();
     }
+
+    #[cfg(test)]
+    mod tests {
+        use crate::utils::io_utils;
+        use super::*;
+        use super::super::DAY;
+
+        #[test]
+        fn example_1_is_correct() {
+            let mut password_scrambler = PasswordScrambler::new("bdfhgeca");
+            password_scrambler.parse_input_file(&io_utils::input_filename(&DAY, io_utils::InputFileType::Input));
+            password_scrambler.unscramble();
+            assert_eq!(password_scrambler.password(), "abcdefgh".to_string());
+        }
+
+        #[test]
+        fn it_reverses_correctly() {
+            let mut password_scrambler = PasswordScrambler::new("abcdefgh");
+            password_scrambler.parse_input_file(&io_utils::input_filename(&DAY, io_utils::InputFileType::Input));
+            password_scrambler.scramble();
+            password_scrambler.unscramble();
+            assert_eq!(password_scrambler.password(), "abcdefgh".to_string());
+        }
+
+        #[test]
+        fn steps_are_correct() {
+            let mut forward = PasswordScrambler::new("abcdefgh");
+            forward.parse_input_file(&io_utils::input_filename(&DAY, io_utils::InputFileType::Input));
+            let forward_steps = forward.scramble_to_vec();
+            let mut backward = PasswordScrambler::new("bdfhgeca");
+            backward.parse_input_file(&io_utils::input_filename(&DAY, io_utils::InputFileType::Input));
+            let backward_steps = backward.unscramble_to_vec();
+            for i in 0..backward_steps.len() {
+                assert_eq!(backward_steps[i], forward_steps[forward_steps.len() - 1 - i]);
+            }
+        }
+    }    
 }
 
 pub mod part_one {
@@ -217,4 +315,37 @@ pub mod part_one {
             );
         }
     }    
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::PasswordScrambler;
+
+    #[derive(Debug)]
+    pub struct Soln {
+        password_scrambler: PasswordScrambler,
+    }
+
+    impl Default for Soln {
+        fn default() -> Self {
+            Self::new("fbgdceah")
+        }
+    }
+    
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.password_scrambler.parse_input_file(filename);
+            self.password_scrambler.unscramble();
+            Answer::String(self.password_scrambler.password())
+        }
+    }
+
+    impl Soln {
+        fn new(password: &str) -> Self {
+            Self {
+                password_scrambler: PasswordScrambler::new(password),
+            }
+        }
+    }
 }
