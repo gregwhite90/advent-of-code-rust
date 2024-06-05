@@ -63,6 +63,7 @@ mod utils {
         length: usize,
         unvisited: BTreeSet<u32>,
         current: u32,
+        return_home: bool,
     }
 
     impl GraphPath {
@@ -74,7 +75,7 @@ mod utils {
         }
 
         fn is_finished(&self) -> bool {
-            self.unvisited.is_empty()
+            self.unvisited.is_empty() && (!self.return_home || self.current == 0)
         }
     }
 
@@ -89,10 +90,11 @@ mod utils {
         /// Maps the points of interest vertices 
         /// to the shortest length between them
         edges: HashMap<BTreeSet<u32>, usize>,
+        return_home: bool,
     }
 
     impl Graph {
-        pub fn from_graph_builder(graph_builder: GraphBuilder) -> Self {
+        pub fn from_graph_builder(graph_builder: GraphBuilder, return_home: bool) -> Self {
             // TODO: populate
             let mut edges = HashMap::new();
             for (point, val) in graph_builder.points_of_interest.iter() {
@@ -117,6 +119,7 @@ mod utils {
             }
             Self {
                 edges,
+                return_home,
             }
         }
 
@@ -132,6 +135,7 @@ mod utils {
                     length: 0,
                     unvisited,
                     current: 0, 
+                    return_home: self.return_home,
                 })
             ]);
             let mut visited = HashSet::new();
@@ -163,6 +167,7 @@ mod utils {
                         length: path.length + length,
                         unvisited,
                         current: next,
+                        return_home: self.return_home,
                     }
                 })
                 .collect()
@@ -184,7 +189,7 @@ pub mod part_one {
         fn solve(&mut self, filename: &str) -> Answer {
             let mut graph_builder = GraphBuilder::default();
             graph_builder.parse_input_file(filename);
-            self.graph = Graph::from_graph_builder(graph_builder);
+            self.graph = Graph::from_graph_builder(graph_builder, false);
             Answer::Usize(self.graph.shortest_path())
         }
     }
@@ -206,4 +211,24 @@ pub mod part_one {
             );
         }
     }    
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::{Graph, GraphBuilder};
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        graph: Graph,
+    }
+    
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            let mut graph_builder = GraphBuilder::default();
+            graph_builder.parse_input_file(filename);
+            self.graph = Graph::from_graph_builder(graph_builder, true);
+            Answer::Usize(self.graph.shortest_path())
+        }
+    }
 }
