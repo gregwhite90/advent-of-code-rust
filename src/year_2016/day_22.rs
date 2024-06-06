@@ -40,7 +40,7 @@ mod utils {
         fn from_str(input: &str) -> Self {
             let captures = NODE_RE.captures(input).unwrap();
             let x = captures.name("x").unwrap().as_str().parse().unwrap();
-            let y = captures.name("x").unwrap().as_str().parse().unwrap();
+            let y = captures.name("y").unwrap().as_str().parse().unwrap();
             let position = Position::new(x, y);
             let size = captures.name("size").unwrap().as_str().parse().unwrap();
             let used = captures.name("used").unwrap().as_str().parse().unwrap();
@@ -56,29 +56,32 @@ mod utils {
 
     #[derive(Debug, Default)]
     pub struct Grid {
-        nodes: Vec<Node>,
+        nodes: HashMap<Position, Node>,
     }
 
     impl Grid {
         pub fn parse_input_file(&mut self, filename: &str) {
             self.nodes = io_utils::file_to_lines(filename)
                 .skip(2)
-                .map(|line| Node::from_str(&line))
+                .map(|line| {
+                    let node = Node::from_str(&line);
+                    (node.position, node)
+                })
                 .collect();
         }
 
         fn nodes_fitting_self(&self) -> usize {
-            self.nodes.iter().filter(|node| node.fits_self()).count()
+            self.nodes.values().filter(|node| node.fits_self()).count()
         }
 
         pub fn viable_pairs(&self) -> usize {
             let mut avail_count: HashMap<u32, usize> = HashMap::new();
-            self.nodes.iter().for_each(|node| {
+            self.nodes.values().for_each(|node| {
                 if node.avail == 0 { return; }
                 *avail_count.entry(node.avail).or_default() += 1;
             });
             let mut used_count: HashMap<u32, usize> = HashMap::new();
-            self.nodes.iter().for_each(|node| {
+            self.nodes.values().for_each(|node| {
                 if node.used == 0 { return; }
                 *used_count.entry(node.used).or_default() += 1;
             });
