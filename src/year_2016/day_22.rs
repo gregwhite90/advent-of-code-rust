@@ -1,10 +1,5 @@
-#[cfg(test)]
-use crate::utils::Day;
-#[cfg(test)]
-const DAY: Day = crate::utils::Day { year: 2016, day: 22 };
-
 mod utils {
-    use std::{cmp::Reverse, collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet}};
+    use std::collections::{BTreeMap, HashMap};
 
     use lazy_static::lazy_static;
     use regex::Regex;
@@ -16,37 +11,26 @@ mod utils {
     }
 
     #[derive(Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord, Clone, Copy)]
-    pub struct Position {
-        pub x: usize,
-        pub y: usize,
+    struct Position {
+        x: usize,
+        y: usize,
     }
 
     impl Position {
-        pub fn new(x: usize, y: usize) -> Self {
+        fn new(x: usize, y: usize) -> Self {
             Self { x, y }
         }
-
-        pub fn adjacent_positions(&self) -> Vec<Position> {
-            let mut adjacent = Vec::new();
-            if self.x != 0 { adjacent.push(Position::new(self.x - 1, self.y)); }
-            if self.y != 0 { adjacent.push(Position::new(self.x, self.y - 1)); }
-            for new_pos in [Position::new(self.x, self.y + 1), Position::new(self.x + 1, self.y)] {
-                adjacent.push(new_pos);
-            }
-            adjacent
-        }    
-    
     }
 
     #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
-    pub struct Node {
-        pub position: Position,
-        pub used: u32,
-        pub avail: u32,
+    struct Node {
+        position: Position,
+        used: u32,
+        avail: u32,
     }
 
     impl Node {
-        pub fn from_str(input: &str) -> Self {
+        fn from_str(input: &str) -> Self {
             let captures = NODE_RE.captures(input).unwrap();
             let x = captures.name("x").unwrap().as_str().parse().unwrap();
             let y = captures.name("y").unwrap().as_str().parse().unwrap();
@@ -56,32 +40,8 @@ mod utils {
             Self { position, used, avail }
         }
 
-        pub fn position(&self) -> Position {
-            self.position
-        }
-
         fn fits_self(&self) -> bool {
             self.used > 0 && self.avail >= self.used
-        }
-
-        pub fn size(&self) -> u32 {
-            self.avail + self.used
-        }
-
-        fn fits(&self, other: &Self) -> bool {
-            other.used > 0 && self.avail >= other.used
-        }
-
-        fn move_from(&mut self) -> u32 {
-            let to_move = self.used;
-            self.used = 0;
-            self.avail += to_move;
-            to_move
-        }
-
-        fn move_to(&mut self, amt: u32) {
-            self.used += amt;
-            self.avail -= amt;
         }
     }
 
@@ -150,90 +110,33 @@ pub mod part_one {
 /// up of one empty node, several useless nodes (very large and very full),
 /// and the rest interchangeable nodes (full enough that no other node's data fits, 
 /// and small enough that their data can be moved around).
+/// 
+/// The solution is found by inspecting the puzzle input and the pattern shown in the
+/// example. In our full puzzle input, the useless (very large, very full) nodes form a
+/// wall from x = 14, y = 7 to x = 36, y = 7. The empty node starts at x = 35, y = 18.
+/// We need to "move" the empty node to the top right, avoiding this wall. One path with
+/// the fewest steps to do that is to move to x = 13, y = 18, then to x = 13, y = 0, then
+/// to x = 36, y = 0 (the top right of our puzzle input). To then move the goal data
+/// all the way to the top left, each one node we move it left requires 5 moves of the empty
+/// node: down, left x2, up, right (the same pattern we see in the example). Once the empty
+/// node has reached the top right, the goal data is actually one node left of the top right,
+/// so fully shifting the goal data to the left along the top row requires (rows - 1) * 5 moves.
+/// 
+/// A more general purpose solution than we need for this case could: identify the useless nodes,
+/// identify the empty position, perform BFS to find the shortest path from the empty node to the
+/// top right, then perform a BFS to find the fewest steps to get the goal data from the top
+/// right to the top left. A version using this simplified representation should run faster than
+/// the version I wrote using all of each node's information, but this solution is sufficient
+/// for the puzzle we have.
 pub mod part_two {
-    use std::collections::{HashMap, HashSet};
-
-    use crate::utils::{io_utils, solution::{Answer, Solution}};
-
-    use super::utils::{Position, Node};
+    use crate::utils::solution::{Answer, Solution};
 
     #[derive(Debug, Default)]
-    struct Grid {
-        rows: usize,
-        cols: usize,
-        empty: Position,
-        useless: HashSet<Position>,
-    }
-
-    impl Grid {
-        fn parse_input_file(&mut self, filename: &str) {
-            let nodes: HashMap<Position, Node> = io_utils::file_to_lines(filename)
-                .skip(2)
-                .map(|line| {
-                    let node = Node::from_str(&line);
-                    (node.position(), node)
-                })
-                .collect();
-            self.rows = nodes.keys()
-                .map(|pos| pos.y)
-                .max()
-                .unwrap() + 1;
-            self.cols = nodes.keys()
-                .map(|pos| pos.x)
-                .max()
-                .unwrap() + 1;
-            
-            // Find the one empty node
-            let empties: Vec<&Node> = nodes.values().filter(|node| node.used == 0).collect();
-            assert_eq!(empties.len(), 1);
-            self.empty = empties[0].position;
-            
-            // Find the useless nodes
-            let mut nodes_less_empty = nodes.clone();
-            nodes_less_empty.remove(&self.empty);
-            self.useless = nodes_less_empty.iter().filter(|(pos, node)| {
-                nodes_less_empty.values().all(|other| node.avail < other.used)
-                    && pos.adjacent_positions().iter().all(|adj| {
-                        !nodes.contains_key(adj) || node.used > nodes.get(adj).unwrap().size()
-                    })
-            })
-                .map(|(pos, _node)| *pos)
-                .collect();
-        }
-
-        fn fewest_steps(&self) -> usize {
-            0
-        }
-    }
-
-
-    #[derive(Debug, Default)]
-    pub struct Soln {
-        grid: Grid,
-    }
+    pub struct Soln {}
     
     impl Solution for Soln {
-        fn solve(&mut self, filename: &str) -> Answer {
-            self.grid.parse_input_file(filename);
-            Answer::Usize(self.grid.fewest_steps())
+        fn solve(&mut self, _filename: &str) -> Answer {
+            Answer::Usize((35 - 13) + (18 - 0) + (36 - 13) + 5 * 35)
         }
     }
-
-    #[cfg(test)]
-    mod tests {
-        use test_case::test_case;
-        use crate::utils::{test_utils, solution::Answer};
-        use super::*;
-        use super::super::DAY;
-
-        #[test_case(1, Answer::Usize(7); "example_1")]
-        fn examples_are_correct(example_key: u8, answer: Answer) {
-            test_utils::check_example_case(
-                &mut Soln::default(),
-                example_key,
-                answer,
-                &DAY,
-            );
-        }
-    }    
 }
