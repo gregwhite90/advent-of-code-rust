@@ -3,9 +3,11 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2018, day: 2 };
 
-mod utils {
+pub mod part_one {
     use std::collections::HashMap;
 
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
+    
     #[derive(Debug)]
     pub struct BoxID {
         letter_count: HashMap<char, u32>,
@@ -24,11 +26,6 @@ mod utils {
             self.letter_count.values().filter(|c| **c == count).count()
         }
     }
-}
-
-pub mod part_one {
-    use crate::utils::{io_utils, solution::{Answer, Solution}};
-    use super::utils::BoxID;
 
     #[derive(Debug, Default)]
     pub struct Soln {
