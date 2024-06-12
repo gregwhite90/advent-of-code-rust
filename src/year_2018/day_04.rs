@@ -3,13 +3,13 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2018, day: 4 };
 
-pub mod part_one {
+mod utils {
     use std::{cmp::Reverse, collections::{BinaryHeap, HashMap}};
 
     use regex::Regex;   
     use chrono::{Duration, NaiveDateTime, NaiveTime, TimeDelta};
 
-    use crate::utils::{io_utils, solution::{Answer, Solution}};
+    use crate::utils::io_utils;
 
     #[derive(Debug)]
     struct SleepSession {
@@ -55,7 +55,7 @@ pub mod part_one {
                 .sum()
         }
 
-        fn most_overlapped_minute(&self) -> i64 {
+        fn most_overlapped_minute(&self) -> Option<(i64, u32)> {
             let basetime = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
             let mut minute_count: HashMap<i64, u32> = HashMap::new();
             self.sleep_sessions.iter().for_each(|ss| {
@@ -65,24 +65,17 @@ pub mod part_one {
                     time += Duration::minutes(1);
                 }
             });
-            *minute_count.iter().max_by_key(|(_minute, count)| **count).unwrap().0
+            minute_count.into_iter().max_by_key(|(_minute, count)| *count)
         }
     }
 
     #[derive(Debug, Default)]
-    pub struct Soln {
+    pub struct GuardSchedule {
         guards: HashMap<usize, Guard>,    
     }
 
-    impl Solution for Soln {
-        fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
-            Answer::Usize(self.strategy_one())
-        }
-    }
-
-    impl Soln {
-        fn parse_input_file(&mut self, filename: &str) {
+    impl GuardSchedule {
+        pub fn parse_input_file(&mut self, filename: &str) {
             let mut lines: BinaryHeap<Reverse<String>> = io_utils::file_to_lines(filename)
                 .map(|line| Reverse(line))
                 .collect();
@@ -122,12 +115,39 @@ pub mod part_one {
             }
         }   
 
-        fn strategy_one(&self) -> usize {
+        pub fn strategy_one(&self) -> usize {
             let (id, guard) = self.guards.iter()
                 .max_by_key(|(_id, guard)| guard.total_sleep_minutes())
                 .unwrap();
-            let most_overlapped_minute: usize = guard.most_overlapped_minute().try_into().unwrap();
+            let most_overlapped_minute: usize = guard.most_overlapped_minute().unwrap().0.try_into().unwrap();
             id * most_overlapped_minute
+        }
+
+        pub fn strategy_two(&self) -> usize {
+            let (id, guard) = self.guards.iter()
+                .filter(|(_id, guard)| guard.most_overlapped_minute().is_some())
+                .max_by_key(|(_id, guard)| guard.most_overlapped_minute().unwrap().1)
+                .unwrap();
+            let most_overlapped_minute: usize = guard.most_overlapped_minute().unwrap().0.try_into().unwrap();
+            id * most_overlapped_minute
+        }
+    }
+}
+
+pub mod part_one {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::GuardSchedule;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        guard_schedule: GuardSchedule,    
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.guard_schedule.parse_input_file(filename);
+            Answer::Usize(self.guard_schedule.strategy_one())
         }
     }
 
@@ -139,6 +159,42 @@ pub mod part_one {
         use super::super::DAY;
 
         #[test_case(1, Answer::Usize(240); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::GuardSchedule;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        guard_schedule: GuardSchedule,    
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.guard_schedule.parse_input_file(filename);
+            Answer::Usize(self.guard_schedule.strategy_two())
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::Usize(4_455); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
