@@ -116,20 +116,20 @@ mod utils {
         }   
 
         pub fn strategy_one(&self) -> usize {
-            let (id, guard) = self.guards.iter()
-                .max_by_key(|(_id, guard)| guard.total_sleep_minutes())
+            let guard = self.guards.values()
+                .max_by_key(|guard| guard.total_sleep_minutes())
                 .unwrap();
             let most_overlapped_minute: usize = guard.most_overlapped_minute().unwrap().0.try_into().unwrap();
-            id * most_overlapped_minute
+            guard.id * most_overlapped_minute
         }
 
         pub fn strategy_two(&self) -> usize {
-            let (id, guard) = self.guards.iter()
-                .filter(|(_id, guard)| guard.most_overlapped_minute().is_some())
-                .max_by_key(|(_id, guard)| guard.most_overlapped_minute().unwrap().1)
+            let guard = self.guards.values()
+                .filter(|guard| guard.most_overlapped_minute().is_some())
+                .max_by_key(|guard| guard.most_overlapped_minute().unwrap().1)
                 .unwrap();
             let most_overlapped_minute: usize = guard.most_overlapped_minute().unwrap().0.try_into().unwrap();
-            id * most_overlapped_minute
+            guard.id * most_overlapped_minute
         }
     }
 }
