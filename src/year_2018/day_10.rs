@@ -1,7 +1,7 @@
 #[cfg(test)]
 use crate::utils::Day;
 #[cfg(test)]
-const DAY: Day = crate::utils::Day { year: 2018, day: 9 };
+const DAY: Day = crate::utils::Day { year: 2018, day: 10 };
 
 mod utils {
     use std::{collections::HashSet, fmt::Display, ops::{Add, AddAssign, Sub}};
