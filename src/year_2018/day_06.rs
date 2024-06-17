@@ -66,9 +66,18 @@ mod utils {
     pub struct Grid {
         bounding_box: BoundingBox,
         regions: HashMap<Point, HashSet<Point>>,
+        safe_region_max_dist: usize,
     }
 
     impl Grid {
+        pub fn with_safe_region_max_dist(safe_region_max_dist: usize) -> Self {
+            Self {
+                bounding_box: BoundingBox::default(),
+                regions: HashMap::default(),
+                safe_region_max_dist,
+            }
+        }
+
         pub fn parse_input_file(&mut self, filename: &str) {
             let line_re = Regex::new(r"(?<x>\d+), (?<y>\d+)").unwrap();
             io_utils::file_to_lines(filename).for_each(|line| {
@@ -109,6 +118,19 @@ mod utils {
                 .max()
                 .unwrap()
         }
+
+        /// This assumes the safe region is contained within the bounding box, which is not necessarily true
+        pub fn safe_region_area(&mut self) -> usize {
+            iproduct!(
+                self.bounding_box.x.min..=self.bounding_box.x.max,
+                self.bounding_box.y.min..=self.bounding_box.y.max
+            ).filter(|(x, y)| {
+                let point = Point { x: *x, y: *y };
+                self.regions.keys().map(|pt| {
+                    point.manhattan_distance(&pt)
+                }).sum::<usize>() < self.safe_region_max_dist
+            }).count()
+        }
     }
 }
 
@@ -140,6 +162,55 @@ pub mod part_one {
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+    use super::utils::Grid;
+
+    #[derive(Debug)]
+    pub struct Soln {
+        grid: Grid,    
+    }
+
+    impl Default for Soln {
+        fn default() -> Self {
+            Self::with_safe_region_max_dist(10_000)
+        }
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.grid.parse_input_file(filename);
+            Answer::Usize(self.grid.safe_region_area())
+        }
+    }
+
+    impl Soln {
+        fn with_safe_region_max_dist(safe_region_max_dist: usize) -> Self {
+            Self {
+                grid: Grid::with_safe_region_max_dist(safe_region_max_dist),
+            }
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::Usize(16); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::with_safe_region_max_dist(32),
                 example_key,
                 answer,
                 &DAY,
