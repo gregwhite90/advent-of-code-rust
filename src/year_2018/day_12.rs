@@ -4,7 +4,7 @@ use crate::utils::Day;
 const DAY: Day = crate::utils::Day { year: 2018, day: 12 };
 
 mod utils {
-    use std::collections::HashSet;
+    use std::{collections::HashSet, fmt::Display};
 
     use regex::Regex;
 
@@ -16,6 +16,19 @@ mod utils {
         // the sequences that yield a plant in the next generation
         // TODO: change to just a BTreeSet of indices?
         propagation_notes: HashSet<Vec<bool>>,
+    }
+
+    impl Display for PlantPropagator {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{}", (self.min_idx()..=self.max_idx())
+                .map(|idx| {
+                    match self.pots_with_plants.contains(&idx) {
+                        true => '#',
+                        false => '.',
+                    }
+                })
+                .collect::<String>())
+        }
     }
 
     impl PlantPropagator {
@@ -53,8 +66,8 @@ mod utils {
         /// otherwise, would need to be more thoughtful about the edges
         pub fn propagate(&mut self) {
             let mut new_pots_with_plants = HashSet::new();
-            let min = *self.pots_with_plants.iter().min().unwrap_or(&0);
-            let max = *self.pots_with_plants.iter().max().unwrap_or(&0);
+            let min = self.min_idx();
+            let max = self.max_idx();
             for idx in min - 2..=max + 2 {
                 if self.propagation_notes.contains(
                     &vec![
@@ -69,6 +82,14 @@ mod utils {
                 }
             }            
             self.pots_with_plants = new_pots_with_plants;
+        }
+
+        pub fn min_idx(&self) -> i64 {
+            *self.pots_with_plants.iter().min().unwrap_or(&0)
+        }
+
+        fn max_idx(&self) -> i64 {
+            *self.pots_with_plants.iter().max().unwrap_or(&0)
         }
 
         pub fn sum_of_pots_with_plants(&self) -> i64 {
