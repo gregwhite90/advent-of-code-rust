@@ -151,7 +151,19 @@ mod utils {
             let mut collisions = HashSet::new();
             while !self.carts.is_empty() {
                 let mut cart = self.carts.pop().unwrap().0;
-                self.advance(&mut cart);                
+                self.advance(&mut cart);  
+                // TODO: a collision happens when a cart moves into a space occupied by another
+                // cart. This version only catches collisions when the carts start with one track
+                // between them facing different directions. e.g.,
+                //    -->-<--
+                //    ---X---
+                // We need to adjust to also catch collisions when the carts start next to each other. e.g.,
+                //    --><--
+                // This should result in
+                //    ---X--
+                // midway through the tick, but right now it results in
+                //    --<>--
+                // after the tick
                 if !new_positions.insert(cart.location) {
                     collisions.insert(cart.location);
                     continue;
@@ -205,6 +217,13 @@ mod utils {
             assert_eq!(1, collisions.len());
             collisions.into_iter().next().unwrap()
         }
+
+        pub fn last_cart_standing_location(&mut self) -> Point {
+            while self.carts.len() > 1 {
+                self.tick();
+            }            
+            self.carts.pop().unwrap().0.location
+        }
     }
 }
 
@@ -233,6 +252,42 @@ pub mod part_one {
         use super::super::DAY;
 
         #[test_case(1, Answer::String("7,3".to_string()); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::Tracks;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        tracks: Tracks,    
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.tracks.parse_input_file(filename);
+            Answer::String(format!("{}", self.tracks.last_cart_standing_location()))
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(2, Answer::String("6,4".to_string()); "example_2")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
