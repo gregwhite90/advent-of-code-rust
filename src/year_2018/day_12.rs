@@ -95,6 +95,10 @@ mod utils {
         pub fn sum_of_pots_with_plants(&self) -> i64 {
             self.pots_with_plants.iter().sum()
         }
+
+        pub fn count_of_pots_with_plants(&self) -> i64 {
+            self.pots_with_plants.len().try_into().unwrap()
+        }
     }
 }
 
@@ -133,6 +137,42 @@ pub mod part_one {
                 answer,
                 &DAY,
             );
+        }
+    }
+}
+
+/// Find when the pattern first repeats (it will then continue to
+/// repeat forever) and extrapolate.
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::PlantPropagator;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        plant_propagator: PlantPropagator,    
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.plant_propagator.parse_input_file(filename);
+            let mut previous = format!("{}", self.plant_propagator);
+            let mut previous_min_idx = self.plant_propagator.min_idx();
+            let mut iteration = 0;
+            loop {
+                self.plant_propagator.propagate(); 
+                iteration += 1;               
+                let next = format!("{}", self.plant_propagator);
+                let next_min_idx = self.plant_propagator.min_idx();
+                if next == previous {
+                    return Answer::I64(
+                        self.plant_propagator.sum_of_pots_with_plants()
+                        + (50_000_000_000 - iteration) * (next_min_idx - previous_min_idx) * self.plant_propagator.count_of_pots_with_plants()
+                    );
+                }
+                previous = next;
+                previous_min_idx = next_min_idx;
+            }
         }
     }
 }
