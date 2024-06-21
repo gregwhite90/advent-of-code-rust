@@ -152,20 +152,17 @@ mod utils {
             while !self.carts.is_empty() {
                 let mut cart = self.carts.pop().unwrap().0;
                 self.advance(&mut cart);  
-                // TODO: a collision happens when a cart moves into a space occupied by another
-                // cart. This version only catches collisions when the carts start with one track
+                // A collision happens when a cart moves into a space occupied by another
+                // cart. We account both for the case where the carts start with one track
                 // between them facing different directions. e.g.,
                 //    -->-<--
                 //    ---X---
-                // We need to adjust to also catch collisions when the carts start next to each other. e.g.,
+                // and the case where the carts start next to each other. e.g.,
                 //    --><--
-                // This should result in
                 //    ---X--
-                // midway through the tick, but right now it results in
-                //    --<>--
-                // after the tick
-                if !new_positions.insert(cart.location) {
+                if !new_positions.insert(cart.location) || self.carts.iter().any(|c| c.0.location == cart.location) {
                     collisions.insert(cart.location);
+                    self.carts.retain(|c| c.0.location != cart.location);
                     continue;
                 }
                 new_carts.push(Reverse(cart));
