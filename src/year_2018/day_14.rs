@@ -4,84 +4,73 @@ use crate::utils::Day;
 const DAY: Day = crate::utils::Day { year: 2018, day: 14 };
 
 mod utils {
-    use crate::utils::io_utils;
-
     #[derive(Debug)]
-    pub struct RecipeBoard {
+    pub struct RecipeMaker {
         recipes: Vec<u8>,
-        test_recipes: usize,
+        elves: [usize; 2],
     }
 
-    impl Default for RecipeBoard {
+    impl Default for RecipeMaker {
         fn default() -> Self {
             Self {
                 recipes: vec![3, 7],
-                test_recipes: 0,
+                elves: [0, 1],
             }
         }
     }
 
-    impl RecipeBoard {
-        pub fn parse_input_file(&mut self, filename: &str) {
-            self.test_recipes = io_utils::file_to_string(filename).parse().unwrap();
+    impl RecipeMaker {
+        pub fn make_recipes(&mut self) {
+            let new_recipe: u8 = self.elves.iter().map(|elf| self.recipes[*elf]).sum();
+            let repr = format!("{}", new_recipe);
+            repr.chars().for_each(|ch| {
+                self.recipes.push(ch.to_digit(10).unwrap().try_into().unwrap());
+            });
+            self.elves.iter_mut().for_each(|elf| {
+                *elf = (*elf + 1 + self.recipes[*elf] as usize) % self.recipes.len()
+            });
         }
 
-        pub fn make_recipes_test_recipes(&mut self) {
-            let mut elf_0_idx = 0;
-            let mut elf_1_idx = 1;
-            while self.recipes.len() < self.test_recipes + 10 {
-                let new_recipe = self.recipes[elf_0_idx] + self.recipes[elf_1_idx];
-                let repr = format!("{}", new_recipe);
-                repr.chars().for_each(|ch| {
-                    self.recipes.push(ch.to_digit(10).unwrap().try_into().unwrap());
-                });
-                elf_0_idx = (elf_0_idx + 1 + self.recipes[elf_0_idx] as usize) % self.recipes.len();
-                elf_1_idx = (elf_1_idx + 1 + self.recipes[elf_1_idx] as usize) % self.recipes.len();
-            }
+        pub fn num_recipes(&self) -> usize {
+            self.recipes.len()
         }
 
-        pub fn score_next_10(&self) -> String {
-            self.recipes[self.test_recipes..self.test_recipes + 10].iter().map(|score| {
+        pub fn score(&self, start: usize, len: usize) -> String {
+            self.recipes[start..start + len].iter().map(|score| {
                 format!("{}", score)
             })
                 .collect::<String>()
         }
 
-        pub fn make_recipes(&mut self) -> usize {
-            let test_sequence: Vec<u8> = format!("{:0>5}", self.test_recipes).chars().map(|ch| ch.to_digit(10).unwrap() as u8).collect();
-            let mut cur_idx = 0;
-            let mut cur_test_sequence_idx = 0;
-            let mut elf_0_idx = 0;
-            let mut elf_1_idx = 1;
-            loop {
-                let new_recipe = self.recipes[elf_0_idx] + self.recipes[elf_1_idx];
-                let repr = format!("{}", new_recipe);
-                repr.chars().for_each(|ch| {
-                    self.recipes.push(ch.to_digit(10).unwrap().try_into().unwrap());
-                });
-                elf_0_idx = (elf_0_idx + 1 + self.recipes[elf_0_idx] as usize) % self.recipes.len();
-                elf_1_idx = (elf_1_idx + 1 + self.recipes[elf_1_idx] as usize) % self.recipes.len();
-                while cur_idx < self.recipes.len() {
-                    if self.recipes[cur_idx] == test_sequence[cur_test_sequence_idx] {
-                        cur_idx += 1;
-                        cur_test_sequence_idx += 1;
-                        if cur_test_sequence_idx == test_sequence.len() {
-                            return cur_idx - cur_test_sequence_idx;
-                        }
-                    } else {
-                        cur_test_sequence_idx = if self.recipes[cur_idx] == test_sequence[0] { 1 } else { 0 };
-                        cur_idx += 1;
-                    }
-                }
-            }
+        pub fn test_sequence_matches(&self, test_sequence: &Vec<u8>, start: usize) -> bool {
+            self.recipes[start..start + test_sequence.len()] == *test_sequence
         }
     }
 }
 
 pub mod part_one {
-    use crate::utils::solution::{Answer, Solution};
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
 
-    use super::utils::RecipeBoard;
+    use super::utils::RecipeMaker;
+
+    #[derive(Debug, Default)]
+    pub struct RecipeBoard {
+        recipe_maker: RecipeMaker,
+        test_recipes: usize,
+    }
+
+    impl RecipeBoard {
+        fn parse_input_file(&mut self, filename: &str) {
+            self.test_recipes = io_utils::file_to_string(filename).parse().unwrap();
+        }
+
+        fn score(&mut self) -> String {
+            while self.recipe_maker.num_recipes() < self.test_recipes + 10 {
+                self.recipe_maker.make_recipes();
+            }
+            self.recipe_maker.score(self.test_recipes, 10)
+        }
+    }
 
     #[derive(Debug, Default)]
     pub struct Soln {
@@ -91,8 +80,7 @@ pub mod part_one {
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
             self.recipe_board.parse_input_file(filename);
-            self.recipe_board.make_recipes_test_recipes();
-            Answer::String(self.recipe_board.score_next_10())
+            Answer::String(self.recipe_board.score())
         }
     }
 
@@ -119,9 +107,40 @@ pub mod part_one {
 }
 
 pub mod part_two {
-    use crate::utils::solution::{Answer, Solution};
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
 
-    use super::utils::RecipeBoard;
+    use super::utils::RecipeMaker;
+
+
+    #[derive(Debug, Default)]
+    pub struct RecipeBoard {
+        recipe_maker: RecipeMaker,
+        test_sequence: Vec<u8>,
+    }
+
+    impl RecipeBoard {
+        fn parse_input_file(&mut self, filename: &str) {
+            self.test_sequence = io_utils::file_to_string(filename)
+                .chars()
+                .map(|ch| ch.to_digit(10).unwrap().try_into().unwrap())
+                .collect();
+        }
+
+        fn before_first_test_sequence(&mut self) -> usize {
+            let mut cur_idx = 0;
+            loop {
+                while cur_idx + self.test_sequence.len() >= self.recipe_maker.num_recipes() { 
+                    self.recipe_maker.make_recipes();
+                }
+                while cur_idx + self.test_sequence.len() < self.recipe_maker.num_recipes() {
+                    if self.recipe_maker.test_sequence_matches(&self.test_sequence, cur_idx) {
+                        return cur_idx;
+                    }
+                    cur_idx += 1;
+                }
+            }
+        }
+    }
 
     #[derive(Debug, Default)]
     pub struct Soln {
@@ -131,7 +150,7 @@ pub mod part_two {
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
             self.recipe_board.parse_input_file(filename);
-            Answer::Usize(self.recipe_board.make_recipes())
+            Answer::Usize(self.recipe_board.before_first_test_sequence())
         }
     }
 
