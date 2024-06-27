@@ -63,12 +63,16 @@ mod utils {
     }
 
     impl CombatUnit {
-        fn new(point: Point, unit_type_input: char, id: usize) -> Self {
+        fn new(point: Point, unit_type_input: char, elf_attack_power: usize, id: usize) -> Self {
+            let unit_type = CombatUnitType::from_char(unit_type_input);
             Self {
                 round: 0,
                 point,
-                unit_type: CombatUnitType::from_char(unit_type_input),
-                attack_power: 3,
+                unit_type,
+                attack_power: match unit_type {
+                    CombatUnitType::Goblin => 3,
+                    CombatUnitType::Elf => elf_attack_power,
+                },
                 id,
                 hit_points: RefCell::new(200),
             }
@@ -184,7 +188,7 @@ mod utils {
     }
 
     impl CombatSimulator {
-        pub fn parse_input_file(&mut self, filename: &str) {
+        pub fn parse_input_file(&mut self, filename: &str, elf_attack_power: usize) {
             let mut row = 0;
             let mut id = 0;
             io_utils::file_to_lines(filename).for_each(|line| {
@@ -198,6 +202,7 @@ mod utils {
                             self.units.push(Reverse(CombatUnit::new(
                                 Point { row, col },
                                 ch,
+                                elf_attack_power,
                                 id,
                             )));
                             id += 1;
@@ -209,11 +214,14 @@ mod utils {
             });
         }
 
-        pub fn simulate_combat(&mut self) {
+        /// Returns whether zero elves have died in the combat. Depending on argument,
+        /// short-circuits if elf dies
+        pub fn simulate_combat(&mut self, short_circuit_if_elf_dies: bool) -> bool {
             loop {
                 let mut unit = self.units.pop().unwrap().0;
                 // Remove from units collection if the unit is dead.
                 if *unit.hit_points.borrow() == 0 {
+                    if short_circuit_if_elf_dies && unit.unit_type == CombatUnitType::Elf { return false; }
                     continue;
                 }
                 let targets = self.units.iter().filter(|u| {
@@ -221,8 +229,9 @@ mod utils {
                 });
                 // Combat ends if there are no targets
                 if targets.clone().count() == 0 {
+                    let result = unit.unit_type == CombatUnitType::Elf;
                     self.units.push(Reverse(unit));
-                    break;
+                    return result;
                 }
                 // If in attacking range, attack.
                 if attack(&unit, targets.clone()) {
@@ -328,8 +337,8 @@ pub mod part_one {
 
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.combat_simulator.parse_input_file(filename);
-            self.combat_simulator.simulate_combat();
+            self.combat_simulator.parse_input_file(filename, 3);
+            self.combat_simulator.simulate_combat(false);
             Answer::Usize(self.combat_simulator.outcome())
         }
     }
@@ -347,6 +356,51 @@ pub mod part_one {
         #[test_case(4, Answer::Usize(27_755); "example_4")]
         #[test_case(5, Answer::Usize(28_944); "example_5")]
         #[test_case(6, Answer::Usize(18_740); "example_6")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::CombatSimulator;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {}
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            let mut elf_attack_power = 4;
+            loop {
+                let mut combat_simulator = CombatSimulator::default();
+                combat_simulator.parse_input_file(filename, elf_attack_power);
+                if combat_simulator.simulate_combat(true) {
+                    return Answer::Usize(combat_simulator.outcome());        
+                }
+                elf_attack_power += 1;
+            }
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::Usize(4_988); "example_1")]
+        #[test_case(3, Answer::Usize(31_284); "example_3")]
+        #[test_case(4, Answer::Usize(3_478); "example_4")]
+        #[test_case(5, Answer::Usize(6_474); "example_5")]
+        #[test_case(6, Answer::Usize(1_140); "example_6")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
