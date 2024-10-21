@@ -3,6 +3,13 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2018, day: 11 };
 
+
+/*
+    Grid will have serial number and power levels.
+
+    GridSearcher will have a dimensions and method for window size that takes a reference to a grid.
+*/
+
 mod utils {
     use std::{collections::HashMap, fmt::Display};
 
@@ -26,8 +33,6 @@ mod utils {
 
     #[derive(Debug, Default)]
     pub struct Grid {
-        dimensions: usize,
-        window_size: usize,
         serial_number: usize,
         power_levels: HashMap<Point, i64>,
     }
@@ -39,8 +44,6 @@ mod utils {
     impl Grid {
         pub fn new(serial_number: usize) -> Self {
             Self {
-                dimensions: 300,
-                window_size: 3,
                 serial_number,
                 power_levels: HashMap::new(),
             }
@@ -50,7 +53,7 @@ mod utils {
             self.serial_number = io_utils::file_to_string(filename).parse().unwrap();
         }
 
-        fn power_level(&mut self, point: &Point) -> i64 {
+        pub fn power_level(&mut self, point: &Point) -> i64 {
             *self.power_levels.entry(*point).or_insert({
                 let rack_id = point.x + 10;
                 let power_level = (rack_id * point.y + self.serial_number) * rack_id;
@@ -60,24 +63,27 @@ mod utils {
                 power_level - 5
             })
         }
+    }
 
-        pub fn largest_total_power_top_left(&mut self) -> Point {
-            let (point, _total_power) = iproduct!(
-                1..self.dimensions - self.window_size + 1,
-                1..self.dimensions - self.window_size + 1
-            )
-                .map(|(col, row)| {
-                    let total_power: i64 = iproduct!(col..col + self.window_size, row..row + self.window_size)
-                        .map(|(x, y)| { 
-                            self.power_level(&Point { x, y })
-                        })
-                        .sum();
-                    (Point {x: col, y: row}, total_power)
-                })
-                .max_by_key(|(_point, total_power)| *total_power)
-                .unwrap();
-            point
-        }
+    pub fn search_grid(
+        dimensions: usize, 
+        window_size: usize,
+        grid: &mut Grid,
+    ) -> (Point, i64) {
+        iproduct!(
+            1..dimensions - window_size + 1,
+            1..dimensions - window_size + 1
+        )
+            .map(|(col, row)| {
+                let total_power: i64 = iproduct!(col..col + window_size, row..row + window_size)
+                    .map(|(x, y)| { 
+                        grid.power_level(&Point { x, y })
+                    })
+                    .sum();
+                (Point {x: col, y: row}, total_power)
+            })
+            .max_by_key(|(_point, total_power)| *total_power)
+            .unwrap()
     }
 
     #[cfg(test)]
@@ -99,7 +105,7 @@ mod utils {
 pub mod part_one {
     use crate::utils::solution::{Answer, Solution};
 
-    use super::utils::Grid;
+    use super::utils::{self, Grid};
 
     #[derive(Debug)]
     pub struct Soln {
@@ -109,7 +115,8 @@ pub mod part_one {
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
             self.grid.parse_input_file(filename);
-            Answer::String(format!("{}", self.grid.largest_total_power_top_left()))
+            let (point, _total_power) = utils::search_grid(300, 3, &mut self.grid);
+            Answer::String(format!("{}", point))
         }
     }
 
@@ -130,6 +137,57 @@ pub mod part_one {
 
         #[test_case(1, Answer::String("33,45".to_string()); "example_1")]
         #[test_case(2, Answer::String("21,61".to_string()); "example_2")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }
+}
+
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::{self, Grid};
+
+    #[derive(Debug)]
+    pub struct Soln {
+        grid: Grid,    
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.grid.parse_input_file(filename);
+            let ((top_left, _total_power), window_size) = (1..=300).map(|window_size| {
+                (utils::search_grid(300, window_size, &mut self.grid), window_size)
+            })
+                .max_by_key(|((_point, total_power), _window_size)| *total_power)
+                .unwrap();
+            Answer::String(format!("{},{}", top_left, window_size))
+        }
+    }
+
+    impl Default for Soln {
+        fn default() -> Self {
+            Self {
+                grid: Grid::new(0),
+            }
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::String("90,269,16".to_string()); "example_1")]
+        #[test_case(2, Answer::String("232,251,12".to_string()); "example_2")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
