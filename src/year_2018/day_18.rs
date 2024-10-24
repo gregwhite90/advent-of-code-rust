@@ -4,7 +4,7 @@ use crate::utils::Day;
 const DAY: Day = crate::utils::Day { year: 2018, day: 18 };
 
 mod utils {
-    use std::collections::HashMap;
+    use std::collections::{BTreeMap, HashMap};
     
     use itertools::iproduct;
 
@@ -28,7 +28,7 @@ mod utils {
         }
     }
 
-    #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+    #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
     struct Point {
         x: isize,
         y: isize,
@@ -36,9 +36,11 @@ mod utils {
 
     #[derive(Debug, Default)]
     pub struct LumberCollectionArea {
-        acres: HashMap<Point, Acre>,
+        acres: BTreeMap<Point, Acre>,
+        minutes: usize,
         rows: usize,
         cols: usize,
+        history: HashMap<BTreeMap<Point, Acre>, usize>,
     }
 
     impl LumberCollectionArea {
@@ -52,6 +54,7 @@ mod utils {
                 row += 1;
             });
             self.rows = row as usize;
+            self.history.insert(self.acres.clone(), self.minutes);
         }
 
         /// Returns the count of types of adjacent acres
@@ -70,8 +73,9 @@ mod utils {
             res
         }
 
-        pub fn progress_one_minute(&mut self) {
-            let mut new_acres = HashMap::new();
+        /// Returns the period of repeating, if any
+        fn progress_one_minute(&mut self) -> Option<usize> {
+            let mut new_acres = BTreeMap::new();
             for (x, y) in iproduct!(0..self.cols as isize, 0..self.rows as isize) {
                 let pt = Point { x, y };
                 let adj_acre_count = self.adjacent_acre_count(&pt);
@@ -107,19 +111,38 @@ mod utils {
                 }
             }
             self.acres = new_acres;
+            self.minutes += 1;
+            if let Some(first_instance) = self.history.get(&self.acres) {
+                return Some(self.minutes - *first_instance);
+            }
+            self.history.insert(self.acres.clone(), self.minutes);            
+            None
+        }
+
+        pub fn progress_to(&mut self, minutes: usize) {
+            while self.minutes < minutes {
+                if let Some(period) = self.progress_one_minute() {
+                    let remaining = (minutes - self.minutes) % period;
+                    for _ in 0..remaining {
+                        self.progress_one_minute();
+                    }
+                    return;
+                }
+            }
         }
 
         pub fn resource_value(&self) -> usize {
-            let trees_acres = self.acres.values()
-                .filter(|acre| **acre == Acre::TREES)
-                .count();
-            let lumberyard_acres = self.acres.values()
-                .filter(|acre| **acre == Acre::LUMBERYARD)
-                .count();
-            trees_acres * lumberyard_acres
+            self.acre_value(Acre::TREES) * self.acre_value(Acre::LUMBERYARD)
+        }
+
+        fn acre_value(&self, acre_type: Acre) -> usize {
+            self.acres.values()
+                .filter(|acre| **acre == acre_type)
+                .count()
         }
     }
 }
+
 
 pub mod part_one {
     use crate::utils::solution::{Answer, Solution};
@@ -134,9 +157,7 @@ pub mod part_one {
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
             self.lumber_collection_area.parse_input_file(filename);
-            for _ in 0..10 {
-                self.lumber_collection_area.progress_one_minute();
-            }
+            self.lumber_collection_area.progress_to(10);
             Answer::Usize(self.lumber_collection_area.resource_value())
         }
     }
@@ -156,6 +177,28 @@ pub mod part_one {
                 answer,
                 &DAY,
             );
+        }
+    }
+}
+
+pub mod part_two {
+    // TODO: need to find a circularity. so the lumber collection area needs to be hashable, it needs to use a BTreeMap instead
+    // of a HashMap. Need to track the state of the LCA with the minutes, find the period of the repeating, and calculate how many more
+    // minutes need to be progressed.
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::LumberCollectionArea;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        lumber_collection_area: LumberCollectionArea,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.lumber_collection_area.parse_input_file(filename);
+            self.lumber_collection_area.progress_to(1_000_000_000);
+            Answer::Usize(self.lumber_collection_area.resource_value())
         }
     }
 }
