@@ -68,23 +68,10 @@ mod utils {
         visited_status: VisitedStatus,
     }
 
-    impl Status {
-        pub fn is_end(&self, target: Coordinates) -> bool {
-            self.visited_status.is_end(target)
-        }
-    }
-
     #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
     struct VisitedStatus {
         coordinates: Coordinates,
         gear: Gear,
-    }
-
-    impl VisitedStatus {
-        pub fn is_end(&self, target: Coordinates) -> bool {
-            // TODO: should this actually be part of maze somehow?
-            self.coordinates == target && self.gear == Gear::TORCH
-        }
     }
 
     #[derive(Debug, Default)]
@@ -140,24 +127,6 @@ mod utils {
                 .sum()
         }
 
-        /**
-         * Status is:
-         * - minutes elapsed
-         * - coordinates
-         * - gear status
-         * 
-         * End status test is:
-         * - coordinates == target, and
-         * - gear status == torch
-         * 
-         * PQ of Reverse(Status)
-         * 
-         * Options are:
-         * - move to (1) adjacent region that (2) allows, cost 1 min
-         * - switch gear status, cost 7 min.
-         * 
-         * Also track visited (coordinates and gear) to not double back.
-         */
         pub fn fewest_minutes(&mut self) -> usize {
             let mut visited: HashSet<VisitedStatus> = HashSet::new();
             let mut pq = BinaryHeap::from([
@@ -183,72 +152,32 @@ mod utils {
                 // move to adjacent
                 if status.visited_status.coordinates.x != 0 {
                     // go left
-                    let new_coords = Coordinates { x: status.visited_status.coordinates.x - 1, y: status.visited_status.coordinates.y };
-                    let erosion_level = self.region_erosion_level(new_coords);
-                    let region_type = RegionType::from_erosion_level(erosion_level);
-                    let valid_gears = region_type.valid_gear();
-                    if valid_gears.contains(&status.visited_status.gear) {
-                        pq.push(Reverse(
-                            Status {
-                                minutes: status.minutes + 1,
-                                visited_status: VisitedStatus {
-                                    coordinates: new_coords,
-                                    gear: status.visited_status.gear,
-                                }
-                            }    
-                        ));
-                    }
+                    self.step_to_new_coords(
+                        &status, 
+                        Coordinates { x: status.visited_status.coordinates.x - 1, y: status.visited_status.coordinates.y }, 
+                        &mut pq,
+                    );
                 }
                 if status.visited_status.coordinates.y != 0 {
                     // go up
-                    let new_coords = Coordinates { x: status.visited_status.coordinates.x, y: status.visited_status.coordinates.y - 1 };
-                    let erosion_level = self.region_erosion_level(new_coords);
-                    let region_type = RegionType::from_erosion_level(erosion_level);
-                    let valid_gears = region_type.valid_gear();
-                    if valid_gears.contains(&status.visited_status.gear) {
-                        pq.push(Reverse(
-                            Status {
-                                minutes: status.minutes + 1,
-                                visited_status: VisitedStatus {
-                                    coordinates: new_coords,
-                                    gear: status.visited_status.gear,
-                                }
-                            }    
-                        ));
-                    }
+                    self.step_to_new_coords(
+                        &status, 
+                        Coordinates { x: status.visited_status.coordinates.x, y: status.visited_status.coordinates.y - 1 }, 
+                        &mut pq,
+                    );
                 }
                 // go right
-                let new_coords = Coordinates { x: status.visited_status.coordinates.x + 1, y: status.visited_status.coordinates.y };
-                let erosion_level = self.region_erosion_level(new_coords);
-                let region_type = RegionType::from_erosion_level(erosion_level);
-                let valid_gears = region_type.valid_gear();
-                if valid_gears.contains(&status.visited_status.gear) {
-                    pq.push(Reverse(
-                        Status {
-                            minutes: status.minutes + 1,
-                            visited_status: VisitedStatus {
-                                coordinates: new_coords,
-                                gear: status.visited_status.gear,
-                            }
-                        }    
-                    ));
-                }
+                self.step_to_new_coords(
+                    &status, 
+                    Coordinates { x: status.visited_status.coordinates.x + 1, y: status.visited_status.coordinates.y }, 
+                    &mut pq,
+                );
                 // go down
-                let new_coords = Coordinates { x: status.visited_status.coordinates.x, y: status.visited_status.coordinates.y + 1 };
-                let erosion_level = self.region_erosion_level(new_coords);
-                let region_type = RegionType::from_erosion_level(erosion_level);
-                let valid_gears = region_type.valid_gear();
-                if valid_gears.contains(&status.visited_status.gear) {
-                    pq.push(Reverse(
-                        Status {
-                            minutes: status.minutes + 1,
-                            visited_status: VisitedStatus {
-                                coordinates: new_coords,
-                                gear: status.visited_status.gear,
-                            }
-                        }    
-                    ));
-                }
+                self.step_to_new_coords(
+                    &status, 
+                    Coordinates { x: status.visited_status.coordinates.x, y: status.visited_status.coordinates.y + 1 }, 
+                    &mut pq,
+                );
                 // switch gears
                 let erosion_level = self.region_erosion_level(status.visited_status.coordinates);
                 let region_type = RegionType::from_erosion_level(erosion_level);
@@ -266,6 +195,23 @@ mod utils {
                 }
             }
             panic!("Empty priority queue without reaching target.");
+        }
+
+        fn step_to_new_coords(&mut self, status: &Status, coords: Coordinates, pq: &mut BinaryHeap<Reverse<Status>>) {
+            let erosion_level = self.region_erosion_level(coords);
+            let region_type = RegionType::from_erosion_level(erosion_level);
+            let valid_gears = region_type.valid_gear();
+            if valid_gears.contains(&status.visited_status.gear) {
+                pq.push(Reverse(
+                    Status {
+                        minutes: status.minutes + 1,
+                        visited_status: VisitedStatus {
+                            coordinates: coords,
+                            gear: status.visited_status.gear,
+                        }
+                    }    
+                ));
+            }
         }
 
         fn is_end(&self, status: &Status) -> bool {
@@ -312,11 +258,9 @@ pub mod part_one {
 }
 
 pub mod part_two {
-    use std::collections::HashSet;
-
     use crate::utils::solution::{Answer, Solution};
 
-    use super::utils::{Coordinates, Maze};
+    use super::utils::Maze;
 
     #[derive(Debug, Default)]
     pub struct Soln {
