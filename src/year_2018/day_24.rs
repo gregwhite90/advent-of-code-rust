@@ -4,8 +4,9 @@ use crate::utils::Day;
 const DAY: Day = crate::utils::Day { year: 2018, day: 24 };
 
 mod utils {
-    use std::collections::{HashMap, HashSet};
+    use std::{cmp, collections::{HashMap, HashSet}};
     
+    use itertools::Itertools;
     use lazy_static::lazy_static;
     use regex::Regex;
 
@@ -14,6 +15,12 @@ mod utils {
     lazy_static! {
         static ref GROUP_RE: Regex = Regex::new(r"(?<units>\d+) units each with (?<hit_points>\d+) hit points (?<weaknesses_and_immunities>[\(a-z \,\;\)]+)?with an attack that does (?<attack_damage>\d+) (?<attack_type>[a-z ]+) damage at initiative (?<initiative>\d+)").unwrap();
         static ref WEAKNESS_IMMUNITY_RE: Regex = Regex::new(r"(?<modifier>weak|immune) to (?<types>[a-z \,]+)[\)\;]").unwrap();
+    }
+
+    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+    enum ArmyType {
+        IMMUNE_SYSTEM,
+        INFECTION,
     }
 
     #[derive(Debug, Default)]
@@ -43,6 +50,117 @@ mod utils {
 
         pub fn num_units(&self) -> usize {
             self.immune_system.num_units() + self.infection.num_units()
+        }
+
+        pub fn fight(&mut self) {
+            // Select targets
+            let mut immune_system_selected_targets: HashMap<usize, usize> = HashMap::new();
+            for (attacking_id, attacking_group) in self.immune_system.groups.iter().sorted_by(|a, b| {
+                b.1.effective_power().cmp(&a.1.effective_power())
+                    .then_with(|| b.1.initiative.cmp(&a.1.initiative))
+            }) {
+                if let Some((defending_id, _defending_group)) = self.infection.groups.iter()
+                    .filter(|(defending_id, defending_group)| {
+                        !immune_system_selected_targets.values().contains(defending_id)
+                        && !defending_group.immunities.contains(&attacking_group.attack_type)
+                    })
+                    .max_by(|a, b| {
+                        a.1.weaknesses.contains(&attacking_group.attack_type).cmp(&b.1.weaknesses.contains(&attacking_group.attack_type))
+                            .then_with(|| a.1.effective_power().cmp(&b.1.effective_power()))
+                            .then_with(|| a.1.initiative.cmp(&b.1.initiative))
+                    }) {
+                        immune_system_selected_targets.insert(*attacking_id, *defending_id);
+                    }
+            }
+            // TODO: refactor shared functionality?
+            let mut infection_selected_targets: HashMap<usize, usize> = HashMap::new();
+            for (attacking_id, attacking_group) in self.infection.groups.iter().sorted_by(|a, b| {
+                b.1.effective_power().cmp(&a.1.effective_power())
+                    .then_with(|| b.1.initiative.cmp(&a.1.initiative))
+            }) {
+                if let Some((defending_id, _defending_group)) = self.immune_system.groups.iter()
+                    .filter(|(defending_id, defending_group)| {
+                        !infection_selected_targets.values().contains(defending_id)
+                        && !defending_group.immunities.contains(&attacking_group.attack_type)
+                    })
+                    .max_by(|a, b| {
+                        a.1.weaknesses.contains(&attacking_group.attack_type).cmp(&b.1.weaknesses.contains(&attacking_group.attack_type))
+                            .then_with(|| a.1.effective_power().cmp(&b.1.effective_power()))
+                            .then_with(|| a.1.initiative.cmp(&b.1.initiative))
+                    }) {
+                        infection_selected_targets.insert(*attacking_id, *defending_id);
+                    }
+            }
+            // Attack
+            for (army_type, id) in self.all_groups_by_initiative() {
+                match army_type {
+                    ArmyType::IMMUNE_SYSTEM => {
+                        if let Some(defending_id) = immune_system_selected_targets.get(&id) {
+                            let attacking_group = self.immune_system.groups.get(&id).unwrap();
+                            let defending_group = self.infection.groups.get_mut(&defending_id).unwrap();
+                            let damage = attacking_group.effective_power()
+                                * if defending_group.weaknesses.contains(&attacking_group.attack_type) { 2 } else { 1 };
+                            let units_killed = cmp::min(defending_group.units, damage / defending_group.hit_points);
+                            defending_group.remove_units(units_killed);
+                        }
+                    },
+                    ArmyType::INFECTION => {
+                        if let Some(defending_id) = infection_selected_targets.get(&id) {
+                            let attacking_group = self.infection.groups.get(&id).unwrap();
+                            let defending_group = self.immune_system.groups.get_mut(&defending_id).unwrap();
+                            let damage = attacking_group.effective_power()
+                                * if defending_group.weaknesses.contains(&attacking_group.attack_type) { 2 } else { 1 };
+                            let units_killed = cmp::min(defending_group.units, damage / defending_group.hit_points);
+                            defending_group.remove_units(units_killed);
+                        }                        
+                    },
+                }
+            }
+            // Remove groups with no units remaining after the fight 
+            for (army_type, id) in self.all_groups_by_initiative() {
+                if self.units_remaining(army_type, id) == 0 {
+                    match army_type {
+                        ArmyType::IMMUNE_SYSTEM => {
+                            self.immune_system.groups.remove(&id);
+                        },
+                        ArmyType::INFECTION => {
+                            self.infection.groups.remove(&id);
+                        },
+                    }
+                }
+            }
+        }
+
+        fn all_groups_by_initiative(&self) -> Vec<(ArmyType, usize)> {
+            self.immune_system.groups.iter().map(|(id, group)| (ArmyType::IMMUNE_SYSTEM, id, group.initiative)).chain(
+                self.infection.groups.iter().map(|(id, group)| (ArmyType::INFECTION, id, group.initiative))
+            )
+                .sorted_by(|a, b| b.2.cmp(&a.2))
+                .map(|(army_type, id, _initiative)| (army_type, *id))
+                .collect()
+        }
+
+        fn units_remaining(&self, army_type: ArmyType, id: usize) -> usize {
+            match army_type {
+                ArmyType::IMMUNE_SYSTEM => {
+                    if let Some(group) = self.immune_system.groups.get(&id) {
+                        group.units
+                    } else {
+                        0
+                    }
+                },
+                ArmyType::INFECTION => {
+                    if let Some(group) = self.infection.groups.get(&id) {
+                        group.units
+                    } else {
+                        0
+                    }
+                }
+            }
+        }
+
+        pub fn fights_completed(&self) -> bool {
+            self.immune_system.groups.len() == 0 || self.infection.groups.len() == 0
         }
     }
 
@@ -108,6 +226,10 @@ mod utils {
         pub fn effective_power(&self) -> usize {
             self.units * self.attack_damage
         }
+
+        pub fn remove_units(&mut self, units: usize) {
+            self.units -= units;
+        }
     }
 }
 
@@ -124,6 +246,9 @@ pub mod part_one {
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
             self.immune_system.parse_input_file(filename);
+            while !self.immune_system.fights_completed() {
+                self.immune_system.fight();
+            }
             Answer::Usize(self.immune_system.num_units())
         }
     }
@@ -135,7 +260,7 @@ pub mod part_one {
         use super::*;
         use super::super::DAY;
 
-        #[test_case(1, Answer::Usize(114); "example_1")]
+        #[test_case(1, Answer::Usize(5_216); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
