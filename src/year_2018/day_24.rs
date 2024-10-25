@@ -52,7 +52,9 @@ mod utils {
             self.immune_system.num_units() + self.infection.num_units()
         }
 
-        pub fn fight(&mut self) {
+        /// Returns how many units were killed in this round. If no units are killed,
+        /// the fighting is at a stalemate.
+        pub fn fight(&mut self) -> usize {
             // Select targets
             let mut immune_system_selected_targets: HashMap<usize, usize> = HashMap::new();
             for (attacking_id, attacking_group) in self.immune_system.groups.iter().sorted_by(|a, b| {
@@ -92,6 +94,7 @@ mod utils {
                     }
             }
             // Attack
+            let mut total_units_killed = 0;
             for (army_type, id) in self.all_groups_by_initiative() {
                 match army_type {
                     ArmyType::IMMUNE_SYSTEM => {
@@ -101,6 +104,7 @@ mod utils {
                             let damage = attacking_group.effective_power()
                                 * if defending_group.weaknesses.contains(&attacking_group.attack_type) { 2 } else { 1 };
                             let units_killed = cmp::min(defending_group.units, damage / defending_group.hit_points);
+                            total_units_killed += units_killed;
                             defending_group.remove_units(units_killed);
                         }
                     },
@@ -111,6 +115,7 @@ mod utils {
                             let damage = attacking_group.effective_power()
                                 * if defending_group.weaknesses.contains(&attacking_group.attack_type) { 2 } else { 1 };
                             let units_killed = cmp::min(defending_group.units, damage / defending_group.hit_points);
+                            total_units_killed += units_killed;
                             defending_group.remove_units(units_killed);
                         }                        
                     },
@@ -129,6 +134,7 @@ mod utils {
                     }
                 }
             }
+            total_units_killed
         }
 
         fn all_groups_by_initiative(&self) -> Vec<(ArmyType, usize)> {
@@ -300,38 +306,25 @@ pub mod part_two {
     use super::utils::{ArmyType, ImmuneSystem};
 
     #[derive(Debug, Default)]
-    pub struct Soln {
-    }
+    pub struct Soln {}
 
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            let mut boost: usize = 63;
-            // TODO: need to figure out why the fight is hanging/whether it's actually hanging when it gets close.
-            // and whether there is a way to calculate what it should be directly vs. simulating.
-            loop {
-                let mut immune_system = ImmuneSystem::default();
-                immune_system.parse_input_file(filename);
-                immune_system.add_boost(boost);
-                while !immune_system.fights_completed() {
-                    immune_system.fight();
-                }
-                if let Some(ArmyType::INFECTION) = immune_system.winning_army() {
-                    return Answer::Usize(immune_system.num_units());
-                } else {
-                    boost -= 1;
-                }
-            }
-            /*
+            // Basically a binary search to find the smallest boost that has immune_system win.
             let mut boost_difference: usize = 1 << 10;
             let mut max_losing_boost: usize = 0;
             let mut boost = max_losing_boost + boost_difference;
-            loop {
+            'outer: loop {
                 let mut immune_system = ImmuneSystem::default();
                 immune_system.parse_input_file(filename);
                 immune_system.add_boost(boost);
-                // TODO: add a level of indirection. apply the boost. do a binary search to find the smallest boost that has immune_system win.
                 while !immune_system.fights_completed() {
-                    immune_system.fight();
+                    if immune_system.fight() == 0 {
+                        // Fighting failed to kill any units, has reached a stalemate.
+                        max_losing_boost = boost;
+                        boost = max_losing_boost + boost_difference;
+                        continue 'outer;
+                    }
                 }
                 if let Some(ArmyType::INFECTION) = immune_system.winning_army() {
                     max_losing_boost = boost;
@@ -343,7 +336,6 @@ pub mod part_two {
                     boost = boost - boost_difference;
                 }
             }
-            */
         }
     }
 
