@@ -18,7 +18,7 @@ mod utils {
     }
 
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-    enum ArmyType {
+    pub enum ArmyType {
         IMMUNE_SYSTEM,
         INFECTION,
     }
@@ -52,7 +52,9 @@ mod utils {
             self.immune_system.num_units() + self.infection.num_units()
         }
 
-        pub fn fight(&mut self) {
+        /// Returns how many units were killed in this round. If no units are killed,
+        /// the fighting is at a stalemate.
+        pub fn fight(&mut self) -> usize {
             // Select targets
             let mut immune_system_selected_targets: HashMap<usize, usize> = HashMap::new();
             for (attacking_id, attacking_group) in self.immune_system.groups.iter().sorted_by(|a, b| {
@@ -92,6 +94,7 @@ mod utils {
                     }
             }
             // Attack
+            let mut total_units_killed = 0;
             for (army_type, id) in self.all_groups_by_initiative() {
                 match army_type {
                     ArmyType::IMMUNE_SYSTEM => {
@@ -101,6 +104,7 @@ mod utils {
                             let damage = attacking_group.effective_power()
                                 * if defending_group.weaknesses.contains(&attacking_group.attack_type) { 2 } else { 1 };
                             let units_killed = cmp::min(defending_group.units, damage / defending_group.hit_points);
+                            total_units_killed += units_killed;
                             defending_group.remove_units(units_killed);
                         }
                     },
@@ -111,6 +115,7 @@ mod utils {
                             let damage = attacking_group.effective_power()
                                 * if defending_group.weaknesses.contains(&attacking_group.attack_type) { 2 } else { 1 };
                             let units_killed = cmp::min(defending_group.units, damage / defending_group.hit_points);
+                            total_units_killed += units_killed;
                             defending_group.remove_units(units_killed);
                         }                        
                     },
@@ -129,6 +134,7 @@ mod utils {
                     }
                 }
             }
+            total_units_killed
         }
 
         fn all_groups_by_initiative(&self) -> Vec<(ArmyType, usize)> {
@@ -161,6 +167,24 @@ mod utils {
 
         pub fn fights_completed(&self) -> bool {
             self.immune_system.groups.len() == 0 || self.infection.groups.len() == 0
+        }
+
+        pub fn add_boost(&mut self, boost: usize) {
+            for (_id, group) in self.immune_system.groups.iter_mut() {
+                group.add_boost(boost);
+            }
+        }
+
+        pub fn winning_army(&self) -> Option<ArmyType> {
+            assert!(self.fights_completed());
+            if self.immune_system.groups.len() == 0 && self.infection.groups.len() == 0 {
+                None
+            } else if self.immune_system.groups.len() == 0 {
+                Some(ArmyType::INFECTION)
+            } else {
+                assert!(self.infection.groups.len() == 0);
+                Some(ArmyType::IMMUNE_SYSTEM)
+            }
         }
     }
 
@@ -230,6 +254,10 @@ mod utils {
         pub fn remove_units(&mut self, units: usize) {
             self.units -= units;
         }
+
+        pub fn add_boost(&mut self, boost: usize) {
+            self.attack_damage += boost;
+        } 
     }
 }
 
@@ -261,6 +289,64 @@ pub mod part_one {
         use super::super::DAY;
 
         #[test_case(1, Answer::Usize(5_216); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::{ArmyType, ImmuneSystem};
+
+    #[derive(Debug, Default)]
+    pub struct Soln {}
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            // Basically a binary search to find the smallest boost that has immune_system win.
+            let mut boost_difference: usize = 1 << 10;
+            let mut max_losing_boost: usize = 0;
+            let mut boost = max_losing_boost + boost_difference;
+            'outer: loop {
+                let mut immune_system = ImmuneSystem::default();
+                immune_system.parse_input_file(filename);
+                immune_system.add_boost(boost);
+                while !immune_system.fights_completed() {
+                    if immune_system.fight() == 0 {
+                        // Fighting failed to kill any units, has reached a stalemate.
+                        max_losing_boost = boost;
+                        boost = max_losing_boost + boost_difference;
+                        continue 'outer;
+                    }
+                }
+                if let Some(ArmyType::INFECTION) = immune_system.winning_army() {
+                    max_losing_boost = boost;
+                    boost = max_losing_boost + boost_difference;
+                } else if boost_difference == 0 {
+                    return Answer::Usize(immune_system.num_units());
+                } else {
+                    boost_difference >>= 1;
+                    boost = boost - boost_difference;
+                }
+            }
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::Usize(51); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
