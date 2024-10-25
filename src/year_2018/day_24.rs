@@ -18,7 +18,7 @@ mod utils {
     }
 
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-    enum ArmyType {
+    pub enum ArmyType {
         IMMUNE_SYSTEM,
         INFECTION,
     }
@@ -162,6 +162,24 @@ mod utils {
         pub fn fights_completed(&self) -> bool {
             self.immune_system.groups.len() == 0 || self.infection.groups.len() == 0
         }
+
+        pub fn add_boost(&mut self, boost: usize) {
+            for (_id, group) in self.immune_system.groups.iter_mut() {
+                group.add_boost(boost);
+            }
+        }
+
+        pub fn winning_army(&self) -> Option<ArmyType> {
+            assert!(self.fights_completed());
+            if self.immune_system.groups.len() == 0 && self.infection.groups.len() == 0 {
+                None
+            } else if self.immune_system.groups.len() == 0 {
+                Some(ArmyType::INFECTION)
+            } else {
+                assert!(self.infection.groups.len() == 0);
+                Some(ArmyType::IMMUNE_SYSTEM)
+            }
+        }
     }
 
     #[derive(Debug, Default)]
@@ -230,6 +248,10 @@ mod utils {
         pub fn remove_units(&mut self, units: usize) {
             self.units -= units;
         }
+
+        pub fn add_boost(&mut self, boost: usize) {
+            self.attack_damage += boost;
+        } 
     }
 }
 
@@ -261,6 +283,78 @@ pub mod part_one {
         use super::super::DAY;
 
         #[test_case(1, Answer::Usize(5_216); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::{ArmyType, ImmuneSystem};
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            let mut boost: usize = 63;
+            // TODO: need to figure out why the fight is hanging/whether it's actually hanging when it gets close.
+            // and whether there is a way to calculate what it should be directly vs. simulating.
+            loop {
+                let mut immune_system = ImmuneSystem::default();
+                immune_system.parse_input_file(filename);
+                immune_system.add_boost(boost);
+                while !immune_system.fights_completed() {
+                    immune_system.fight();
+                }
+                if let Some(ArmyType::INFECTION) = immune_system.winning_army() {
+                    return Answer::Usize(immune_system.num_units());
+                } else {
+                    boost -= 1;
+                }
+            }
+            /*
+            let mut boost_difference: usize = 1 << 10;
+            let mut max_losing_boost: usize = 0;
+            let mut boost = max_losing_boost + boost_difference;
+            loop {
+                let mut immune_system = ImmuneSystem::default();
+                immune_system.parse_input_file(filename);
+                immune_system.add_boost(boost);
+                // TODO: add a level of indirection. apply the boost. do a binary search to find the smallest boost that has immune_system win.
+                while !immune_system.fights_completed() {
+                    immune_system.fight();
+                }
+                if let Some(ArmyType::INFECTION) = immune_system.winning_army() {
+                    max_losing_boost = boost;
+                    boost = max_losing_boost + boost_difference;
+                } else if boost_difference == 0 {
+                    return Answer::Usize(immune_system.num_units());
+                } else {
+                    boost_difference >>= 1;
+                    boost = boost - boost_difference;
+                }
+            }
+            */
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::Usize(51); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
