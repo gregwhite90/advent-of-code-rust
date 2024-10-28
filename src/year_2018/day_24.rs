@@ -19,8 +19,8 @@ mod utils {
 
     #[derive(Debug, PartialEq, Eq, Clone, Copy)]
     pub enum ArmyType {
-        IMMUNE_SYSTEM,
-        INFECTION,
+        ImmuneSystem,
+        Infection,
     }
 
     #[derive(Debug, Default)]
@@ -97,7 +97,7 @@ mod utils {
             let mut total_units_killed = 0;
             for (army_type, id) in self.all_groups_by_initiative() {
                 match army_type {
-                    ArmyType::IMMUNE_SYSTEM => {
+                    ArmyType::ImmuneSystem => {
                         if let Some(defending_id) = immune_system_selected_targets.get(&id) {
                             let attacking_group = self.immune_system.groups.get(&id).unwrap();
                             let defending_group = self.infection.groups.get_mut(&defending_id).unwrap();
@@ -108,7 +108,7 @@ mod utils {
                             defending_group.remove_units(units_killed);
                         }
                     },
-                    ArmyType::INFECTION => {
+                    ArmyType::Infection => {
                         if let Some(defending_id) = infection_selected_targets.get(&id) {
                             let attacking_group = self.infection.groups.get(&id).unwrap();
                             let defending_group = self.immune_system.groups.get_mut(&defending_id).unwrap();
@@ -125,10 +125,10 @@ mod utils {
             for (army_type, id) in self.all_groups_by_initiative() {
                 if self.units_remaining(army_type, id) == 0 {
                     match army_type {
-                        ArmyType::IMMUNE_SYSTEM => {
+                        ArmyType::ImmuneSystem => {
                             self.immune_system.groups.remove(&id);
                         },
-                        ArmyType::INFECTION => {
+                        ArmyType::Infection => {
                             self.infection.groups.remove(&id);
                         },
                     }
@@ -138,8 +138,8 @@ mod utils {
         }
 
         fn all_groups_by_initiative(&self) -> Vec<(ArmyType, usize)> {
-            self.immune_system.groups.iter().map(|(id, group)| (ArmyType::IMMUNE_SYSTEM, id, group.initiative)).chain(
-                self.infection.groups.iter().map(|(id, group)| (ArmyType::INFECTION, id, group.initiative))
+            self.immune_system.groups.iter().map(|(id, group)| (ArmyType::ImmuneSystem, id, group.initiative)).chain(
+                self.infection.groups.iter().map(|(id, group)| (ArmyType::Infection, id, group.initiative))
             )
                 .sorted_by(|a, b| b.2.cmp(&a.2))
                 .map(|(army_type, id, _initiative)| (army_type, *id))
@@ -148,14 +148,14 @@ mod utils {
 
         fn units_remaining(&self, army_type: ArmyType, id: usize) -> usize {
             match army_type {
-                ArmyType::IMMUNE_SYSTEM => {
+                ArmyType::ImmuneSystem => {
                     if let Some(group) = self.immune_system.groups.get(&id) {
                         group.units
                     } else {
                         0
                     }
                 },
-                ArmyType::INFECTION => {
+                ArmyType::Infection => {
                     if let Some(group) = self.infection.groups.get(&id) {
                         group.units
                     } else {
@@ -180,10 +180,10 @@ mod utils {
             if self.immune_system.groups.len() == 0 && self.infection.groups.len() == 0 {
                 None
             } else if self.immune_system.groups.len() == 0 {
-                Some(ArmyType::INFECTION)
+                Some(ArmyType::Infection)
             } else {
                 assert!(self.infection.groups.len() == 0);
-                Some(ArmyType::IMMUNE_SYSTEM)
+                Some(ArmyType::ImmuneSystem)
             }
         }
     }
@@ -326,7 +326,7 @@ pub mod part_two {
                         continue 'outer;
                     }
                 }
-                if let Some(ArmyType::INFECTION) = immune_system.winning_army() {
+                if let Some(ArmyType::Infection) = immune_system.winning_army() {
                     max_losing_boost = boost;
                     boost = max_losing_boost + boost_difference;
                 } else if boost_difference == 0 {

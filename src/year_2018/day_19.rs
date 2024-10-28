@@ -9,10 +9,6 @@ mod utils {
 
     use crate::utils::io_utils;
 
-    /**
-     * TODO: clarify the instruction.
-     */
-
     #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, EnumIter)]
     pub enum Operation {
         ADDR(usize, usize, usize),
@@ -193,7 +189,7 @@ mod utils {
 pub mod part_one {
     use crate::utils::solution::{Answer, Solution};
 
-    use super::utils::{self, CPU};
+    use super::utils::CPU;
 
     #[derive(Debug, Default)]
     pub struct Soln {
@@ -213,7 +209,7 @@ pub mod part_one {
         use test_case::test_case;
         use crate::utils::{test_utils, solution::Answer};
         use super::*;
-        use super::super::DAY;
+        use super::super::{DAY, utils};
 
         #[test]
         fn decompiled_is_correct() {
