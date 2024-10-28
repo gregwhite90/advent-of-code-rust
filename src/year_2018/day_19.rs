@@ -153,6 +153,15 @@ mod utils {
                 if self.instruction_ptr >= self.instructions.len() {
                     break;
                 }
+                if self.instruction_ptr == 1 {
+                    // We know this from decompiling the instructions.
+                    // The loop beginning at instruction 1 calculates 
+                    // and stores in register 0 the
+                    // cumulative sum of the multiplicative factors of the
+                    // value in register 1 at the start of the loop.
+                    self.registers[0] = sum_of_factors(self.registers[1]);
+                    break;
+                }
                 self.registers[self.instruction_ptr_register] = self.instruction_ptr;
                 self.instructions[self.instruction_ptr].execute(&mut self.registers);
                 self.instruction_ptr = self.registers[self.instruction_ptr_register];
@@ -164,12 +173,27 @@ mod utils {
             self.registers[register] = value;
         }
     }
+
+    pub fn sum_of_factors(n: usize) -> usize {
+        let mut sum_of_factors = 0;
+        let mut i: usize = 1;
+        loop {
+            if i.pow(2) == n { sum_of_factors += i; }
+            else if n % i == 0 {
+                sum_of_factors += i;
+                sum_of_factors += n / i;
+            }
+            if i.pow(2) >= n { break; }
+            i += 1;
+        }
+        sum_of_factors
+    }
 }
 
 pub mod part_one {
     use crate::utils::solution::{Answer, Solution};
 
-    use super::utils::CPU;
+    use super::utils::{self, CPU};
 
     #[derive(Debug, Default)]
     pub struct Soln {
@@ -190,6 +214,11 @@ pub mod part_one {
         use crate::utils::{test_utils, solution::Answer};
         use super::*;
         use super::super::DAY;
+
+        #[test]
+        fn decompiled_is_correct() {
+            assert_eq!(2_821, utils::sum_of_factors(900));
+        }
 
         #[test_case(1, Answer::Usize(6); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
