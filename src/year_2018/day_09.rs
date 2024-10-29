@@ -87,6 +87,10 @@ mod utils {
         pub fn high_score(&self) -> usize {
             *self.scores.values().max().unwrap()
         }
+
+        pub fn multiply_last_marble(&mut self, factor: usize) {
+            self.last_marble *= factor;
+        }
     }
 }
 
@@ -130,4 +134,24 @@ pub mod part_one {
             );
         }
     }    
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::MarbleGame;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        marble_game: MarbleGame,    
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.marble_game.parse_input_file(filename);
+            self.marble_game.multiply_last_marble(100);
+            self.marble_game.play();
+            Answer::Usize(self.marble_game.high_score())
+        }
+    }
 }
