@@ -155,7 +155,7 @@ mod utils {
                     // and if register 0 == register 2, we will break out of the
                     // program after the minimum number of instructions,
                     // solving part one.
-                    self.registers[0] = self.registers[2];
+                    println!("{}", self.registers[2]);
                 }
                 self.registers[self.instruction_ptr_register] = self.instruction_ptr;
                 self.instructions[self.instruction_ptr].execute(&mut self.registers);
