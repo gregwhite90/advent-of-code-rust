@@ -70,6 +70,10 @@ mod utils {
             let nanobot_with_largest_signal_radius = self.nanobots.iter().max_by_key(|n| n.radius).unwrap();
             self.nanobots.iter().filter(|n| nanobot_with_largest_signal_radius.other_is_in_range(n)).count()
         }
+
+        pub fn distance_to_nearest_position_in_range_of_most_nanobots(&self) -> usize {
+            // TODO
+        }
     }
 }
 
@@ -98,6 +102,42 @@ pub mod part_one {
         use super::super::DAY;
 
         #[test_case(1, Answer::Usize(7); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::Cavern;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        cavern: Cavern,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.cavern.parse_input_file(filename);
+            Answer::Usize(self.cavern.distance_to_nearest_position_in_range_of_most_nanobots())
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(2, Answer::Usize(36); "example_2")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
