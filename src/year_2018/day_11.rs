@@ -14,8 +14,6 @@ mod utils {
     use std::{collections::HashMap, fmt::Display};
 
     use itertools::iproduct;
-    use lazy_static::lazy_static;
-    use regex::Regex;
 
     use crate::utils::io_utils;
 
@@ -37,10 +35,6 @@ mod utils {
         power_levels: HashMap<Point, i64>,
     }
 
-    lazy_static! {
-        static ref POWER_LEVEL_RE: Regex = Regex::new(r"\d*(?<hundreds_digit>\d)\d{2}").unwrap();
-    }
-
     impl Grid {
         pub fn new(serial_number: usize) -> Self {
             Self {
@@ -56,10 +50,10 @@ mod utils {
         pub fn power_level(&mut self, point: &Point) -> i64 {
             *self.power_levels.entry(*point).or_insert({
                 let rack_id = point.x + 10;
-                let power_level = (rack_id * point.y + self.serial_number) * rack_id;
-                let haystack = format!("{}", power_level);
-                let captures = POWER_LEVEL_RE.captures(&haystack).unwrap();
-                let power_level: i64 = captures.name("hundreds_digit").unwrap().as_str().parse().unwrap();
+                let mut power_level = (rack_id * point.y + self.serial_number) * rack_id;
+                power_level /= 100;
+                power_level %= 10;
+                let power_level: i64 = power_level.try_into().unwrap();
                 power_level - 5
             })
         }
@@ -97,7 +91,7 @@ mod utils {
         #[test_case(101, 153, 71, 4; "example_4")]
         fn power_levels_are_correct(x: usize, y: usize, serial_number: usize, power_level: i64) {
             let mut grid = Grid::new(serial_number);
-            assert_eq!(grid.power_level(&Point { x, y}), power_level);
+            assert_eq!(grid.power_level(&Point { x, y }), power_level);
         }
     }
 }
