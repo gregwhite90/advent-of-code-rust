@@ -11,11 +11,13 @@ const DAY: Day = crate::utils::Day { year: 2018, day: 11 };
 */
 
 mod utils {
-    use std::{collections::HashMap, fmt::Display};
+    use std::{cmp, collections::HashMap, fmt::Display, i64};
 
     use itertools::iproduct;
 
     use crate::utils::io_utils;
+
+    const GRID_DIMENSIONS: usize = 300;
 
     #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
     pub struct Point {
@@ -32,6 +34,7 @@ mod utils {
     #[derive(Debug, Default)]
     pub struct Grid {
         serial_number: usize,
+        dimensions: usize,
         power_levels: HashMap<Point, i64>,
         summed_area_table: HashMap<Point, i64>,
     }
@@ -40,6 +43,7 @@ mod utils {
         pub fn new(serial_number: usize) -> Self {
             Self {
                 serial_number,
+                dimensions: GRID_DIMENSIONS,
                 power_levels: HashMap::new(),
                 summed_area_table: HashMap::new(),
             }
@@ -61,8 +65,8 @@ mod utils {
         }
 
         pub fn build_summed_area_table(&mut self) {
-            for x in 1..=300 {
-                for y in 1..=300 {
+            for x in 1..=self.dimensions {
+                for y in 1..=self.dimensions {
                     let pt = Point { x, y };
                     let mut sat_entry = self.power_level(&pt);
                     if x > 1 {
@@ -93,6 +97,33 @@ mod utils {
                 total_power += self.summed_area_table.get(&Point{ x: point.x - 1, y: point.y - 1 }).unwrap();
             }
             total_power
+        }
+
+        /// Returns a tuple of the top-left point and the window size of the square with the
+        /// maximum power
+        pub fn max_total_power_locn(&mut self) -> (Point, usize) {
+            let mut max_total_power = i64::MIN;
+            let mut top_left = None;
+            let mut window_size = None;
+            for (x, y) in iproduct!(1..=self.dimensions, 1..=self.dimensions) {
+                let point = Point { x, y };
+                let total_power = self.power_level(&point);
+                if total_power > max_total_power {
+                    max_total_power = total_power;
+                    top_left = Some(point);
+                    window_size = Some(1);
+                }
+                let max_window = self.dimensions - cmp::max(x, y) + 1;
+                for ws in 2..=max_window {
+                    let total_power = self.total_power(&point, ws);
+                    if total_power > max_total_power {
+                        max_total_power = total_power;
+                        top_left = Some(point);
+                        window_size = Some(ws);    
+                    }
+                }
+            }
+            (top_left.unwrap(), window_size.unwrap())
         }
     }
 
@@ -194,7 +225,7 @@ pub mod part_one {
 pub mod part_two {
     use crate::utils::solution::{Answer, Solution};
 
-    use super::utils::{self, Grid};
+    use super::utils::Grid;
 
     #[derive(Debug)]
     pub struct Soln {
@@ -204,11 +235,8 @@ pub mod part_two {
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
             self.grid.parse_input_file(filename);
-            let ((top_left, _total_power), window_size) = (1..=300).map(|window_size| {
-                (utils::search_grid(300, window_size, &mut self.grid), window_size)
-            })
-                .max_by_key(|((_point, total_power), _window_size)| *total_power)
-                .unwrap();
+            self.grid.build_summed_area_table();
+            let (top_left, window_size) = self.grid.max_total_power_locn();
             Answer::String(format!("{},{}", top_left, window_size))
         }
     }
