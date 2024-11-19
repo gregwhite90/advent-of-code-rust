@@ -3,14 +3,21 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2018, day: 11 };
 
+
+/*
+    Grid will have serial number and power levels.
+
+    GridSearcher will have a dimensions and method for window size that takes a reference to a grid.
+*/
+
 mod utils {
-    use std::{collections::HashMap, fmt::Display};
+    use std::{cmp, collections::HashMap, fmt::Display, i64};
 
     use itertools::iproduct;
-    use lazy_static::lazy_static;
-    use regex::Regex;
 
     use crate::utils::io_utils;
+
+    const GRID_DIMENSIONS: usize = 300;
 
     #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
     pub struct Point {
@@ -26,23 +33,19 @@ mod utils {
 
     #[derive(Debug, Default)]
     pub struct Grid {
-        dimensions: usize,
-        window_size: usize,
         serial_number: usize,
+        dimensions: usize,
         power_levels: HashMap<Point, i64>,
-    }
-
-    lazy_static! {
-        static ref POWER_LEVEL_RE: Regex = Regex::new(r"\d*(?<hundreds_digit>\d)\d{2}").unwrap();
+        summed_area_table: HashMap<Point, i64>,
     }
 
     impl Grid {
         pub fn new(serial_number: usize) -> Self {
             Self {
-                dimensions: 300,
-                window_size: 3,
                 serial_number,
+                dimensions: GRID_DIMENSIONS,
                 power_levels: HashMap::new(),
+                summed_area_table: HashMap::new(),
             }
         }
 
@@ -50,34 +53,99 @@ mod utils {
             self.serial_number = io_utils::file_to_string(filename).parse().unwrap();
         }
 
-        fn power_level(&mut self, point: &Point) -> i64 {
+        pub fn power_level(&mut self, point: &Point) -> i64 {
             *self.power_levels.entry(*point).or_insert({
                 let rack_id = point.x + 10;
-                let power_level = (rack_id * point.y + self.serial_number) * rack_id;
-                let haystack = format!("{}", power_level);
-                let captures = POWER_LEVEL_RE.captures(&haystack).unwrap();
-                let power_level: i64 = captures.name("hundreds_digit").unwrap().as_str().parse().unwrap();
+                let mut power_level = (rack_id * point.y + self.serial_number) * rack_id;
+                power_level /= 100;
+                power_level %= 10;
+                let power_level: i64 = power_level.try_into().unwrap();
                 power_level - 5
             })
         }
 
-        pub fn largest_total_power_top_left(&mut self) -> Point {
-            let (point, _total_power) = iproduct!(
-                1..self.dimensions - self.window_size + 1,
-                1..self.dimensions - self.window_size + 1
-            )
-                .map(|(col, row)| {
-                    let total_power: i64 = iproduct!(col..col + self.window_size, row..row + self.window_size)
-                        .map(|(x, y)| { 
-                            self.power_level(&Point { x, y })
-                        })
-                        .sum();
-                    (Point {x: col, y: row}, total_power)
-                })
-                .max_by_key(|(_point, total_power)| *total_power)
-                .unwrap();
-            point
+        pub fn build_summed_area_table(&mut self) {
+            for x in 1..=self.dimensions {
+                for y in 1..=self.dimensions {
+                    let pt = Point { x, y };
+                    let mut sat_entry = self.power_level(&pt);
+                    if x > 1 {
+                        sat_entry += self.summed_area_table.get(&Point { x: x - 1, y }).unwrap()
+                    }
+                    if y > 1 {
+                        sat_entry += self.summed_area_table.get(&Point { x, y: y - 1 }).unwrap()
+                    }
+                    if x > 1 && y > 1 {
+                        sat_entry -= self.summed_area_table.get(&Point { x: x - 1, y: y - 1 }).unwrap();
+                    }
+                    self.summed_area_table.insert(pt, sat_entry);
+                }
+            }
         }
+
+        pub fn total_power(&self, point: &Point, window_size: usize) -> i64 {
+            // The summed-area table methodology does not work for single points
+            assert!(window_size > 1);
+            let mut total_power = *self.summed_area_table.get(&Point{ x: point.x + window_size - 1, y: point.y + window_size - 1}).unwrap();
+            if point.x > 1 {
+                total_power -= *self.summed_area_table.get(&Point{ x: point.x - 1, y: point.y + window_size - 1 }).unwrap();
+            }
+            if point.y > 1 {
+                total_power -= self.summed_area_table.get(&Point{ x: point.x + window_size - 1, y: point.y - 1 }).unwrap();
+            }
+            if point.x > 1 && point.y > 1 {
+                total_power += self.summed_area_table.get(&Point{ x: point.x - 1, y: point.y - 1 }).unwrap();
+            }
+            total_power
+        }
+
+        /// Returns a tuple of the top-left point and the window size of the square with the
+        /// maximum power
+        pub fn max_total_power_locn(&mut self) -> (Point, usize) {
+            let mut max_total_power = i64::MIN;
+            let mut top_left = None;
+            let mut window_size = None;
+            for (x, y) in iproduct!(1..=self.dimensions, 1..=self.dimensions) {
+                let point = Point { x, y };
+                let total_power = self.power_level(&point);
+                if total_power > max_total_power {
+                    max_total_power = total_power;
+                    top_left = Some(point);
+                    window_size = Some(1);
+                }
+                let max_window = self.dimensions - cmp::max(x, y) + 1;
+                for ws in 2..=max_window {
+                    let total_power = self.total_power(&point, ws);
+                    if total_power > max_total_power {
+                        max_total_power = total_power;
+                        top_left = Some(point);
+                        window_size = Some(ws);    
+                    }
+                }
+            }
+            (top_left.unwrap(), window_size.unwrap())
+        }
+    }
+
+    pub fn search_grid(
+        dimensions: usize, 
+        window_size: usize,
+        grid: &mut Grid,
+    ) -> (Point, i64) {
+        iproduct!(
+            1..dimensions - window_size + 1,
+            1..dimensions - window_size + 1
+        )
+            .map(|(col, row)| {
+                let total_power: i64 = iproduct!(col..col + window_size, row..row + window_size)
+                    .map(|(x, y)| { 
+                        grid.power_level(&Point { x, y })
+                    })
+                    .sum();
+                (Point {x: col, y: row}, total_power)
+            })
+            .max_by_key(|(_point, total_power)| *total_power)
+            .unwrap()
     }
 
     #[cfg(test)]
@@ -91,7 +159,15 @@ mod utils {
         #[test_case(101, 153, 71, 4; "example_4")]
         fn power_levels_are_correct(x: usize, y: usize, serial_number: usize, power_level: i64) {
             let mut grid = Grid::new(serial_number);
-            assert_eq!(grid.power_level(&Point { x, y}), power_level);
+            assert_eq!(grid.power_level(&Point { x, y }), power_level);
+        }
+
+        #[test_case(90, 269, 16, 18, 113; "example_1")]
+        #[test_case(232, 251, 12, 42, 119; "example_2")]
+        fn total_powers_are_correct(x: usize, y: usize, window_size: usize, serial_number: usize, total_power: i64) {
+            let mut grid = Grid::new(serial_number);
+            grid.build_summed_area_table();
+            assert_eq!(grid.total_power(&Point{ x, y }, window_size), total_power);
         }
     }
 }
@@ -99,7 +175,7 @@ mod utils {
 pub mod part_one {
     use crate::utils::solution::{Answer, Solution};
 
-    use super::utils::Grid;
+    use super::utils::{self, Grid};
 
     #[derive(Debug)]
     pub struct Soln {
@@ -109,7 +185,8 @@ pub mod part_one {
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
             self.grid.parse_input_file(filename);
-            Answer::String(format!("{}", self.grid.largest_total_power_top_left()))
+            let (point, _total_power) = utils::search_grid(300, 3, &mut self.grid);
+            Answer::String(format!("{}", point))
         }
     }
 
@@ -130,6 +207,57 @@ pub mod part_one {
 
         #[test_case(1, Answer::String("33,45".to_string()); "example_1")]
         #[test_case(2, Answer::String("21,61".to_string()); "example_2")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }
+}
+
+/**
+ * Solution to part two uses a summed-area table, as first found suggested on the Reddit
+ * thread of solutions.
+ */
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::Grid;
+
+    #[derive(Debug)]
+    pub struct Soln {
+        grid: Grid,    
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.grid.parse_input_file(filename);
+            self.grid.build_summed_area_table();
+            let (top_left, window_size) = self.grid.max_total_power_locn();
+            Answer::String(format!("{},{}", top_left, window_size))
+        }
+    }
+
+    impl Default for Soln {
+        fn default() -> Self {
+            Self {
+                grid: Grid::new(0),
+            }
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::String("90,269,16".to_string()); "example_1")]
+        #[test_case(2, Answer::String("232,251,12".to_string()); "example_2")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
