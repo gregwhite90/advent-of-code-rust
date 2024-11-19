@@ -4,7 +4,7 @@ use crate::utils::Day;
 const DAY: Day = crate::utils::Day { year: 2018, day: 20 };
 
 pub mod part_one {
-    use std::{cmp::Reverse, collections::{BinaryHeap, HashMap, HashSet, VecDeque}};
+    use std::{cmp::min, collections::{HashMap, HashSet, VecDeque}};
 
     /** TODO: can i build it up from the start?
      * keep a priority queue of the doors tracked, location.
@@ -18,54 +18,111 @@ pub mod part_one {
         y: isize,
     }
 
-    #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
+    #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+    enum Direction {
+        North,
+        South,
+        East,
+        West,
+    }
+
+    impl Direction {
+        fn from_char(input: char) -> Self {
+            match input {
+                'N' => Self::North,
+                'S' => Self::South,
+                'E' => Self::East,
+                'W' => Self::West,
+                _ => panic!("Unrecognized character"),
+            }
+        }
+    }
+
+    impl Point {
+        fn move_direction(&mut self, direction: &Direction) {
+            match direction {
+                Direction::North => self.y += 1,
+                Direction::South => self.y -= 1,
+                Direction::East  => self.x += 1,
+                Direction::West  => self.x -= 1,
+            }
+        }
+    }
+
+    #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
     struct ConstructionMapStatus {
         doors_crossed: usize,
         point: Point,
     }
 
+    impl ConstructionMapStatus {
+        fn move_direction(&mut self, direction: &Direction) {
+            self.doors_crossed += 1;
+            self.point.move_direction(direction);
+        }
+    }
+
     #[derive(Debug, Default)]
     pub struct Soln {}
 
+    // TODO: Track shortest path to each position.
+    // Track current positions
+
     impl Soln {
         fn largest_number_of_doors(&mut self, filename: &str) -> usize {
-            // stack of branch starting points?
-            // TODO: what i really need is the set of current paths that need to be processed.
-            let mut branch_origins: VecDeque<ConstructionMapStatus> = VecDeque::new();
-            let mut branch_ends: VecDeque<ConstructionMapStatus> = VecDeque::new();
-            let mut pq: BinaryHeap<Reverse<ConstructionMapStatus>> = BinaryHeap::from([
-                Reverse(ConstructionMapStatus::default())
-            ]);
-            let mut visited: HashSet<Point> = HashSet::new(); // TODO: is this enough?
-            // TODO: track the depth too?
+            let start = Point::default();
+            let mut current: Vec<ConstructionMapStatus> = Vec::new();
+            // TODO: what data structure here?
+            let mut branch_origins: VecDeque<HashSet<ConstructionMapStatus>> = VecDeque::new();
+            // TODO: what data structure here?
+            let mut branch_ends: VecDeque<HashSet<ConstructionMapStatus>> = VecDeque::new();
+            let mut distances: HashMap<Point, usize> = HashMap::new();
             io_utils::file_to_string(filename)
                 .chars()
                 .for_each(|ch| {
-                    pq.pop();
                     match ch {
-                        '^' | '$' => (),
+                        '^' => current.push(ConstructionMapStatus { point: start, doors_crossed: 0 }),
+                        '$' => current.iter().for_each(|status| {
+                            distances
+                                .entry(status.point)
+                                .and_modify(|dist| *dist = min(*dist, status.doors_crossed))
+                                .or_insert(status.doors_crossed);
+                        }),
                         'N' | 'S' | 'E' | 'W' => {
-                            // TODO: handle
                             // Move all the current paths along this direction.
-                            // TODO: should I mark the doors? Then later can deal with the pq and visited?
+                            for status in current.iter_mut() {
+                                distances
+                                    .entry(status.point)
+                                    .and_modify(|dist| *dist = min(*dist, status.doors_crossed))
+                                    .or_insert(status.doors_crossed);
+                                status.move_direction(&Direction::from_char(ch));
+                            }
                         }, 
                         '(' => {
-                            // TODO: open a new branch
                             // Save all current paths as starting points for this branch
+                            branch_origins.push_back(HashSet::from_iter(current.clone().into_iter()));
+                            branch_ends.push_back(HashSet::new());
                         },
                         '|' => {
-                            // TODO: branch.
                             // Add all current paths to the branch ends.
+                            branch_ends.get_mut(branch_ends.len() - 1)
+                                .unwrap()
+                                .extend(current.clone().into_iter());
                             // Restart with all the top starting points as current.
+                            current = Vec::from_iter(branch_origins.get(branch_origins.len() - 1).unwrap().clone().into_iter());
                         },
                         ')' => {
-                            // TODO: close the branches
+                            branch_ends.get_mut(branch_ends.len() - 1)
+                                .unwrap()
+                                .extend(current.clone().into_iter());
                             // Pop off the top starting points and continue processing
+                            current = Vec::from_iter(branch_ends.pop_back().unwrap().into_iter());
+                            branch_origins.pop_back();
                         },
                         _ => panic!("Unrecognized character."),
                     }
                 });
-            0
+            *distances.values().max().unwrap()
         }
     }
 
