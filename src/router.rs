@@ -444,6 +444,13 @@ fn get_solns(day: &Day) -> DailySolutions {
             },
         ),
         (
+            Day { year: 2018, day: 9 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2018::day_09::part_one::Soln::default())),
+                part_two: Some(Box::new(year_2018::day_09::part_two::Soln::default())),
+            },
+        ),
+        (
             Day { year: 2018, day: 10 },
             DailySolutions { 
                 part_one: Some(Box::new(year_2018::day_10::part_one::Soln::default())),
@@ -454,7 +461,7 @@ fn get_solns(day: &Day) -> DailySolutions {
             Day { year: 2018, day: 11 },
             DailySolutions { 
                 part_one: Some(Box::new(year_2018::day_11::part_one::Soln::default())),
-                part_two: None,
+                part_two: Some(Box::new(year_2018::day_11::part_two::Soln::default())),
             },
         ),
         (
@@ -497,6 +504,34 @@ fn get_solns(day: &Day) -> DailySolutions {
             DailySolutions { 
                 part_one: Some(Box::new(year_2018::day_18::part_one::Soln::default())),
                 part_two: Some(Box::new(year_2018::day_18::part_two::Soln::default())),
+            },
+        ),
+        (
+            Day { year: 2018, day: 19 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2018::day_19::part_one::Soln::default())),
+                part_two: Some(Box::new(year_2018::day_19::part_two::Soln::default())),
+            },
+        ),
+        (
+            Day { year: 2018, day: 22 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2018::day_22::part_one::Soln::default())),
+                part_two: Some(Box::new(year_2018::day_22::part_two::Soln::default())),
+            },
+        ),
+        (
+            Day { year: 2018, day: 24 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2018::day_24::part_one::Soln::default())),
+                part_two: Some(Box::new(year_2018::day_24::part_two::Soln::default())),
+            },
+        ),
+        (
+            Day { year: 2018, day: 25 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2018::day_25::part_one::Soln::default())),
+                part_two: None,
             },
         ),
         (
