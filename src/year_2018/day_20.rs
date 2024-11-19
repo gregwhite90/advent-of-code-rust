@@ -3,14 +3,10 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2018, day: 20 };
 
-pub mod part_one {
+mod utils {
     use std::{cmp::min, collections::{HashMap, HashSet, VecDeque}};
 
-    /** TODO: can i build it up from the start?
-     * keep a priority queue of the doors tracked, location.
-     * but also need to know the depth in the regex maybe
-    */
-    use crate::utils::{io_utils, solution::{Answer, Solution}};
+    use crate::utils::io_utils;
 
     #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
     struct Point {
@@ -63,27 +59,23 @@ pub mod part_one {
     }
 
     #[derive(Debug, Default)]
-    pub struct Soln {}
+    pub struct ConstructionMap {
+        distances: HashMap<Point, usize>,
+    }
 
-    // TODO: Track shortest path to each position.
-    // Track current positions
-
-    impl Soln {
-        fn largest_number_of_doors(&mut self, filename: &str) -> usize {
+    impl ConstructionMap {
+        pub fn parse_input_file(&mut self, filename: &str) {
             let start = Point::default();
             let mut current: Vec<ConstructionMapStatus> = Vec::new();
-            // TODO: what data structure here?
             let mut branch_origins: VecDeque<HashSet<ConstructionMapStatus>> = VecDeque::new();
-            // TODO: what data structure here?
             let mut branch_ends: VecDeque<HashSet<ConstructionMapStatus>> = VecDeque::new();
-            let mut distances: HashMap<Point, usize> = HashMap::new();
             io_utils::file_to_string(filename)
                 .chars()
                 .for_each(|ch| {
                     match ch {
                         '^' => current.push(ConstructionMapStatus { point: start, doors_crossed: 0 }),
                         '$' => current.iter().for_each(|status| {
-                            distances
+                            self.distances
                                 .entry(status.point)
                                 .and_modify(|dist| *dist = min(*dist, status.doors_crossed))
                                 .or_insert(status.doors_crossed);
@@ -91,7 +83,7 @@ pub mod part_one {
                         'N' | 'S' | 'E' | 'W' => {
                             // Move all the current paths along this direction.
                             for status in current.iter_mut() {
-                                distances
+                                self.distances
                                     .entry(status.point)
                                     .and_modify(|dist| *dist = min(*dist, status.doors_crossed))
                                     .or_insert(status.doors_crossed);
@@ -122,13 +114,32 @@ pub mod part_one {
                         _ => panic!("Unrecognized character."),
                     }
                 });
-            *distances.values().max().unwrap()
         }
+
+        pub fn largest_number_of_doors(&self) -> usize {
+            *self.distances.values().max().unwrap()
+        }
+
+        pub fn rooms_at_least_n_doors_away(&self, n: usize) -> usize {
+            self.distances.values().filter(|doors| **doors >= n).count()
+        }
+    }
+}
+
+pub mod part_one {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::ConstructionMap;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        construction_map: ConstructionMap,
     }
 
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            Answer::Usize(self.largest_number_of_doors(filename))
+            self.construction_map.parse_input_file(filename);
+            Answer::Usize(self.construction_map.largest_number_of_doors())
         }
     }
 
@@ -151,6 +162,24 @@ pub mod part_one {
                 answer,
                 &DAY,
             );
+        }
+    }
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::ConstructionMap;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        construction_map: ConstructionMap,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.construction_map.parse_input_file(filename);
+            Answer::Usize(self.construction_map.rooms_at_least_n_doors_away(1_000))
         }
     }
 }
