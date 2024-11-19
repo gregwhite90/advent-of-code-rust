@@ -49,10 +49,6 @@ mod utils {
             }
         }
 
-        pub fn manhattan_distance(&self, other: &Self) -> usize {
-            self.position.manhattan_distance(&other.position)
-        }
-
         fn position_is_in_range(&self, position: &Position) -> bool {
             self.position.manhattan_distance(position) <= self.radius
         }
