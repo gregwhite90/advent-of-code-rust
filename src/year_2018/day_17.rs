@@ -15,53 +15,110 @@ const DAY: Day = crate::utils::Day { year: 2018, day: 17 };
  */
 
 mod utils {
+    use std::{cmp, collections::HashMap};
+
+    use regex::Regex;
+
+    use crate::utils::io_utils;
+
+    #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
     struct Point {
         x: usize,
         y: usize,
     }
 
     #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
-    enum Orientation {
-        Horizontal,
-        Vertical,
+    enum SquareType {
+        Spring,
+        Sand,
+        Clay,
+        FlowingWater,
+        RestingWater,
     }
 
-    struct Range {
-        orientation: Orientation,
-        min: usize,
-        max: usize,
-    }
-
+    #[derive(Debug)]
     pub struct Reservoir {
         spring: Point,
         min_y: usize,
         max_y: usize,
+        squares: HashMap<Point, SquareType>,
     }
 
-    // TODO: should spring be dynamic?
     impl Default for Reservoir {
         fn default() -> Self {
+            let spring = Point { x: 500, y: 0 };
             Self {
-                spring: Point { x: 500, y: 0 },
-                min_y: 0,
-                max_y: 0,
+                spring,
+                min_y: usize::MAX,
+                max_y: usize::MIN,
+                squares: HashMap::from([(spring, SquareType::Spring)]),
             }
+        }
+    }
+
+    impl Reservoir {
+        pub fn parse_input_file(&mut self, filename: &str) {
+            let line_re = Regex::new(r"(?<single_axis>[xy])=(?<single_axis_value>\d+), (?<range_axis>[xy])=(?<range_min>\d+)\.\.(?<range_max>\d+)").unwrap();
+            io_utils::file_to_lines(filename).for_each(|line| {
+                let caps = line_re.captures(&line).unwrap();
+                let single_axis = caps.name("single_axis").unwrap().as_str();
+                let single_axis_value: usize = caps.name("single_axis_value").unwrap().as_str().parse().unwrap();
+                let range_axis = caps.name("range_axis").unwrap().as_str();
+                let range_min: usize = caps.name("range_min").unwrap().as_str().parse().unwrap();
+                let range_max: usize = caps.name("range_max").unwrap().as_str().parse().unwrap();               
+                match single_axis {
+                    "x" => {
+                        assert_eq!(range_axis, "y");
+                        self.min_y = cmp::min(self.min_y, range_min);
+                        self.max_y = cmp::max(self.max_y, range_max);
+                        for y in range_min..=range_max {
+                            self.squares.insert(
+                                Point { x: single_axis_value, y },
+                                SquareType::Clay,
+                            );
+                        }                                
+                    },
+                    "y" => {
+                        assert_eq!(range_axis, "x");
+                        self.min_y = cmp::min(self.min_y, single_axis_value);
+                        self.max_y = cmp::max(self.max_y, single_axis_value);
+                        for x in range_min..=range_max {
+                            self.squares.insert(
+                                Point { x, y: single_axis_value },
+                                SquareType::Clay,
+                            );                            
+                        }                                
+                    },
+                    _ => panic!("Unrecognized single axis,"),
+                }
+            });
         }
     }
 }
 
+/**
+ * Add to the queue to process
+ *      If sand: keep going down
+ *      If clay or still water: go outward in both directions from the one above.
+ *              This is a special case
+ *      If 
+ */
+
 pub mod part_one {
-    use regex::Regex;
+    use crate::utils::solution::{Answer, Solution};
 
-    use crate::utils::{io_utils, solution::{Answer, Solution}};
-
-    use super::utils::Operation;
+    use super::utils::Reservoir;
 
     #[derive(Debug, Default)]
-    pub struct Soln {}
+    pub struct Soln {
+        reservoir: Reservoir,
+    }
 
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
+            self.reservoir.parse_input_file(filename);
+            // TODO: actually do
+            Answer::Usize(0)
         }
     }
 
@@ -80,66 +137,6 @@ pub mod part_one {
                 answer,
                 &DAY,
             );
-        }
-    }
-}
-
-pub mod part_two {
-    use regex::Regex;
-
-    use crate::utils::{io_utils, solution::{Answer, Solution}};
-
-    use super::utils::CPU;
-
-    #[derive(Debug, Default)]
-    pub struct Soln {
-        cpu: CPU,
-    }
-
-    impl Solution for Soln {
-        fn solve(&mut self, filename: &str) -> Answer {
-            let mut before = None;
-            let mut operation: Option<Vec<usize>> = None;
-            let mut after = None;
-            let registers_re = Regex::new(r"(?<seq>(Before)|(After)):\s+\[(?<registers>[\d\, ]+)\]").unwrap();
-            io_utils::file_to_lines(filename).for_each(|line| {
-                if line.len() == 0 {
-                    if let Some(af) = &after {
-                        assert_ne!(before, None);
-                        // NOTE: changed from part one
-                        self.cpu.process_sample(
-                            &before.as_ref().unwrap(),
-                            operation.as_ref().unwrap()[0],
-                            operation.as_ref().unwrap()[1], 
-                            operation.as_ref().unwrap()[2], 
-                            operation.as_ref().unwrap()[3], 
-                            &af
-                        );
-                        before = None;
-                        operation = None;
-                        after = None;                        
-                    }
-                } else if let Some(captures) = registers_re.captures(&line) {
-                    let seq = captures.name("seq").unwrap().as_str();
-                    let registers = captures.name("registers").unwrap().as_str().split(", ")
-                        .map(|val| val.parse().unwrap())
-                        .collect();
-                    match seq {
-                        "Before" => before = Some(registers),
-                        "After"  => after  = Some(registers),
-                        _ => panic!("Unrecognized sequence"),
-                    }
-                } else {
-                    let op = line.split(" ").map(|val| val.parse().unwrap()).collect();
-                    if before == None {
-                        // perform operation
-                        self.cpu.perform_operation(op);
-                    } else {
-                        operation = Some(op);
-                    }
-                }
-            });
-            Answer::Usize(self.cpu.register_value(0))
         }
     }
 }
