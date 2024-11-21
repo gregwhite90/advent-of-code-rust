@@ -229,6 +229,14 @@ mod utils {
                     && pt.y <= self.max_y
             }).count()
         }
+
+        pub fn squares_with_resting_water(&self) -> usize {
+            self.squares.iter().filter(|(pt, square_type)| {
+                **square_type == SquareType::RestingWater
+                    && pt.y >= self.min_y
+                    && pt.y <= self.max_y
+            }).count()
+        }
     }
 
     impl std::fmt::Display for Reservoir {
@@ -277,6 +285,43 @@ pub mod part_one {
         use super::super::DAY;
 
         #[test_case(1, Answer::Usize(57); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::Reservoir;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        reservoir: Reservoir,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.reservoir.parse_input_file(filename);
+            self.reservoir.flow_water();
+            Answer::Usize(self.reservoir.squares_with_resting_water())
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::Usize(29); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
