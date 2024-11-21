@@ -3,17 +3,6 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2018, day: 17 };
 
-/**
- * At each y, I need to know all the x's that are clay, approximately in order?
- * 
- * Track the horizontals and the verticals?
- * 
- * Then when hits, it goes left and right simultaneously. Once both are stopped,
- * it becomes settled water.
- * 
- * Save a map of y to all x's.
- */
-
 mod utils {
     use std::{cmp, collections::{BTreeSet, HashMap, HashSet}};
 
@@ -33,10 +22,10 @@ mod utils {
         Right,
     }
 
+    // We don't need an explicit variant for Sand.
     #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
     enum SquareType {
         Spring,
-        Sand,
         Clay,
         FlowingWater,
         RestingWater,
@@ -104,9 +93,6 @@ mod utils {
             let mut to_process = BTreeSet::from([self.spring]);
             while !to_process.is_empty() {
                 let pt = to_process.pop_first().unwrap();
-                // println!("{:?}", to_process);
-                // println!("{:?}", pt);
-                // println!("{}", self);
                 match self.squares.get(&pt) {
                     None | Some(SquareType::FlowingWater) | Some(SquareType::Spring) => (),
                     Some(SquareType::RestingWater) => {
@@ -116,9 +102,6 @@ mod utils {
                     Some(SquareType::Clay) => {
                         panic!("Should not be processing a clay square");
                     },
-                    Some(SquareType::Sand) => {
-                        panic!("Should not explicitly be marking squares as sand");
-                    }
                 }
                 let down_pt = Point { x: pt.x, y: pt.y + 1 };
                 match self.squares.get(&down_pt) {
@@ -160,9 +143,6 @@ mod utils {
                             },
                         }
                     },
-                    Some(SquareType::Sand) => {
-                        panic!("Should not be explicitly storing any squares as sand");
-                    },
                     Some(SquareType::Spring) => {
                         panic!("Water should not be above spring");
                     }
@@ -186,10 +166,10 @@ mod utils {
                 Direction::Right => Point { x: starting_point.x + 1, y: starting_point.y },
             };
             match self.squares.get(&next_pt) {
-                None | Some(SquareType::Sand) | Some(SquareType::FlowingWater) => {
+                None | Some(SquareType::FlowingWater) => {
                     let next_pt_support = Point { x: next_pt.x, y: next_pt.y + 1 };
                     match self.squares.get(&next_pt_support) {
-                        None | Some(SquareType::FlowingWater) | Some(SquareType::Sand) => {
+                        None | Some(SquareType::FlowingWater) => {
                             return (Some(next_pt), HashSet::from([*starting_point, next_pt]));
                         },
                         Some(SquareType::Clay) | Some(SquareType::RestingWater) => {
@@ -206,13 +186,6 @@ mod utils {
                 Some(SquareType::Clay) => {
                     return (None, HashSet::from([*starting_point]));
                 },
-                /*
-                Some(SquareType::FlowingWater) => {
-                    // TODO: confirm this is the desired treatment
-                    let (res, mut points) = self.flow_water_horizontally(&next_pt, direction);
-                    points.insert(*starting_point);
-                    return (res, points);
-                },*/
                 Some(SquareType::RestingWater) => {
                     panic!("Should not be possible to flow horizontally into resting water");
                 },
@@ -245,7 +218,7 @@ mod utils {
                 for x in 440..=560 {
                     let ch = match self.squares.get(&Point { x, y }) {
                         Some(SquareType::Spring) => '+',
-                        None | Some(SquareType::Sand) => '.',
+                        None => '.',
                         Some(SquareType::Clay) => '#',
                         Some(SquareType::RestingWater) => '~',
                         Some(SquareType::FlowingWater) => '|',
