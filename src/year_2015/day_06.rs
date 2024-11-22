@@ -3,11 +3,13 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2015, day: 6 };
 
-pub mod part_one {
+mod utils {
     use itertools::iproduct;
     use regex::Regex;
 
-    use crate::utils::{io_utils, solution::{Answer, Solution}};
+    use crate::utils::io_utils;
+
+    pub const DIMENSIONS: usize = 1_000;
 
     #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
     struct Point {
@@ -15,26 +17,26 @@ pub mod part_one {
         y: usize,
     }
 
-    struct Rectangle {
+    pub struct Rectangle {
         top_left: Point,
         bottom_right: Point,
     }
 
-    const DIMENSIONS: usize = 1_000;
-
-    #[derive(Debug)]
-    struct LightGrid {
-        on: Vec<Vec<bool>>,
+    impl Rectangle {
+        pub fn iter_over_cells(&self) -> impl Iterator<Item = (usize, usize)> { 
+            iproduct!(
+                self.top_left.x..=self.bottom_right.x,
+                self.top_left.y..=self.bottom_right.y
+            )
+        }
     }
 
-    impl LightGrid {
-        fn new(dimensions: usize) -> Self {
-            Self {
-                on: vec![vec![false; dimensions]; dimensions]
-            }
-        }
+    pub trait InteractiveLightGrid {
+        fn turn_on(&mut self, rectangle: &Rectangle);
+        fn toggle(&mut self, rectangle: &Rectangle);
+        fn turn_off(&mut self, rectangle: &Rectangle);
 
-        pub fn parse_input_file(&mut self, filename: &str) {
+        fn parse_input_file(&mut self, filename: &str) {
             let re = Regex::new(
                 r"(?<op>(turn on)|(toggle)|(turn off)) (?<x_min>\d+)\,(?<y_min>\d+) through (?<x_max>\d+)\,(?<y_max>\d+)"
             ).unwrap();
@@ -56,31 +58,23 @@ pub mod part_one {
                 }
             }
         }
+    }
+}
 
-        fn turn_on(&mut self, rectangle: &Rectangle) {
-            for (x, y ) in iproduct!(
-                rectangle.top_left.x..=rectangle.bottom_right.x,
-                rectangle.top_left.y..=rectangle.bottom_right.y
-            ) {
-                self.on[x][y] = true;
-            }
-        }
+pub mod part_one {
+    use crate::utils::solution::{Answer, Solution};
 
-        fn toggle(&mut self, rectangle: &Rectangle) {
-            for (x, y ) in iproduct!(
-                rectangle.top_left.x..=rectangle.bottom_right.x,
-                rectangle.top_left.y..=rectangle.bottom_right.y
-            ) {
-                self.on[x][y] = !self.on[x][y];
-            }
-        }
+    use super::utils::{InteractiveLightGrid, Rectangle, DIMENSIONS};
 
-        fn turn_off(&mut self, rectangle: &Rectangle) {
-            for (x, y ) in iproduct!(
-                rectangle.top_left.x..=rectangle.bottom_right.x,
-                rectangle.top_left.y..=rectangle.bottom_right.y
-            ) {
-                self.on[x][y] = false;
+    #[derive(Debug)]
+    struct LightGrid {
+        on: Vec<Vec<bool>>,
+    }
+
+    impl LightGrid {
+        fn new(dimensions: usize) -> Self {
+            Self {
+                on: vec![vec![false; dimensions]; dimensions]
             }
         }
 
@@ -89,7 +83,26 @@ pub mod part_one {
                 row.iter().filter(|on| **on).count()
             }).sum()
         }
+    }
 
+    impl InteractiveLightGrid for LightGrid { 
+        fn turn_on(&mut self, rectangle: &Rectangle) {
+            for (x, y) in rectangle.iter_over_cells() {
+                self.on[x][y] = true;
+            }
+        }
+
+        fn toggle(&mut self, rectangle: &Rectangle) {
+            for (x, y) in rectangle.iter_over_cells() {
+                self.on[x][y] = !self.on[x][y];
+            }
+        }
+
+        fn turn_off(&mut self, rectangle: &Rectangle) {
+            for (x, y) in rectangle.iter_over_cells() {
+                self.on[x][y] = false;
+            }
+        }
     }
 
     impl Default for LightGrid {
