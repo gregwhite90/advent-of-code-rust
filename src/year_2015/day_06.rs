@@ -141,3 +141,88 @@ pub mod part_one {
         }
     }    
 }
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::{InteractiveLightGrid, Rectangle, DIMENSIONS};
+
+    #[derive(Debug)]
+    struct LightGrid {
+        on: Vec<Vec<usize>>,
+    }
+
+    impl LightGrid {
+        fn new(dimensions: usize) -> Self {
+            Self {
+                on: vec![vec![0; dimensions]; dimensions]
+            }
+        }
+
+        pub fn num_on(&self) -> usize {
+            self.on.iter().map(|row|{
+                row.iter().sum::<usize>()
+            }).sum()
+        }
+    }
+
+    impl InteractiveLightGrid for LightGrid { 
+        fn turn_on(&mut self, rectangle: &Rectangle) {
+            for (x, y) in rectangle.iter_over_cells() {
+                self.on[x][y] += 1;
+            }
+        }
+
+        fn toggle(&mut self, rectangle: &Rectangle) {
+            for (x, y) in rectangle.iter_over_cells() {
+                self.on[x][y] += 2;
+            }
+        }
+
+        fn turn_off(&mut self, rectangle: &Rectangle) {
+            for (x, y) in rectangle.iter_over_cells() {
+                self.on[x][y] = if let Some(res) = self.on[x][y].checked_sub(1) {
+                    res
+                } else {
+                    0
+                };
+            }
+        }
+    }
+
+    impl Default for LightGrid {
+        fn default() -> Self {
+            Self::new(DIMENSIONS)
+        }
+    }
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        light_grid: LightGrid,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.light_grid.parse_input_file(filename);
+            Answer::Usize(self.light_grid.num_on())
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::Usize(1_000_000 + 2 * 1_000 - 4); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
