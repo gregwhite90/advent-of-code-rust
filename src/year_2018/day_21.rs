@@ -4,10 +4,18 @@ use crate::utils::Day;
 const DAY: Day = crate::utils::Day { year: 2018, day: 21 };
 
 mod utils {
+    use std::collections::HashSet;
+
     use regex::Regex;
     use strum_macros::EnumIter;
 
     use crate::utils::io_utils;
+
+    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+    pub enum Part {
+        One,
+        Two,
+    }
 
     #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy, EnumIter)]
     pub enum Operation {
@@ -142,20 +150,33 @@ mod utils {
             self.registers[register]
         }
 
-        pub fn run_program(&mut self) {
-            // TODO: deal with a negative instruction pointer?
-            // TODO? account for when there is no instruction pointer register?
+        pub fn run_program(&mut self, part: Part) {
+            let mut last_register_2_value: Option<usize> = None;
+            let mut seen_register_2: HashSet<usize> = HashSet::new();
             loop {
                 if self.instruction_ptr >= self.instructions.len() {
                     break;
                 }
                 if self.instruction_ptr == 28 {
                     // This is the result of decompiling the instructions.
-                    // This instruction is the first time register 0 is referenced,
-                    // and if register 0 == register 2, we will break out of the
-                    // program after the minimum number of instructions,
-                    // solving part one.
-                    println!("{}", self.registers[2]);
+                    // This instruction is the first time register 0 is referenced.
+                    // For part one, if register 0 == register 2, we will break out of the
+                    // program after the minimum number of instructions.
+                    // For part two, we want to find the first time register 2 repeats itself,
+                    // the solution that maximizes the number of instructions is the
+                    // previous value of register 2.
+                    match part {
+                        Part::One => {
+                            self.set_register(0, self.register_value(2));
+                        },
+                        Part::Two => {
+                            if !seen_register_2.insert(self.register_value(2)) {
+                                self.set_register(0, last_register_2_value.unwrap());
+                            } else {
+                                last_register_2_value = Some(self.register_value(2));
+                            }
+                        },
+                    }
                 }
                 self.registers[self.instruction_ptr_register] = self.instruction_ptr;
                 self.instructions[self.instruction_ptr].execute(&mut self.registers);
@@ -168,27 +189,12 @@ mod utils {
             self.registers[register] = value;
         }
     }
-
-    pub fn sum_of_factors(n: usize) -> usize {
-        let mut sum_of_factors = 0;
-        let mut i: usize = 1;
-        loop {
-            if i.pow(2) == n { sum_of_factors += i; }
-            else if n % i == 0 {
-                sum_of_factors += i;
-                sum_of_factors += n / i;
-            }
-            if i.pow(2) >= n { break; }
-            i += 1;
-        }
-        sum_of_factors
-    }
 }
 
 pub mod part_one {
     use crate::utils::solution::{Answer, Solution};
 
-    use super::utils::CPU;
+    use super::utils::{CPU, Part};
 
     #[derive(Debug, Default)]
     pub struct Soln {
@@ -198,7 +204,26 @@ pub mod part_one {
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
             self.cpu.parse_input_file(filename);
-            self.cpu.run_program();
+            self.cpu.run_program(Part::One);
+            Answer::Usize(self.cpu.register_value(0))
+        }
+    }
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::{CPU, Part};
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        cpu: CPU,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.cpu.parse_input_file(filename);
+            self.cpu.run_program(Part::Two);
             Answer::Usize(self.cpu.register_value(0))
         }
     }

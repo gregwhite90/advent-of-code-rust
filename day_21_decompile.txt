@@ -27,6 +27,6 @@ d       addi 3 1 1        register 1 = register 3 + 1
         seti 17 7 4       
 c       setr 3 4 5        Sets register 5 to register 3
         seti 7 8 4        Jumps back to instruction 8 (b)
-a       eqrr 2 0 3        Jump out of the loop once register 2 equals register 0.
+a       eqrr 2 0 3        Jump out of the loop once register 2 equals register 0. So the value of register 0 that maximizes the number of instructions run but still halts is the value before the first repeat of register 2.
         addr 3 4 4   
         seti 5 6 4        If register 0 != register 2, go back to instruction 6 (start of outer).
