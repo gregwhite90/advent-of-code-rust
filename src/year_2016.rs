@@ -1,4 +1,4 @@
-//! Solutions to the [2017](https://adventofcode.com/2016) puzzles.
+//! Solutions to the [2016](https://adventofcode.com/2016) puzzles.
 
 pub mod utils;
 pub mod day_01;
