@@ -2,7 +2,7 @@
 use std::collections::{HashMap, HashSet};
 use crate::{Args, Part};
 use advent_of_code_rust::utils::{solution::Solution, io_utils::{self, InputFileType}, Day};
-use advent_of_code_rust::{year_2016, year_2017, year_2018, year_2023};
+use advent_of_code_rust::{year_2015, year_2016, year_2017, year_2018, year_2023};
 
 /// Runs the solution(s) specified by the command line arguments.
 pub fn run_solution(args: &Args) {
@@ -44,6 +44,13 @@ struct DailySolutions {
 fn get_solns(day: &Day) -> DailySolutions {
     // Mutable because we will later move out the daily solutions to be able to return them.
     let mut daily_solutions: HashMap<Day, DailySolutions> = HashMap::from([
+        (
+            Day { year: 2015, day: 6 },
+            DailySolutions { 
+                part_one: Some(Box::new(year_2015::day_06::part_one::Soln::default())),
+                part_two: None,
+            },
+        ),
         (
             Day { year: 2016, day: 1 },
             DailySolutions { 
