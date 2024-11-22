@@ -1,8 +1,3 @@
-#[cfg(test)]
-use crate::utils::Day;
-#[cfg(test)]
-const DAY: Day = crate::utils::Day { year: 2018, day: 21 };
-
 mod utils {
     use std::collections::HashSet;
 
