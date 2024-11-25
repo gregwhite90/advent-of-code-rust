@@ -59,3 +59,42 @@ pub mod part_one {
         }
     }    
 }
+
+pub mod part_two {
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            Answer::Usize(
+                io_utils::file_to_lines(filename).map(|line| {
+                    line.chars().filter(|ch| *ch == '\\' || *ch == '"').count() + 2 // +2 to account for the starting and ending quotations
+                }).sum()
+            )
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::Usize(4); "example_1")]
+        #[test_case(2, Answer::Usize(4); "example_2")]
+        #[test_case(3, Answer::Usize(6); "example_3")]
+        #[test_case(4, Answer::Usize(5); "example_4")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
