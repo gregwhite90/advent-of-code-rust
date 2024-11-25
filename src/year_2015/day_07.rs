@@ -153,6 +153,16 @@ mod utils {
                 }
             }
         }
+
+        pub fn set_wire(&mut self, wire: &str, val: u16) {
+            let gate = self.wires.get_mut(wire).unwrap();
+            assert_eq!(gate.gate_type, GateType::Wire);
+            gate.inputs[0] = GateInput::Value(val);
+        }
+
+        pub fn reset_all_wires(&mut self) {
+            self.wire_values = HashMap::new();
+        }
     }
 
     #[cfg(test)]
@@ -191,6 +201,27 @@ pub mod part_one {
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
             self.circuit.parse_input_file(filename);
+            Answer::U16(self.circuit.wire_value("a"))
+        }
+    }
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::Circuit;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        circuit: Circuit,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.circuit.parse_input_file(filename);
+            let a = self.circuit.wire_value("a");
+            self.circuit.set_wire("b", a);
+            self.circuit.reset_all_wires();
             Answer::U16(self.circuit.wire_value("a"))
         }
     }
