@@ -13,6 +13,7 @@ mod utils {
     #[derive(Debug, Default)]
     pub struct Atlas {
         distances: HashMap<BTreeSet<String>, usize>,
+        longest_paths: HashMap<(String, BTreeSet<String>), usize>,
     }
 
 
@@ -69,6 +70,32 @@ mod utils {
             }
             panic!("Did not find a solution");
         }
+
+        pub fn longest_path(&mut self) -> usize {
+            let all_cities: BTreeSet<String> = self.distances.keys().cloned().flatten().collect();
+            all_cities.iter().map(|city| {
+                let mut remaining = all_cities.clone();
+                remaining.remove(city);
+                self.longest_subpath(city, &remaining)
+            }).max().unwrap()
+        }
+
+        pub fn longest_subpath(&mut self, city: &str, remaining: &BTreeSet<String>) -> usize {
+            if remaining.is_empty() {
+                return 0;
+            }
+            let cache_id = (city.to_string(), remaining.clone());
+            if let Some(dist) = self.longest_paths.get(&cache_id) {
+                return *dist;
+            }
+            let dist = remaining.iter().map(|next| {
+                let mut rem = remaining.clone();
+                rem.remove(next);
+                *self.distances.get(&BTreeSet::from([city.to_string(), next.clone()])).unwrap() + self.longest_subpath(next, &rem)
+            }).max().unwrap();
+            self.longest_paths.insert(cache_id, dist);
+            dist
+        }
     }
 }
 
@@ -98,6 +125,43 @@ pub mod part_one {
         use super::super::DAY;
 
         #[test_case(1, Answer::Usize(605); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::Atlas;
+
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        atlas: Atlas,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.atlas.parse_input_file(filename);
+            Answer::Usize(self.atlas.longest_path())
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::Usize(982); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
