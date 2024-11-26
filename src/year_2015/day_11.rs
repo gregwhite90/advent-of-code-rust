@@ -40,7 +40,7 @@ mod utils {
 
     fn req_3(password: &[u8]) -> bool {
         password.windows(2).enumerate()
-            .filter(|(idx, chs)| {
+            .filter(|(_idx, chs)| {
                 chs[0] == chs[1]
             })
             .combinations(2)
@@ -57,6 +57,9 @@ mod utils {
             idx -= 1;
         }
         res[idx] += 1;
+        if res[idx] == 'i' as u8 || res[idx] == 'o' as u8 || res[idx] == 'l' as u8 {
+            res[idx] += 1;
+        }
         res
     }
 
@@ -115,8 +118,9 @@ pub mod part_one {
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
             let mut password = utils::to_chars(&io_utils::file_to_string(filename));
-            while !utils::is_valid(&password) {
+            loop {
                 password = utils::increment(&password);
+                if utils::is_valid(&password) { break; }
             }
             Answer::String(utils::to_string(&password))
         }
@@ -139,4 +143,30 @@ pub mod part_one {
                 &DAY,
             );
         }
-    }}
+    }
+}
+
+pub mod part_two {
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
+
+    use super::utils;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            let mut password = utils::to_chars(&io_utils::file_to_string(filename));
+            loop {
+                password = utils::increment(&password);
+                if utils::is_valid(&password) { break; }
+            }
+            loop {
+                password = utils::increment(&password);
+                if utils::is_valid(&password) { break; }
+            }
+            Answer::String(utils::to_string(&password))
+        }
+    }
+}
