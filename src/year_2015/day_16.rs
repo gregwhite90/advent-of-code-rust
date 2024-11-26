@@ -9,13 +9,20 @@ mod utils {
     use crate::utils::io_utils;
     use super::DAY;
 
+    #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+    pub enum RangeType {
+        Greater,
+        Less,
+    }
+
     #[derive(Debug)]
     struct Letter {
         results: HashMap<String, usize>,
+        feature_ranges: HashMap<String, RangeType>,
     }
 
     impl Letter {
-        fn new(filename: &str) -> Self {
+        fn new(filename: &str, feature_ranges: HashMap<String, RangeType>) -> Self {
             let result_re = Regex::new(r"(?<feature_name>\w+): (?<feature_value>\d+)").unwrap();
             Self {
                 results: io_utils::file_to_lines(filename).map(|line| {
@@ -24,11 +31,16 @@ mod utils {
                     let feature_value: usize = caps.name("feature_value").unwrap().as_str().parse().unwrap();
                     (feature_name.to_string(), feature_value)
                 }).collect::<HashMap<String, usize>>(),
+                feature_ranges,
             }
         }
 
         pub fn disqualifies(&self, feature_name: &str, feature_value: usize) -> bool {
-            *self.results.get(feature_name).unwrap() != feature_value
+            match self.feature_ranges.get(feature_name) {
+                None => *self.results.get(feature_name).unwrap() != feature_value,
+                Some(RangeType::Greater) => feature_value <= *self.results.get(feature_name).unwrap(),
+                Some(RangeType::Less) => feature_value >= *self.results.get(feature_name).unwrap(),
+            }
         }
     }
 
@@ -37,10 +49,13 @@ mod utils {
         letter: Letter,
     }
 
-    impl Default for LetterChecker {
-        fn default() -> Self {
+    impl LetterChecker {
+        pub fn new(feature_ranges: HashMap<String, RangeType>) -> Self {
             Self {
-                letter: Letter::new(&io_utils::filename(&DAY, "mfcsam_results.txt"))
+                letter: Letter::new(
+                    &io_utils::filename(&DAY, "mfcsam_results.txt"),
+                    feature_ranges,
+                )
             }
         }
     }
@@ -69,13 +84,23 @@ mod utils {
 }
 
 pub mod part_one {
+    use std::collections::HashMap;
+
     use crate::utils::solution::{Answer, Solution};
 
     use super::utils::LetterChecker;
 
-    #[derive(Debug, Default)]
+    #[derive(Debug)]
     pub struct Soln {
         letter_checker: LetterChecker,
+    }
+
+    impl Default for Soln {
+        fn default() -> Self {
+            Self {
+                letter_checker: LetterChecker::new(HashMap::new())
+            }
+        }
     }
 
     impl Solution for Soln {
