@@ -15,6 +15,7 @@ mod utils {
         velocity: usize,
         stamina: usize,
         required_rest: usize,
+        points: usize,
     }
 
     impl Reindeer {
@@ -23,13 +24,19 @@ mod utils {
                 velocity,
                 stamina,
                 required_rest,
+                points: 0,
             }
         }
+
         fn distance(&self, time: usize) -> usize {
             self.velocity * (
                 (time / (self.required_rest + self.stamina)) * self.stamina
                 + cmp::min(self.stamina, time % (self.required_rest + self.stamina))
             )
+        }
+
+        fn add_point(&mut self) {
+            self.points += 1;
         }
     }
 
@@ -52,6 +59,22 @@ mod utils {
         
         pub fn winner_distance(&self, time: usize) -> usize {
             self.reindeers.iter().map(|r| r.distance(time)).max().unwrap()
+        }
+
+        pub fn assign_points_at_time(&mut self, time: usize) {
+            let leader_distance = self.winner_distance(time);
+            self.reindeers.iter_mut()
+                .filter(|r| r.distance(time) == leader_distance)
+                .for_each(|r| {
+                    r.add_point()
+                });
+        }
+
+        pub fn winner_points(&mut self, time: usize) -> usize {
+            for t in 1..=time {
+                self.assign_points_at_time(t);
+            }
+            self.reindeers.iter().map(|r| r.points).max().unwrap()
         }
     }
 }
@@ -97,6 +120,58 @@ pub mod part_one {
         use super::super::DAY;
 
         #[test_case(1, Answer::Usize(1_120); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::with_time(1_000),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::ReindeerRace;
+
+    #[derive(Debug)]
+    pub struct Soln {
+        time: usize,
+        reindeer_race: ReindeerRace,
+    }
+
+    impl Soln {
+        fn with_time(time: usize) -> Self {
+            Self {
+                time,
+                reindeer_race: ReindeerRace::default(),
+            }
+        }
+    }
+
+    impl Default for Soln {
+        fn default() -> Self {
+            Self::with_time(2_503)
+        }
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.reindeer_race.parse_input_file(filename);
+            Answer::Usize(self.reindeer_race.winner_points(self.time))
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::Usize(689); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::with_time(1_000),
