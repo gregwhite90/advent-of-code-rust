@@ -69,6 +69,11 @@ pub mod io_utils {
         format!("input/year_{}/day_{:02}/{}", day.year, day.day, file)
     }
 
+    /// Converts a day and filename to a fully pathed filename.
+    pub fn filename(day: &Day, filename: &str) -> String {
+        format!("input/year_{}/day_{:02}/{}", day.year, day.day, filename)
+    }
+
     /// Returns a string with the entire contents of the file.
     pub fn file_to_string(filename: &str) -> String {
         fs::read_to_string(filename)
