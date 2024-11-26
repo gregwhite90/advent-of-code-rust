@@ -50,9 +50,7 @@ pub mod part_one {
 }
 
 pub mod part_two {
-    use std::{collections::{HashMap, VecDeque}, f32::consts::PI};
-
-    use regex::Regex;
+    use serde_json;
 
     use crate::utils::{io_utils, solution::{Answer, Solution}};
 
@@ -60,50 +58,32 @@ pub mod part_two {
     pub struct Soln {
     }
 
+    fn number_sum(data: &serde_json::Value) -> i64 {
+        match data {
+            serde_json::Value::Array(entries) => entries.iter().map(|entry| number_sum(entry)).sum(),
+            serde_json::Value::Object(obj) => {
+                if obj.values().any(|v| {
+                    if let serde_json::Value::String(val) = v {
+                        return *val == "red".to_string();
+                    } else {
+                        return false;
+                    }
+                }) {
+                    0
+                } else {
+                    obj.values().map(|v| number_sum(v)).sum()
+                }
+            }
+            serde_json::Value::Number(val) => val.as_i64().unwrap(),
+            _ => 0,
+        }
+    }
+
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            let number_re = Regex::new(r"\-?\d+").unwrap();
-            let red_re = Regex::new(r#"\{[^\{]+:"red""#).unwrap();
             let input = io_utils::file_to_string(filename);
-            let closer_to_opener = HashMap::from([('}', '{'), (']', '[')]);
-            /**
-             *  TODO: find the "red"s in objects
-             *        scan forward to find the closing of the object.
-             *          use a VecDeque to track depth. once it's empty, we're done.
-             *        that gives us exclusion zones
-             *        then filter out the number matches with indices in any of those zones
-             */
-            // (start, end) tuples of the ojects with a "red"-valued property
-            let exclusion_zones: Vec<(usize, usize)> = red_re.find_iter(&input).map(|m| {
-                let mut stack = VecDeque::new();
-                let mut input_chars = (&input[m.start()..]).char_indices();                
-                loop {
-                    let (idx, ch) = input_chars.next().unwrap();
-                    match ch {
-                        '{' | '[' => {
-                            stack.push_back(ch);
-                        },
-                        '}' | ']' => {
-                            let opener = stack.pop_back().unwrap();
-                            assert_eq!(opener, *closer_to_opener.get(&ch).unwrap());
-                        },
-                        _ => (),
-                    }
-                    if stack.is_empty() {
-                        return (m.start(), m.start() + idx)
-                    }
-                }
-            }).collect();
-            let included_numbers: i64 = number_re.find_iter(&input)
-                .filter(|m|{
-                    !exclusion_zones.iter().any(|(start, end)| {
-                        *start <= m.start() && *end >= m.start()
-                    })
-                })
-                .map(|m| {
-                    m.as_str().parse::<i64>().unwrap()
-                }).sum();
-            Answer::I64(included_numbers)
+            let data: serde_json::Value = serde_json::from_str(&input).unwrap();
+            Answer::I64(number_sum(&data))
         }
     }
 
