@@ -46,6 +46,14 @@ mod utils {
             let all_names: HashSet<String> = HashSet::from_iter(self.happiness_changes.keys().cloned().flatten());
             all_names.iter().permutations(all_names.len()).map(|c| self.total_change_in_happiness(c)).max().unwrap()
         }
+
+        pub fn add_seatee(&mut self, name: &str, happiness_change: i64) {
+            let all_names: HashSet<String> = HashSet::from_iter(self.happiness_changes.keys().cloned().flatten());
+            all_names.iter().for_each(|existing| {
+                let key = BTreeSet::from([existing.clone(), name.to_string()]);
+                self.happiness_changes.insert(key, happiness_change);
+            })
+        }
     }
 }
 
@@ -83,4 +91,23 @@ pub mod part_one {
             );
         }
     }    
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::Table;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        table: Table,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.table.parse_input_file(filename);
+            self.table.add_seatee("Me", 0);
+            Answer::I64(self.table.max_change_in_happiness())
+        }
+    }
 }
