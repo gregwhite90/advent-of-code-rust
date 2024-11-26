@@ -109,3 +109,35 @@ pub mod part_one {
         }
     }
 }
+
+pub mod part_two {
+    use std::collections::HashMap;
+
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::{LetterChecker, RangeType};
+
+    #[derive(Debug)]
+    pub struct Soln {
+        letter_checker: LetterChecker,
+    }
+
+    impl Default for Soln {
+        fn default() -> Self {
+            Self {
+                letter_checker: LetterChecker::new(HashMap::from([
+                    ("cats".to_string(), RangeType::Greater),
+                    ("trees".to_string(), RangeType::Greater),
+                    ("pomeranians".to_string(), RangeType::Less),
+                    ("goldfish".to_string(), RangeType::Less),
+                ]))
+            }
+        }
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            Answer::Usize(self.letter_checker.valid_id(filename))
+        }
+    }
+}
