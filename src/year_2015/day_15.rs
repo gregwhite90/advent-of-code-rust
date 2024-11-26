@@ -6,7 +6,8 @@ const DAY: Day = crate::utils::Day { year: 2015, day: 15 };
 mod utils {
     use std::cmp;
 
-    use ndarray::{array, Array, Array1, Array2};
+    use itertools::Itertools;
+    use ndarray::{Array, Array1, Array2};
     use regex::Regex;
 
     use crate::utils::io_utils;
@@ -45,6 +46,10 @@ mod utils {
         fn score(&self, recipe: &Array1<i64>) -> i64 {
             self.features.dot(recipe).iter().map(|s| cmp::max(*s, 0)).product()
         }
+
+        fn num_ingredients(&self) -> usize {
+            self.features.shape()[1]
+        }
     }
 
     #[derive(Debug, Default)]
@@ -59,22 +64,25 @@ mod utils {
 
         pub fn max_total_score(&self, calorie_count: Option<i64>) -> i64 {
             // TODO: figure out how to do this dynamically
-            let mut res = i64::MIN;
-            for i in 0..=100 {
-                  for j in 0..=(100 - i) {
-                    for k in 0..=(100 - i - j) {
-                        let l = 100 - i - j - k;
-                        let recipe = array![i, j, k, l];
-                        if let Some(calories) = calorie_count {
-                            let cals = self.ingredients.calories(&recipe);
-                            if cals != calories { continue; }
-                        }
-                        let score = self.ingredients.score(&recipe);
-                        if score > res { res = score; }
+            let n = self.ingredients.num_ingredients();
+            itertools::repeat_n(0..=100, n)
+                .multi_cartesian_product()
+                .filter(|amounts| {
+                    if amounts.iter().sum::<i64>() != 100 { return false; }
+                    if let Some(calories) = calorie_count {
+                        let recipe = Array::from_vec(amounts.clone());
+                        let cals = self.ingredients.calories(&recipe);
+                        return cals == calories
+                    } else {
+                        return true;
                     }
-                }
-            }
-            res
+                })
+                .map(|amounts| {
+                    let recipe = Array::from_vec(amounts);
+                    self.ingredients.score(&recipe)
+                })
+                .max()
+                .unwrap()
         }
     }
 }
