@@ -39,7 +39,7 @@ mod utils {
 
         #[test]
         fn parse_empty_line_is_correct() {
-            assert_eq!(parse_line(""), vec![]);
+            assert_eq!(parse_line(""), Vec::<i32>::new());
         }
 
         #[test]
