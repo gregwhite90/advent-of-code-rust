@@ -2,10 +2,8 @@ use crate::utils::Day;
 const DAY: Day = crate::utils::Day { year: 2015, day: 16 };
 
 mod utils {
-    use std::{cmp, collections::HashMap};
+    use std::collections::HashMap;
 
-    use itertools::Itertools;
-    use ndarray::{Array, Array1, Array2};
     use regex::Regex;
 
     use crate::utils::io_utils;
