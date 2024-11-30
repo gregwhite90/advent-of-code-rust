@@ -38,7 +38,7 @@ mod utils {
     #[derive(Debug, Default)]
     pub struct Distributor {
         containers: Vec<usize>,
-        cache: HashMap<CacheKey, usize>,
+        cache: HashMap<CacheKey, HashMap<usize, usize>>, // Values are the map of length to count
     }
 
     impl Distributor {
@@ -48,22 +48,37 @@ mod utils {
 
         pub fn num_combos(&mut self, amount: usize) -> usize {
             let containers = self.containers.clone();
-            self.num_combos_recursive(containers, amount)
+            let counts = self.num_combos_recursive(0, containers, amount);
+            counts.iter()
+                .map(|(len, count)| {
+                    let permutations: usize = (1..=*len).product();
+                    assert_eq!(count % permutations, 0);
+                    count / permutations
+                })
+                .sum()
         }
 
         // TODO: I think I need to track the length of the solutions. This is counting every single
         // combination as if the ordering matters.
-        fn num_combos_recursive(&mut self, mut containers: Vec<usize>, remaining: usize) -> usize {
-            if remaining == 0 { return 1; }
+        /// Returns a map of length to number of combos of that length 
+        fn num_combos_recursive(&mut self, len: usize, mut containers: Vec<usize>, remaining: usize) -> HashMap<usize, usize> {
+            if remaining == 0 { return HashMap::from([(len, 1)]); }
             clean_up_containers(&mut containers, remaining); // TODO: is there a more efficient way to do this only once?
             let cache_key = CacheKey::new(&containers, remaining);
-            if let Some(combos) = self.cache.get(&cache_key) { return *combos; }
-            let res = containers.iter().enumerate().map(|(idx, size)| {
+            if let Some(combos) = self.cache.get(&cache_key) { 
+                return combos.clone();
+            }
+            let mut res  = HashMap::new();
+            for sub in containers.iter().enumerate().map(|(idx, size)| {
                 let mut c = containers.clone();
                 c.swap_remove(idx);
-                self.num_combos_recursive(c, remaining - *size)
-            }).sum();
-            self.cache.insert(cache_key, res);
+                self.num_combos_recursive(len + 1, c, remaining - *size)
+            }) {
+                for (len, count) in sub.into_iter() {
+                    res.entry(len).and_modify(|c| *c += count).or_insert(count);
+                }
+            }
+            self.cache.insert(cache_key, res.clone());
             res
         }
     }
