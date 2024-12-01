@@ -1,0 +1,3 @@
+//! Solutions to the [2024](https://adventofcode.com/2024) puzzles.
+
+pub mod day_01;
