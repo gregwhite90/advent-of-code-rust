@@ -47,3 +47,54 @@ pub mod part_one {
         }
     }    
 }
+
+pub mod part_two {
+    use std::collections::HashMap;
+
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
+
+    #[derive(Debug, Default)]
+    pub struct Soln {}
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            // Counters
+            let mut l: HashMap<usize, usize> = HashMap::new();
+            let mut r: HashMap<usize, usize> = HashMap::new();
+            io_utils::file_to_lines(filename)
+                .for_each(|line| {
+                    let components: Vec<&str> = line.split_whitespace().collect();
+                    l.entry(components[0].parse().unwrap()).and_modify(|count| *count += 1).or_insert(1);
+                    r.entry(components[1].parse().unwrap()).and_modify(|count| *count += 1).or_insert(1);
+                });
+            Answer::Usize(
+                l.iter().map(|(num, l_count)| {
+                    if let Some(r_count) = r.get(num) {
+                        num * l_count * r_count
+                    } else {
+                        0
+                    }
+                })
+                .sum()
+            )
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::Usize(31); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
