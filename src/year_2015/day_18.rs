@@ -31,13 +31,22 @@ mod utils {
         }
     }
 
-    #[derive(Debug, Default)]
+    #[derive(Debug)]
     pub struct LightGrid {
         on: BTreeSet<Point>,
         rows: usize,
+        corners_always_on: bool,
     }
 
     impl LightGrid {
+        pub fn new(corners_always_on: bool) -> Self {
+            Self {
+                on: BTreeSet::default(),
+                rows: usize::default(),
+                corners_always_on,
+            }
+        }
+
         pub fn parse_input_file(&mut self, filename: &str) {
             io_utils::file_to_lines(filename)
                 .for_each(|line| {
@@ -73,6 +82,12 @@ mod utils {
                     }
                 })
                 .collect();
+            if self.corners_always_on {
+                self.on.extend(
+                    iproduct!([0, self.rows - 1], [0, self.rows - 1])
+                        .map(|(col, row)| Point { col: col as isize, row: row as isize})
+                );
+            }
         }
 
         pub fn num_on_after(&mut self, ticks: usize) -> usize {
@@ -98,7 +113,7 @@ pub mod part_one {
     impl Soln {
         fn with_ticks(ticks: usize) -> Self {
             Self {
-                light_grid: LightGrid::default(),
+                light_grid: LightGrid::new(false),
                 ticks,
             }
         }
@@ -128,6 +143,58 @@ pub mod part_one {
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::with_ticks(4),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::LightGrid;
+
+    #[derive(Debug)]
+    pub struct Soln {
+        light_grid: LightGrid,
+        ticks: usize,
+    }
+
+    impl Soln {
+        fn with_ticks(ticks: usize) -> Self {
+            Self {
+                light_grid: LightGrid::new(true),
+                ticks,
+            }
+        }
+    }
+
+    impl Default for Soln {
+        fn default() -> Self {
+            Self::with_ticks(100)
+        }
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.light_grid.parse_input_file(filename);
+            Answer::Usize(self.light_grid.num_on_after(self.ticks))
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(2, Answer::Usize(17); "example_2")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::with_ticks(5),
                 example_key,
                 answer,
                 &DAY,
