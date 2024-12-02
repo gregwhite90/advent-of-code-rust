@@ -8,7 +8,7 @@ mod router;
 pub struct Args {
     /// Year of the solution [possible values: 2015-2023 inclusive]
     #[arg(required = true)]
-    #[arg(value_parser = clap::value_parser!(u32).range(2015..=2023))]
+    #[arg(value_parser = clap::value_parser!(u32).range(2015..=2024))]
     year: u32,
 
     /// Day of the solution  [possible values: 1-25 inclusive]
