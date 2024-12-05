@@ -99,7 +99,6 @@ mod utils {
 
         pub fn word_count(&self, word: &str) -> usize {
             assert_ne!(word.len(), 0);
-            // TODO, maybe I can do this as a mut sitch
             let mut word_chars = word.chars();
             let char_0_points = self.chars.get(&word_chars.next().unwrap()).unwrap().clone();
             if let Some(char_1) = word_chars.next() {
@@ -137,6 +136,43 @@ mod utils {
             }
         }
     }
+
+    #[derive(Debug, Default)]
+    pub struct XMasSearch {
+        char_to_points: HashMap<char, HashSet<Point>>,
+        point_to_char: HashMap<Point, char>,
+    }
+
+    impl XMasSearch {
+        pub fn parse_input_file(&mut self, filename: &str) {
+            io_utils::file_to_lines(filename)
+                .enumerate()
+                .for_each(|(row, line)| {
+                    line.char_indices().for_each(|(col, ch)| {
+                        let pt = Point { col: col.try_into().unwrap(), row: row.try_into().unwrap() };
+                        self.char_to_points.entry(ch)
+                            .and_modify(|pts| {
+                                pts.insert(pt);
+                            })
+                            .or_insert(HashSet::from([pt]));
+                        self.point_to_char.insert(pt, ch);
+                    });
+                });
+        }
+
+        pub fn x_mas_count(&self) -> usize {
+            let a_points = self.char_to_points.get(&'A').unwrap();
+            let obj_diagonals = HashSet::from([Some('M'), Some('S')]);
+            a_points.iter().filter(|pt| {
+                HashSet::from([pt.add_delta(&DeltaPoint { col: 1, row: 1 }), pt.add_delta(&DeltaPoint { col: -1, row: -1 })]
+                    .map(|diagonal_pt| self.point_to_char.get(&diagonal_pt).cloned())) == obj_diagonals
+                &&
+                HashSet::from([pt.add_delta(&DeltaPoint { col: 1, row: -1 }), pt.add_delta(&DeltaPoint { col: -1, row: 1 })]
+                    .map(|diagonal_pt| self.point_to_char.get(&diagonal_pt).cloned())) == obj_diagonals
+            })
+            .count()
+        }
+    }
 }
 
 pub mod part_one {
@@ -164,6 +200,42 @@ pub mod part_one {
         use super::super::DAY;
 
         #[test_case(1, Answer::Usize(18); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::XMasSearch;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        x_mas_search: XMasSearch,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.x_mas_search.parse_input_file(filename);
+            Answer::Usize(self.x_mas_search.x_mas_count())
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::Usize(9); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
