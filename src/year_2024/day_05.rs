@@ -4,7 +4,7 @@ use crate::utils::Day;
 const DAY: Day = crate::utils::Day { year: 2024, day: 5 };
 
 mod utils {
-    use std::collections::{HashMap, HashSet};
+    use std::{cmp::Ordering, collections::{HashMap, HashSet}};
 
     use crate::utils::io_utils;
 
@@ -54,6 +54,32 @@ mod utils {
                 .map(|update| update[(update.len() - 1) / 2])
                 .sum()
         }
+
+        pub fn sum_of_mid_of_fixed_orders(&self) -> usize {
+            let mut incorrect_orders: Vec<Vec<usize>> = self.updates.iter()
+                .filter(|update| !self.is_in_correct_order(*update))
+                .cloned()
+                .collect();
+            incorrect_orders.iter_mut().map(|update| {
+                // correct the order
+                update.sort_by(|a, b| {
+                    if let Some(a_subsequents) = self.page_ordering_rules.get(a) {
+                        if a_subsequents.contains(b) {
+                            return Ordering::Less;
+                        }
+                    }
+                    if let Some(b_subsequents) = self.page_ordering_rules.get(b) {
+                        if b_subsequents.contains(a) {
+                            return Ordering::Greater;
+                        }
+                    }
+                    Ordering::Equal
+                });
+                // get the midpoint
+                update[(update.len() - 1) / 2]
+            })
+            .sum()
+        }
     }
 }
 
@@ -82,6 +108,42 @@ pub mod part_one {
         use super::super::DAY;
 
         #[test_case(1, Answer::Usize(143); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::PrintingDepartment;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        printing_department: PrintingDepartment,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.printing_department.parse_input_file(filename);
+            Answer::Usize(self.printing_department.sum_of_mid_of_fixed_orders())
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::Usize(123); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
