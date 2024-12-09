@@ -9,7 +9,7 @@ mod utils {
     use crate::utils::io_utils;
 
     #[derive(Debug, Default, PartialEq, Eq, Hash, Clone, Copy)]
-    struct Point {
+    pub struct Point {
         row: usize,
         col: usize,
     }
@@ -60,10 +60,11 @@ mod utils {
         }
     }
 
-    #[derive(Debug, Default)]
+    #[derive(Debug, Default, Clone)]
     pub struct LabMap {
         rows: usize,
         cols: usize,
+        guard_start: GuardStatus,
         guard_status: GuardStatus,
         obstacles: HashSet<Point>,
     }
@@ -80,11 +81,18 @@ mod utils {
                             match ch {
                                 '.' => (),
                                 '#' => { self.obstacles.insert(Point { row, col }); },
-                                '^' | '>' | 'v' | '<' => self.guard_status = GuardStatus { pos: Point { row, col }, dir: Direction::from_char(ch) },
+                                '^' | '>' | 'v' | '<' => {
+                                    self.guard_start = GuardStatus { pos: Point { row, col }, dir: Direction::from_char(ch) };
+                                    self.guard_status = self.guard_start.clone();
+                                },
                                 _ => panic!("Unrecognized character."),
                             }
                         });
                 });
+        }
+        
+        pub fn add_obstacle(&mut self, point: Point) {
+            self.obstacles.insert(point);
         }
 
         fn next_obstacle(&self) -> Option<&Point> {
@@ -100,9 +108,15 @@ mod utils {
             }
         }
 
-        pub fn num_positions_visited(&mut self) -> usize {
+        /// Returns a tuple of whether the guard is stuck in a loop and the set of points visited
+        pub fn positions_visited(&mut self) -> (bool, HashSet<Point>) {
             let mut visited: HashSet<Point> = HashSet::new();
+            let mut guard_statuses: HashSet<GuardStatus> = HashSet::new();
             loop {
+                if guard_statuses.contains(&self.guard_status) {
+                    return (true, visited);
+                }
+                guard_statuses.insert(self.guard_status.clone());
                 if let Some(&next_obstacle) = self.next_obstacle() {
                     // Move to next obstacle, adding all points along way to visited
                     match self.guard_status.dir {
@@ -159,10 +173,25 @@ mod utils {
                             }
                         },
                     }
-                    break;
+                    return (false, visited);
                 }
             }
-            visited.len()
+        }
+
+        pub fn num_positions_visited(&mut self) -> usize {
+            self.positions_visited().1.len()
+        }
+
+        pub fn guard_start_pos(&self) -> Point {
+            self.guard_start.pos.clone()
+        }
+
+        pub fn is_looping(&mut self) -> bool {
+            self.positions_visited().0
+        }
+        
+        pub fn reset_guard_status(&mut self) {
+            self.guard_status = self.guard_start.clone();
         }
     }
 }
@@ -192,6 +221,52 @@ pub mod part_one {
         use super::super::DAY;
 
         #[test_case(1, Answer::Usize(41); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::LabMap;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {}
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            let mut base_lab_map = LabMap::default();
+            base_lab_map.parse_input_file(filename);
+            let mut candidate_obstacle_additions = base_lab_map.positions_visited().1;
+            base_lab_map.reset_guard_status();
+            candidate_obstacle_additions.remove(&base_lab_map.guard_start_pos());
+            Answer::Usize(
+                candidate_obstacle_additions.into_iter()
+                    .filter(|obstacle| {
+                        let mut lab_map = base_lab_map.clone();
+                        lab_map.add_obstacle(obstacle.to_owned());
+                        lab_map.is_looping()
+                    })
+                    .count()
+            )
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::Usize(6); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
