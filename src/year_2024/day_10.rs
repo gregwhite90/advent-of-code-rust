@@ -60,10 +60,19 @@ mod utils {
         }
 
         pub fn sum_of_trailhead_scores(&self) -> usize {
-            let mut cache: HashMap<Point, HashSet<Point>> = HashMap::new();
+            let mut cache: HashMap<Point, (HashSet<Point>, usize)> = HashMap::new();
             self.trailheads()
                 .map(|trailhead| {
-                    self.ends_reachable(&trailhead, &mut cache).len()
+                    self.ends_reachable(&trailhead, &mut cache).0.len()
+                })
+                .sum()
+        }
+
+        pub fn sum_of_trailhead_ratings(&self) -> usize {
+            let mut cache: HashMap<Point, (HashSet<Point>, usize)> = HashMap::new();
+            self.trailheads()
+                .map(|trailhead| {
+                    self.ends_reachable(&trailhead, &mut cache).1
                 })
                 .sum()
         }
@@ -71,23 +80,23 @@ mod utils {
         fn ends_reachable(
             &self, 
             pt: &Point,
-            mut cache: &mut HashMap<Point, HashSet<Point>>
-        ) -> HashSet<Point> {
+            mut cache: &mut HashMap<Point, (HashSet<Point>, usize)>,
+        ) -> (HashSet<Point>, usize) {
             if let Some(ends) = cache.get(pt) {
                 return ends.clone()
             }
             let ends = if self.height(pt) == 9 {
-                HashSet::from([*pt])
+                (HashSet::from([*pt]), 1)
             } else {
                 if let Some(reachable_ends) = self.reachable_neighbors(pt)
                     .into_iter()
                     .map(|neighbor| self.ends_reachable(&neighbor, &mut cache))
                     .reduce(|acc, e| {
-                        acc.union(&e).cloned().collect()
+                        (acc.0.union(&e.0).cloned().collect(), acc.1 + e.1)
                     }) {
                         reachable_ends
                     } else {
-                        HashSet::new()
+                        (HashSet::new(), 0)
                     }
             };
             cache.insert(*pt, ends.clone());
@@ -140,6 +149,42 @@ pub mod part_one {
 
         #[test_case(1, Answer::Usize(1); "example_1")]
         #[test_case(2, Answer::Usize(36); "example_2")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::TrailMap;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        trail_map: TrailMap,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.trail_map.parse_input_file(filename);
+            Answer::Usize(self.trail_map.sum_of_trailhead_ratings())
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(2, Answer::Usize(81); "example_2")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
