@@ -95,3 +95,51 @@ pub mod part_one {
         }
     }    
 }
+
+pub mod part_two {
+    use std::collections::HashMap;
+
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
+
+    use super::utils;
+
+    #[derive(Debug)]
+    pub struct Soln {
+        stones: Vec<usize>,
+        blinks: usize,
+    }
+
+    impl Default for Soln {
+        fn default() -> Self {
+            Self::with_blinks(75)
+        }
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.parse_input_file(filename);
+            let mut cache: HashMap<(usize, usize), usize> = HashMap::new();
+            Answer::Usize(
+                self.stones.iter()
+                    .map(|value| utils::num_stones(*value, self.blinks, &mut cache))
+                    .sum()
+            )
+        }
+    }
+
+    impl Soln {
+        fn with_blinks(blinks: usize) -> Self {
+            Self { 
+                stones: Vec::default(),
+                blinks,
+            }
+        }
+
+        fn parse_input_file(&mut self, filename: &str) {
+            self.stones = io_utils::file_to_string(filename)
+                .split(' ')
+                .map(|v| v.parse().unwrap())
+                .collect()
+        }
+    }
+}
