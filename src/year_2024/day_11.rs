@@ -6,6 +6,37 @@ const DAY: Day = crate::utils::Day { year: 2024, day: 11 };
 mod utils {
     use std::collections::HashMap;
 
+    use crate::utils::io_utils;
+
+    #[derive(Debug)]
+    pub struct Stones {
+        stones: Vec<usize>,
+        blinks: usize,
+    }
+
+    impl Stones {
+        pub fn with_blinks(blinks: usize) -> Self {
+            Self {
+                stones: Vec::default(),
+                blinks,
+            }
+        }
+        
+        pub fn parse_input_file(&mut self, filename: &str) {
+            self.stones = io_utils::file_to_string(filename)
+                .split(' ')
+                .map(|v| v.parse().unwrap())
+                .collect()
+        }
+
+        pub fn num_stones(&self) -> usize {
+            let mut cache: HashMap<(usize, usize), usize> = HashMap::new();
+            self.stones.iter()
+                .map(|value| num_stones(*value, self.blinks, &mut cache))
+                .sum()
+        }
+    }
+
     pub fn num_stones(value: usize, blinks: usize, mut cache: &mut HashMap<(usize, usize), usize>) -> usize {
         if blinks == 0 {
             return 1;
@@ -29,16 +60,13 @@ mod utils {
 }
 
 pub mod part_one {
-    use std::collections::HashMap;
+    use crate::utils::solution::{Answer, Solution};
 
-    use crate::utils::{io_utils, solution::{Answer, Solution}};
-
-    use super::utils;
+    use super::utils::Stones;
 
     #[derive(Debug)]
     pub struct Soln {
-        stones: Vec<usize>,
-        blinks: usize,
+        stones: Stones,
     }
 
     impl Default for Soln {
@@ -49,29 +77,16 @@ pub mod part_one {
 
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
-            let mut cache: HashMap<(usize, usize), usize> = HashMap::new();
-            Answer::Usize(
-                self.stones.iter()
-                    .map(|value| utils::num_stones(*value, self.blinks, &mut cache))
-                    .sum()
-            )
+            self.stones.parse_input_file(filename);
+            Answer::Usize(self.stones.num_stones())
         }
     }
 
     impl Soln {
         fn with_blinks(blinks: usize) -> Self {
-            Self { 
-                stones: Vec::default(),
-                blinks,
+            Self {
+                stones: Stones::with_blinks(blinks),
             }
-        }
-
-        fn parse_input_file(&mut self, filename: &str) {
-            self.stones = io_utils::file_to_string(filename)
-                .split(' ')
-                .map(|v| v.parse().unwrap())
-                .collect()
         }
     }
 
@@ -97,49 +112,27 @@ pub mod part_one {
 }
 
 pub mod part_two {
-    use std::collections::HashMap;
+    use crate::utils::solution::{Answer, Solution};
 
-    use crate::utils::{io_utils, solution::{Answer, Solution}};
-
-    use super::utils;
+    use super::utils::Stones;
 
     #[derive(Debug)]
     pub struct Soln {
-        stones: Vec<usize>,
-        blinks: usize,
+        stones: Stones,
     }
 
     impl Default for Soln {
         fn default() -> Self {
-            Self::with_blinks(75)
+            Self {
+                stones: Stones::with_blinks(75),
+            }
         }
     }
 
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            self.parse_input_file(filename);
-            let mut cache: HashMap<(usize, usize), usize> = HashMap::new();
-            Answer::Usize(
-                self.stones.iter()
-                    .map(|value| utils::num_stones(*value, self.blinks, &mut cache))
-                    .sum()
-            )
-        }
-    }
-
-    impl Soln {
-        fn with_blinks(blinks: usize) -> Self {
-            Self { 
-                stones: Vec::default(),
-                blinks,
-            }
-        }
-
-        fn parse_input_file(&mut self, filename: &str) {
-            self.stones = io_utils::file_to_string(filename)
-                .split(' ')
-                .map(|v| v.parse().unwrap())
-                .collect()
+            self.stones.parse_input_file(filename);
+            Answer::Usize(self.stones.num_stones())
         }
     }
 }
