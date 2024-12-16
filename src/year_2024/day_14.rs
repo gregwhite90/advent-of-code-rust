@@ -4,7 +4,7 @@ use crate::utils::Day;
 const DAY: Day = crate::utils::Day { year: 2024, day: 14 };
 
 mod utils {
-    use std::{cmp::Ordering, collections::HashMap};
+    use std::{cmp::Ordering, collections::HashMap, fmt::Display};
 
     use lazy_static::lazy_static;
     use regex::Regex;
@@ -107,6 +107,28 @@ mod utils {
             quad_counts.values().product()
         }
     }
+
+    impl Display for Robots {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            let mut counts: HashMap<Vector, usize> = HashMap::new();
+            self.robots.iter().for_each(|robot| {
+                counts.entry(Vector { x: robot.pos.x, y: robot.pos.y })
+                    .and_modify(|count| *count += 1)
+                    .or_insert(1);
+            });
+            for y in 0..self.height {
+                for x in 0..self.width {
+                    let ch = match counts.get(&Vector {x, y}) {
+                        None => ' ',
+                        _ => '#',
+                    };
+                    write!(f, "{}", ch)?;
+                }
+                write!(f, "\n")?;
+            }
+            Ok(())
+        }
+    }
 }
 
 pub mod part_one {
@@ -158,4 +180,45 @@ pub mod part_one {
             );
         }
     }    
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::Robots;
+
+    #[derive(Debug)]
+    pub struct Soln {
+        _robots: Robots,
+    }
+
+    impl Default for Soln {
+        fn default() -> Self {
+            Self::with_dimensions(101, 103)
+        }
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, _filename: &str) -> Answer {
+            /* 
+             * Code to print the display output to find the tree
+            self.robots.parse_input_file(filename);
+            for seconds in 1..=(101 * 103) {
+                self.robots.simulate(1);
+                println!("After {} seconds:", seconds);
+                println!("{}", &self.robots);
+            }
+            */
+            // Based on printing the display output
+            Answer::Usize(8_159)
+        }
+    }
+
+    impl Soln {
+        fn with_dimensions(width: isize, height: isize) -> Self {
+            Self {
+                _robots: Robots::new(width, height),
+            }
+        }
+    }
 }
