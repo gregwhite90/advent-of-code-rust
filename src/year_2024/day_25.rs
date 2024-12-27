@@ -78,7 +78,7 @@ mod utils {
                     }
                 } else {
                     if cur.as_ref().unwrap().heights_type == HeightsType::Lock {
-                        if line == "....." {
+                        if rows == MAX_HEIGHT {
                             cur.as_mut().unwrap().update_all_nones();
                             self.locks.push(cur.as_ref().unwrap().clone());
                         } else {
@@ -92,7 +92,7 @@ mod utils {
                         }
                     } else {
                         assert_eq!(cur.as_ref().unwrap().heights_type, HeightsType::Key);
-                        if line == "#####" {
+                        if rows == MAX_HEIGHT {
                             cur.as_mut().unwrap().update_all_nones();
                             self.keys.push(cur.as_ref().unwrap().clone());
                         } else {
