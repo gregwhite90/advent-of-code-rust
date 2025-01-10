@@ -18,7 +18,7 @@ mod utils {
 
     #[derive(Debug, Default)]
     pub struct NetworkMap {
-        connections: HashMap<String, HashSet<String>>,
+        connections: HashMap<String, BTreeSet<String>>,
     }
 
     impl NetworkMap {
@@ -28,10 +28,10 @@ mod utils {
                 let l = captures.name("l").unwrap().as_str();
                 let r = captures.name("r").unwrap().as_str();
                 self.connections.entry(l.to_string())
-                    .or_insert(HashSet::new())
+                    .or_insert(BTreeSet::new())
                     .insert(r.to_string());
                 self.connections.entry(r.to_string())
-                    .or_insert(HashSet::new())
+                    .or_insert(BTreeSet::new())
                     .insert(l.to_string());
             })
         }
@@ -51,6 +51,53 @@ mod utils {
                     }
                 }
             subsets.len()
+        }
+
+        /**
+         * Potential improvements:
+         *  - pivot?
+         *  - use references to avoid cloning?
+         *  - use a better data structure for max_cliques?
+         */
+        fn bron_kerbosch(
+            &self,
+            r: BTreeSet<String>,
+            mut p: BTreeSet<String>,
+            mut x: BTreeSet<String>,
+            max_cliques: &mut Vec<BTreeSet<String>>,
+        ) {
+            if p.is_empty() && x.is_empty() {
+                max_cliques.push(r);
+            } else {
+                while !p.is_empty() {
+                    let v = p.pop_first().unwrap();
+                    let neighbors = self.connections.get(&v).unwrap();
+                    self.bron_kerbosch(
+                        r.union(&BTreeSet::from([v.clone()])).cloned().collect(),
+                        p.intersection(neighbors).cloned().collect(),
+                        x.intersection(neighbors).cloned().collect(),
+                        max_cliques,
+                    );
+                    x.insert(v);
+                }
+            }
+        }
+
+        pub fn password(&self) -> String {
+            let mut max_cliques = Vec::new();
+            self.bron_kerbosch(
+                BTreeSet::new(), 
+                self.connections.keys().cloned().collect(), 
+                BTreeSet::new(), 
+                &mut max_cliques,
+            );
+            let max_len_clique = max_cliques.iter().max_by_key(|c| {
+                c.len()
+            }).unwrap();
+            max_len_clique
+                .iter()
+                .sorted()
+                .join(",")
         }
     }
 }
@@ -80,6 +127,42 @@ pub mod part_one {
         use super::super::DAY;
 
         #[test_case(1, Answer::Usize(7); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    use super::utils::NetworkMap;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        network_map: NetworkMap,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.network_map.parse_input_file(filename);
+            Answer::String(self.network_map.password())
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::String("co,de,ka,ta".to_string()); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
