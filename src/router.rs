@@ -2,7 +2,7 @@
 use std::collections::{HashMap, HashSet};
 use crate::{Args, Part};
 use advent_of_code_rust::utils::{solution::Solution, io_utils::{self, InputFileType}, Day};
-use advent_of_code_rust::{year_2015, year_2016, year_2017, year_2018, year_2023, year_2024};
+use advent_of_code_rust::{year_2015, year_2016, year_2017, year_2018, year_2023, year_2024, year_2025};
 
 /// Runs the solution(s) specified by the command line arguments.
 pub fn run_solution(args: &Args) {
