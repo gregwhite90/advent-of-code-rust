@@ -25,8 +25,6 @@ mod utils {
 
     pub trait Module {
         fn receive(&mut self, pulse: Pulse, sender: &str) -> VecDeque<PulseInProcess>;
-        fn is_original_state(&self) -> bool;
-        fn destination_modules(&self) -> &Vec<String>;
         fn set_input_modules(&mut self, inputs: Vec<String>);
     }
 
@@ -56,14 +54,6 @@ mod utils {
                     }).collect()
                 },
             }
-        }
-
-        fn is_original_state(&self) -> bool {
-            self.on == false
-        }
-
-        fn destination_modules(&self) -> &Vec<String> {
-            &self.destination_modules
         }
 
         fn set_input_modules(&mut self, _inputs: Vec<String>) {}
@@ -97,14 +87,6 @@ mod utils {
                     recipient: String::from(dest),
                 }
             }).collect()
-        }
-
-        fn is_original_state(&self) -> bool {
-            self.most_recent_pulses.values().all(|p| *p == Pulse::Low)
-        }
-
-        fn destination_modules(&self) -> &Vec<String> {
-            &self.destination_modules
         }
 
         fn set_input_modules(&mut self, inputs: Vec<String>) {
@@ -141,14 +123,6 @@ mod utils {
             }).collect()
         }
 
-        fn is_original_state(&self) -> bool {
-            true
-        }
-
-        fn destination_modules(&self) -> &Vec<String> {
-            &self.destination_modules
-        }
-
         fn set_input_modules(&mut self, _inputs: Vec<String>) {}
     }
 
@@ -170,14 +144,6 @@ mod utils {
     impl Module for EndModule {
         fn receive(&mut self, _pulse: Pulse, _sender: &str) -> VecDeque<PulseInProcess> {
             VecDeque::new()
-        }
-
-        fn is_original_state(&self) -> bool {
-            true
-        }
-
-        fn destination_modules(&self) -> &Vec<String> {
-            &self.destination_modules
         }
 
         fn set_input_modules(&mut self, _inputs: Vec<String>) {}

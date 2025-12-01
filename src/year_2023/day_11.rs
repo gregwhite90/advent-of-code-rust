@@ -31,8 +31,8 @@ mod utils {
         fn set_empty_cols(&mut self, empty_cols: HashSet<usize>);
         fn empty_cols(&self) -> &HashSet<usize>;
         fn empty_rows(&self) -> &HashSet<usize>;
-        fn distances(&self) -> Ref<HashMap<(Point, Point), usize>>;
-        fn distances_mut(&self) -> RefMut<HashMap<(Point, Point), usize>>;
+        fn distances(&self) -> Ref<'_, HashMap<(Point, Point), usize>>;
+        fn distances_mut(&self) -> RefMut<'_, HashMap<(Point, Point), usize>>;
         fn expansion_factor(&self) -> usize;
 
         fn parse_input_file(&mut self, filename: &str) {
@@ -160,11 +160,11 @@ pub mod part_one {
             &self.empty_rows
         }
 
-        fn distances(&self) -> Ref<HashMap<(Point, Point), usize>> {
+        fn distances(&self) -> Ref<'_, HashMap<(Point, Point), usize>> {
             self.distances.borrow()
         }
 
-        fn distances_mut(&self) -> RefMut<HashMap<(Point, Point), usize>> {
+        fn distances_mut(&self) -> RefMut<'_, HashMap<(Point, Point), usize>> {
             self.distances.borrow_mut()
         }        
 
@@ -260,11 +260,11 @@ pub mod part_two {
             &self.empty_rows
         }
 
-        fn distances(&self) -> Ref<HashMap<(Point, Point), usize>> {
+        fn distances(&self) -> Ref<'_, HashMap<(Point, Point), usize>> {
             self.distances.borrow()
         }
 
-        fn distances_mut(&self) -> RefMut<HashMap<(Point, Point), usize>> {
+        fn distances_mut(&self) -> RefMut<'_, HashMap<(Point, Point), usize>> {
             self.distances.borrow_mut()
         }     
 
