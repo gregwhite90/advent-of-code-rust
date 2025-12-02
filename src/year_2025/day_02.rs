@@ -3,11 +3,9 @@ use crate::utils::Day;
 #[cfg(test)]
 const DAY: Day = crate::utils::Day { year: 2025, day: 2 };
 
-pub mod part_one {
-    use crate::utils::{io_utils, solution::{Answer, Solution}};
-
+mod utils {
     #[derive(Debug)]
-    struct Range {
+    pub struct Range {
         invalid_ids_sum: usize,
     }
 
@@ -45,6 +43,11 @@ pub mod part_one {
             self.invalid_ids_sum
         }
     }
+}
+
+pub mod part_one {
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
+    use super::utils::Range;
 
     #[derive(Debug, Default)]
     pub struct Soln {}
