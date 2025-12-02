@@ -10,30 +10,42 @@ mod utils {
     }
 
     impl Range {
-        pub fn from_str(input: &str) -> Self {
+        pub fn from_str(
+            input: &str,
+            more_than_two_repeats_allowed: bool,
+        ) -> Self {
             let bounds: Vec<&str> = input.split('-').collect();
             let bounds_digits: Vec<usize> = bounds.iter().map(|bound| bound.len()).collect();
             let invalid_ids_sum = (bounds_digits[0]..=bounds_digits[1])
                 .map(|num_digits| {
-                    if num_digits % 2 == 1 {
-                        // Numbers with an odd number of digits can not have any invalid IDs
-                        0
+                    let max_repeats: usize = if more_than_two_repeats_allowed {
+                        num_digits
                     } else {
-                        // Numbers with an even number of digits can have invalid IDs
-                        let exp: u32 = (num_digits / 2) as u32;
-                        let lower: usize = std::cmp::max(bounds[0].parse().unwrap(), 10usize.pow((num_digits - 1) as u32));
-                        let lower_prefix = lower / 10usize.pow(exp);
-                        let upper: usize = std::cmp::min(bounds[1].parse().unwrap(), 10usize.pow(num_digits as u32) - 1);
-                        let upper_prefix = upper / 10usize.pow(exp);
-                        (lower_prefix..=upper_prefix)
-                            .map(|prefix| {
-                                prefix * 10usize.pow(exp) + prefix
-                            })
-                            .filter(|num| {
-                                lower <= *num && *num <= upper
-                            })
-                            .sum()
-                    }
+                        2
+                    };
+                    (2..=max_repeats)
+                        .map(|repeats| {
+                            if num_digits % repeats == 0 {
+                                // If num_digits is divisible by the number of repeats, invalid IDs are possible
+                                let exp: u32 = (num_digits / 2) as u32;
+                                let lower: usize = std::cmp::max(bounds[0].parse().unwrap(), 10usize.pow((num_digits - 1) as u32));
+                                let lower_prefix = lower / 10usize.pow(exp);
+                                let upper: usize = std::cmp::min(bounds[1].parse().unwrap(), 10usize.pow(num_digits as u32) - 1);
+                                let upper_prefix = upper / 10usize.pow(exp);
+                                (lower_prefix..=upper_prefix)
+                                    .map(|prefix| {
+                                        prefix * 10usize.pow(exp) + prefix
+                                    })
+                                    .filter(|num| {
+                                        lower <= *num && *num <= upper
+                                    })
+                                    .sum()
+                            } else {
+                                // If num_digits is not divisible by the number of repeats, can't have any invalid IDs
+                                0
+                            }
+                        })
+                        .sum::<usize>()
                 })
                 .sum();
             Self { invalid_ids_sum } 
@@ -59,7 +71,7 @@ pub mod part_one {
                     .map(|line| {
                         line.split(',')
                             .map(|range_str| {
-                                Range::from_str(range_str).invalid_ids_sum()
+                                Range::from_str(range_str, false).invalid_ids_sum()
                             })
                             .sum::<usize>()
                     })
@@ -93,7 +105,7 @@ pub mod part_one {
         #[test_case("38593856-38593862", 38_593_859; "puzzle_38593856-38593862")]
         fn individual_examples_are_correct(input: &str, invalid_ids_sum: usize) {
             assert_eq!(
-                Range::from_str(input).invalid_ids_sum(),
+                Range::from_str(input, false).invalid_ids_sum(),
                 invalid_ids_sum,
             )
         }
