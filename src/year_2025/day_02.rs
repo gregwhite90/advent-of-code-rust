@@ -13,7 +13,32 @@ pub mod part_one {
 
     impl Range {
         pub fn from_str(input: &str) -> Self {
-            unimplemented!()
+            let bounds: Vec<&str> = input.split('-').collect();
+            let bounds_digits: Vec<usize> = bounds.iter().map(|bound| bound.len()).collect();
+            let invalid_ids_sum = (bounds_digits[0]..=bounds_digits[1])
+                .map(|num_digits| {
+                    if num_digits % 2 == 1 {
+                        // Numbers with an odd number of digits can not have any invalid IDs
+                        0
+                    } else {
+                        // Numbers with an even number of digits can have invalid IDs
+                        let exp: u32 = (num_digits / 2) as u32;
+                        let lower: usize = std::cmp::max(bounds[0].parse().unwrap(), 10usize.pow((num_digits - 1) as u32));
+                        let lower_prefix = lower / 10usize.pow(exp);
+                        let upper: usize = std::cmp::min(bounds[1].parse().unwrap(), 10usize.pow(num_digits as u32) - 1);
+                        let upper_prefix = upper / 10usize.pow(exp);
+                        (lower_prefix..=upper_prefix)
+                            .map(|prefix| {
+                                prefix * 10usize.pow(exp) + prefix
+                            })
+                            .filter(|num| {
+                                lower <= *num && *num <= upper
+                            })
+                            .sum()
+                    }
+                })
+                .sum();
+            Self { invalid_ids_sum } 
         }
 
         pub fn invalid_ids_sum(&self) -> usize {
@@ -29,7 +54,11 @@ pub mod part_one {
             Answer::Usize(
                 io_utils::file_to_lines(filename)
                     .map(|line| {
-                        Range::from_str(&line).invalid_ids_sum()
+                        line.split(',')
+                            .map(|range_str| {
+                                Range::from_str(range_str).invalid_ids_sum()
+                            })
+                            .sum::<usize>()
                     })
                     .sum()
             )
@@ -51,7 +80,7 @@ pub mod part_one {
         #[test_case("1-31", 33; "different_lengths_odd_to_even")]
         #[test_case("1-161", 495; "different_lengths_odd_to_odd")]
         #[test_case("78-101", 187; "different_lengths_even_to_odd")]
-        #[test_case("78-1320", 3_520; "different_lengths_even_to_even")]
+        #[test_case("78-1320", 4_833; "different_lengths_even_to_even")]
         #[test_case("11-22", 33; "puzzle_11-22")]
         #[test_case("95-115", 99; "puzzle_95-115")]
         #[test_case("998-1012", 1010; "puzzle_998-1012")]
