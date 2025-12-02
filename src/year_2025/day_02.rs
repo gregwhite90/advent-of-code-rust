@@ -87,7 +87,7 @@ pub mod part_one {
         use super::*;
         use super::super::DAY;
 
-        #[test_case("171-161", 0; "same_length_odd")]
+        #[test_case("161-171", 0; "same_length_odd")]
         #[test_case("21-57", 154; "same_length_even_includes_both")]
         #[test_case("25-57", 132; "same_length_even_excludes_lower")]
         #[test_case("21-52", 99; "same_length_even_excludes_upper")]
@@ -111,6 +111,74 @@ pub mod part_one {
         }
 
         #[test_case(1, Answer::Usize(1_227_775_554); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
+
+pub mod part_two {
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
+    use super::utils::Range;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {}
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            Answer::Usize(
+                io_utils::file_to_lines(filename)
+                    .map(|line| {
+                        line.split(',')
+                            .map(|range_str| {
+                                Range::from_str(range_str, true).invalid_ids_sum()
+                            })
+                            .sum::<usize>()
+                    })
+                    .sum()
+            )
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case("101-121", 111; "same_length_odd")]
+        #[test_case("21-57", 154; "same_length_even_includes_both")]
+        #[test_case("25-57", 132; "same_length_even_excludes_lower")]
+        #[test_case("21-52", 99; "same_length_even_excludes_upper")]
+        #[test_case("25-52", 77; "same_length_even_excludes_both")]
+        #[test_case("1-31", 33; "different_lengths_odd_to_even")]
+        #[test_case("1-161", 606; "different_lengths_odd_to_odd")]
+        #[test_case("78-101", 187; "different_lengths_even_to_odd")]
+        #[test_case("78-1320", 8_163; "different_lengths_even_to_even")]
+        #[test_case("11-22", 33; "puzzle_11-22")]
+        #[test_case("95-115", 210; "puzzle_95-115")]
+        #[test_case("998-1012", 2_009; "puzzle_998-1012")]
+        #[test_case("1188511880-1188511890", 1_188_511_885; "puzzle_1188511880-1188511890")]
+        #[test_case("1698522-1698528", 0; "puzzle_1698522-1698528")]
+        #[test_case("446443-446449", 446_446; "puzzle_446443-446449")]
+        #[test_case("38593856-38593862", 38_593_859; "puzzle_38593856-38593862")]
+        #[test_case("565653-565659", 565_656; "puzzle_565653-565659")]
+        #[test_case("824824821-824824827", 824_824_824; "puzzle_824824821-824824827")]
+        #[test_case("2121212118-2121212124", 2_121_212_121; "puzzle_2121212118-2121212124")]
+        fn individual_examples_are_correct(input: &str, invalid_ids_sum: usize) {
+            assert_eq!(
+                Range::from_str(input, true).invalid_ids_sum(),
+                invalid_ids_sum,
+            )
+        }
+
+        #[test_case(1, Answer::Usize(4_174_379_265); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
