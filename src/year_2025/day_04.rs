@@ -68,6 +68,9 @@ mod utils {
 
         // Modifies in place and returns the count of all paper removed.
         pub fn remove_accessible_paper_all_rounds(&mut self, max_neighbors: usize) -> usize {
+            // TODO: this could be made much more efficient by (1) tracking the number of neighbors from the outset for each position
+            // by using a HashMap instead of a HashSet and/or (2) only considering the positions in the current iteration that had one of
+            // their neighbors removed in the previous iteration.
             let mut removed: usize = 0;
             loop {
                 let removed_round = self.remove_accessible_paper_round(max_neighbors);
