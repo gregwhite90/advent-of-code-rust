@@ -4,7 +4,7 @@ use crate::utils::Day;
 const DAY: Day = crate::utils::Day { year: 2025, day: 4 };
 
 mod utils {
-    use std::collections::HashSet;
+    use std::collections::{HashMap, HashSet, VecDeque};
     use itertools::iproduct;
 
     use crate::utils::io_utils;
@@ -35,12 +35,12 @@ mod utils {
 
     #[derive(Debug, Default, PartialEq, Eq)]
     pub struct Grid {
-        paper: HashSet<Position>,
+        paper_to_num_neighbors: HashMap<Position, usize>,
     }
 
     impl Grid {
         pub fn parse_input_file(&mut self, filename: &str) {
-            self.paper = io_utils::file_to_lines(filename)
+            let paper: HashSet<Position> = io_utils::file_to_lines(filename)
                 .enumerate()
                 .flat_map(|(row, line)| {
                     line.char_indices()
@@ -53,30 +53,54 @@ mod utils {
                         })
                         .collect::<HashSet<Position>>()
                 })
-                .collect()
-        }
-
-        // Modifies in place and eturns the count of paper removed in one round.
-        pub fn remove_accessible_paper_round(&mut self, max_neighbors: usize) -> usize {
-            let to_remove: HashSet<Position> = self.paper.iter()
-                .filter(|paper| paper.neighbors().intersection(&self.paper).count() <= max_neighbors)
-                .cloned()
                 .collect();
-            self.paper.retain(|pos| !to_remove.contains(pos));
-            to_remove.len()
+            self.paper_to_num_neighbors = paper.iter()
+                .map(|pos| {
+                    (pos.clone(), pos.neighbors().intersection(&paper).count())
+                })
+                .collect::<HashMap<Position, usize>>();
         }
 
-        // Modifies in place and returns the count of all paper removed.
-        pub fn remove_accessible_paper_all_rounds(&mut self, max_neighbors: usize) -> usize {
-            let mut removed: usize = 0;
-            loop {
-                let removed_round = self.remove_accessible_paper_round(max_neighbors);
-                if removed_round == 0 {
-                    break;
+        pub fn remove_paper(
+            &mut self, 
+            max_neighbors: usize,
+            iterative: bool,
+        ) -> usize {
+            let mut to_remove: VecDeque<Position> = self.paper_to_num_neighbors
+                .iter()
+                .filter_map(|(pos, neighbors)| {
+                    if *neighbors <= max_neighbors {
+                        Some(*pos)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            if !iterative {
+                return to_remove.len()
+            } else {
+                let mut removed: usize = 0;
+                while let Some(pos) = to_remove.pop_front() {
+                    if let None = self.paper_to_num_neighbors.remove(&pos) { 
+                        // Already removed
+                        continue;
+                    }
+                    removed += 1;
+                    pos.neighbors()
+                        .iter()
+                        .for_each(|neighbor| {
+                            self.paper_to_num_neighbors
+                                .entry(*neighbor)
+                                .and_modify(|num_neighbors| {
+                                    *num_neighbors -= 1;
+                                    if *num_neighbors <= max_neighbors {
+                                        to_remove.push_back(*neighbor);
+                                    }
+                                });
+                        });
                 }
-                removed += removed_round;
+                removed
             }
-            removed
         }
     }
 
@@ -94,7 +118,7 @@ pub mod part_one {
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
             self.grid.parse_input_file(filename);
-            Answer::Usize(self.grid.remove_accessible_paper_round(3))
+            Answer::Usize(self.grid.remove_paper(3, false))
         }
     }
 
@@ -129,7 +153,7 @@ pub mod part_two {
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
             self.grid.parse_input_file(filename);
-            Answer::Usize(self.grid.remove_accessible_paper_all_rounds(3))
+            Answer::Usize(self.grid.remove_paper(3, true))
         }
     }
 
