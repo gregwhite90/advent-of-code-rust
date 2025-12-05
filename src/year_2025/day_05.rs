@@ -13,13 +13,13 @@ mod utils {
 
     #[derive(Debug, Default, PartialEq, Eq, Hash, Clone, Copy)]
     pub struct Range {
-        start: u64,
-        end: u64,
+        start: usize,
+        end: usize,
     }
 
     impl Range {
         #[cfg(test)]
-        pub fn new(start: u64, end: u64) -> Self {
+        pub fn new(start: usize, end: usize) -> Self {
             Self {
                 start,
                 end,
@@ -72,7 +72,7 @@ mod utils {
             &self.ranges
         }
 
-        pub fn is_fresh(&self, ingredient: u64) -> bool {
+        pub fn is_fresh(&self, ingredient: usize) -> bool {
             let idx = self.ranges.partition_point(|&range| range.start <= ingredient);
             if idx > 0 {
                 ingredient <= self.ranges[idx - 1].end
@@ -80,47 +80,18 @@ mod utils {
                 false
             }
         }
-    }
-}
 
-pub mod part_one {
-    use crate::utils::{io_utils, solution::{Answer, Solution}};
-    use super::utils::FreshIngredientRanges;
-
-    #[derive(Debug, Default)]
-    pub struct Soln {
-        fresh_ingredient_ranges: FreshIngredientRanges
-    }
-
-    impl Solution for Soln {
-        fn solve(&mut self, filename: &str) -> Answer {
-            let mut ingredient_range_mode = true;
-            let mut fresh_ingredients: usize = 0;
-            io_utils::file_to_lines(filename)
-                .for_each(|line| {
-                    if line.len() == 0 {
-                        ingredient_range_mode = false;
-                    } else if ingredient_range_mode {
-                        self.fresh_ingredient_ranges.add_range_str(&line);
-                    } else {
-                        // Check for freshness of ingredient
-                        if self.fresh_ingredient_ranges.is_fresh(
-                            line.parse().unwrap(),
-                        ) {
-                            fresh_ingredients += 1;
-                        }
-                    }
-                });
-            Answer::Usize(fresh_ingredients)
+        pub fn total_fresh_ingredients(&self) -> usize {
+            self.ranges.iter()
+                .map(|range| range.end - range.start + 1)
+                .sum()
         }
     }
 
     #[cfg(test)]
     mod tests {
         use test_case::test_case;
-        use crate::utils::{test_utils, solution::Answer};
         use super::*;
-        use super::super::{DAY, utils::{Range, FreshIngredientRanges}};
 
         #[test_case(
             vec!["3-5"],
@@ -185,8 +156,89 @@ pub mod part_one {
                 expected,
             )
         }
+    }
+}
+
+pub mod part_one {
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
+    use super::utils::FreshIngredientRanges;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        fresh_ingredient_ranges: FreshIngredientRanges
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            let mut ingredient_range_mode = true;
+            let mut fresh_ingredients: usize = 0;
+            io_utils::file_to_lines(filename)
+                .for_each(|line| {
+                    if line.len() == 0 {
+                        ingredient_range_mode = false;
+                    } else if ingredient_range_mode {
+                        self.fresh_ingredient_ranges.add_range_str(&line);
+                    } else {
+                        // Check for freshness of ingredient
+                        if self.fresh_ingredient_ranges.is_fresh(
+                            line.parse().unwrap(),
+                        ) {
+                            fresh_ingredients += 1;
+                        }
+                    }
+                });
+            Answer::Usize(fresh_ingredients)
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
 
         #[test_case(1, Answer::Usize(3); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
+
+pub mod part_two {
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
+    use super::utils::FreshIngredientRanges;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        fresh_ingredient_ranges: FreshIngredientRanges
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            for line in io_utils::file_to_lines(filename) {
+                if line.len() == 0 {
+                    break;
+                }
+                self.fresh_ingredient_ranges.add_range_str(&line);
+            }
+            Answer::Usize(self.fresh_ingredient_ranges.total_fresh_ingredients())
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::Usize(14); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
