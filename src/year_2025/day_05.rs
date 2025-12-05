@@ -4,11 +4,8 @@ use crate::utils::Day;
 const DAY: Day = crate::utils::Day { year: 2025, day: 5 };
 
 mod utils {
-    use std::collections::{HashMap, HashSet, VecDeque};
     use lazy_static::lazy_static;
     use regex::Regex;
-
-    use crate::utils::io_utils;
 
     lazy_static! {
         pub static ref RANGE_RE: Regex = Regex::new(r"(?<start>\d+)\-(?<end>\d+)").unwrap();
@@ -21,6 +18,7 @@ mod utils {
     }
 
     impl Range {
+        #[cfg(test)]
         pub fn new(start: u64, end: u64) -> Self {
             Self {
                 start,
@@ -69,22 +67,51 @@ mod utils {
             self.ranges.drain(right_idx..right_idx + end_idx);
         }
 
+        #[cfg(test)]
         pub fn ranges(&self) -> &Vec<Range> {
             &self.ranges
+        }
+
+        pub fn is_fresh(&self, ingredient: u64) -> bool {
+            let idx = self.ranges.partition_point(|&range| range.start <= ingredient);
+            if idx > 0 {
+                ingredient <= self.ranges[idx - 1].end
+            } else {
+                false
+            }
         }
     }
 }
 
 pub mod part_one {
-    use crate::utils::solution::{Answer, Solution};
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
+    use super::utils::FreshIngredientRanges;
 
     #[derive(Debug, Default)]
     pub struct Soln {
+        fresh_ingredient_ranges: FreshIngredientRanges
     }
 
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            unimplemented!();
+            let mut ingredient_range_mode = true;
+            let mut fresh_ingredients: usize = 0;
+            io_utils::file_to_lines(filename)
+                .for_each(|line| {
+                    if line.len() == 0 {
+                        ingredient_range_mode = false;
+                    } else if ingredient_range_mode {
+                        self.fresh_ingredient_ranges.add_range_str(&line);
+                    } else {
+                        // Check for freshness of ingredient
+                        if self.fresh_ingredient_ranges.is_fresh(
+                            line.parse().unwrap(),
+                        ) {
+                            fresh_ingredients += 1;
+                        }
+                    }
+                });
+            Answer::Usize(fresh_ingredients)
         }
     }
 
