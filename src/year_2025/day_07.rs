@@ -13,17 +13,10 @@ mod utils {
         col: usize,
     }
 
-    #[derive(Debug, Default, PartialEq, Eq, Hash, Clone, Copy)]
-    pub struct ManifoldSimulationResult {
-        times_beam_split: usize,
-        // expect this for part two. total_beams: usize,
-    }
-
-    impl ManifoldSimulationResult {
-        pub fn times_beam_split(&self) -> usize {
-            self.times_beam_split
-        }
-    }
+    /*
+        TODO: need to track the number of paths to get to that point in the simulation?
+        Then when we hit a splitter, we split off 2 versions with the predecessor path count
+     */
 
     #[derive(Debug, Default, PartialEq, Eq)]
     pub struct Manifold {
@@ -55,38 +48,46 @@ mod utils {
                 })
         }
 
-        pub fn simulate(&self) -> ManifoldSimulationResult {
+        fn next_splitter(&self, beam_start: &Position) -> Option<Position> {
+            if let Some(splitter_rows) = self.splitters.get(&beam_start.col) {
+                let splitter_row_idx = splitter_rows
+                    .partition_point(|splitter_row| *splitter_row < beam_start.row);
+                if splitter_row_idx != splitter_rows.len() {
+                    // Not all elements match the predicate => we found a splitter this would hit
+                    return Some(
+                        Position {
+                            row: splitter_rows[splitter_row_idx],
+                            col: beam_start.col,
+                        }
+                    )
+                }
+            }
+            None
+        }
+
+        /**
+         * Returns the number of splitters that split beams.
+         */
+        pub fn simulate_classical(&self) -> usize {
             let mut to_process: VecDeque<Position> = VecDeque::from([self.start]);
             let mut splitters_hit: HashSet<Position> = HashSet::new();
 
             while let Some(beam_start) = to_process.pop_front() {
-                if let Some(splitter_rows) = self.splitters.get(&beam_start.col) {
-                    let splitter_row_idx = splitter_rows
-                        .partition_point(|splitter_row| *splitter_row < beam_start.row);
-                    if splitter_row_idx != splitter_rows.len() {
-                        // Not all elements match the predicate => we found a splitter this would hit
-                        let splitter = Position {
-                            row: splitter_rows[splitter_row_idx],
-                            col: beam_start.col,
-                        };
-                        if splitters_hit.insert(splitter) {
-                            // Newly inserted, must be processed
-                            for col in [splitter.col - 1, splitter.col + 1] {
-                                to_process.push_back(
-                                    Position {
-                                        row: splitter.row,
-                                        col,
-                                    }
-                                );
-                            }
+                if let Some(splitter) = self.next_splitter(&beam_start) {
+                    if splitters_hit.insert(splitter) {
+                        // Newly inserted, must be processed
+                        for col in [splitter.col - 1, splitter.col + 1] {
+                            to_process.push_back(
+                                Position {
+                                    row: splitter.row,
+                                    col,
+                                }
+                            );
                         }
                     }
                 }
             }
-
-            ManifoldSimulationResult {
-                times_beam_split: splitters_hit.len(),
-            }
+            splitters_hit.len()
         }
     }
 }
@@ -103,7 +104,7 @@ pub mod part_one {
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
             self.manifold.parse_input_file(filename);
-            Answer::Usize(self.manifold.simulate().times_beam_split())
+            Answer::Usize(self.manifold.simulate_classical())
         }
     }
 
