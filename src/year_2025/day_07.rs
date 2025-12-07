@@ -13,11 +13,6 @@ mod utils {
         col: usize,
     }
 
-    /*
-        TODO: need to track the number of paths to get to that point in the simulation?
-        Then when we hit a splitter, we split off 2 versions with the predecessor path count
-     */
-
     #[derive(Debug, Default, PartialEq, Eq)]
     pub struct Manifold {
         start: Position,
@@ -76,18 +71,49 @@ mod utils {
                 if let Some(splitter) = self.next_splitter(&beam_start) {
                     if splitters_hit.insert(splitter) {
                         // Newly inserted, must be processed
-                        for col in [splitter.col - 1, splitter.col + 1] {
-                            to_process.push_back(
-                                Position {
-                                    row: splitter.row,
-                                    col,
-                                }
-                            );
-                        }
+                        [splitter.col - 1, splitter.col + 1].into_iter()
+                            .for_each(|col| {
+                                to_process.push_back(
+                                    Position {
+                                        row: splitter.row,
+                                        col,
+                                    }
+                                );
+                            });
                     }
                 }
             }
             splitters_hit.len()
+        }
+
+        /**
+         * Returns the number of "timelines" a single starting particle would end up on.
+         */
+        pub fn simulate_quantum(&self) -> usize {
+            // Maps beam starting positions to the number of timelines starting from that position
+            let mut cache: HashMap<Position, usize> = HashMap::new();
+            self.timelines(&mut cache, &self.start)
+        }
+
+        fn timelines(&self, cache: &mut HashMap<Position, usize>, beam_start: &Position) -> usize {
+            if let Some(timelines) = cache.get(beam_start) {
+                return *timelines
+            }
+            let timelines = if let Some(splitter) = self.next_splitter(beam_start) {
+                [splitter.col - 1, splitter.col + 1].into_iter()
+                    .map(|col| self.timelines(
+                        cache,
+                        &Position {
+                            row: splitter.row,
+                            col,
+                        },
+                    ))
+                    .sum()
+            } else {
+                1
+            };
+            cache.insert(*beam_start, timelines);
+            timelines
         }
     }
 }
@@ -116,6 +142,41 @@ pub mod part_one {
         use super::super::DAY;
 
         #[test_case(1, Answer::Usize(21); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+    use super::utils::Manifold;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        manifold: Manifold,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.manifold.parse_input_file(filename);
+            Answer::Usize(self.manifold.simulate_quantum())
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::Usize(40); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
