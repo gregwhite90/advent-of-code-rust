@@ -15,10 +15,21 @@ mod utils {
         point_to_circuit_id: HashMap<Point, usize>,
         circuits: HashMap<usize, HashSet<Point>>,
         next_circuit_id: usize,
+        num_points: usize,
     }
 
     impl Circuits {
-        fn add_connection(&mut self, points: Vec<Point>) {
+        pub fn new(num_points: usize) -> Self {
+            Self {
+                point_to_circuit_id: HashMap::default(),
+                circuits: HashMap::default(),
+                next_circuit_id: usize::default(),
+                num_points,
+            }
+        }
+
+        // Returns whether the connection created one fully connected circuit
+        fn add_connection(&mut self, points: Vec<Point>) -> bool {
             match (
                 self.point_to_circuit_id.get(&points[0]),
                 self.point_to_circuit_id.get(&points[1]),
@@ -49,37 +60,41 @@ mod utils {
                 },
                 (Some(&id_0), Some(&id_1)) => {
                     // Merge the circuits
-                    if id_0 == id_1 {
-                        return;
-                    }
-                    if self.circuits.get(&id_0).unwrap().len() <= self.circuits.get(&id_1).unwrap().len() {
-                        let circuit_0 = self.circuits.remove(&id_0).unwrap();
-                        self.circuits.entry(id_1)
-                            .and_modify(|circuit| {
-                                circuit.extend(circuit_0.iter());
-                            });
-                        for pt in circuit_0.iter() {
-                            self.point_to_circuit_id.insert(
-                                *pt,
-                                id_1,
-                            );
-                        }
-                    } else {
-                        let circuit_1 = self.circuits.remove(&id_1).unwrap();
-                        self.circuits.entry(id_0)
-                            .and_modify(|circuit| {
-                                circuit.extend(circuit_1.iter());
-                            });
-                        for pt in circuit_1.iter() {
-                            self.point_to_circuit_id.insert(
-                                *pt,
-                                id_0,
-                            );
-                        }
+                    if id_0 != id_1 {
+                        if self.circuits.get(&id_0).unwrap().len() <= self.circuits.get(&id_1).unwrap().len() {
+                            let circuit_0 = self.circuits.remove(&id_0).unwrap();
+                            self.circuits.entry(id_1)
+                                .and_modify(|circuit| {
+                                    circuit.extend(circuit_0.iter());
+                                });
+                            for pt in circuit_0.iter() {
+                                self.point_to_circuit_id.insert(
+                                    *pt,
+                                    id_1,
+                                );
+                            }
+                        } else {
+                            let circuit_1 = self.circuits.remove(&id_1).unwrap();
+                            self.circuits.entry(id_0)
+                                .and_modify(|circuit| {
+                                    circuit.extend(circuit_1.iter());
+                                });
+                            for pt in circuit_1.iter() {
+                                self.point_to_circuit_id.insert(
+                                    *pt,
+                                    id_0,
+                                );
+                            }
 
+                        }
                     }
                 },
             }
+            self.is_completely_connected()
+        }
+
+        fn is_completely_connected(&self) -> bool {
+            self.circuits.len() == 1 && self.circuits.values().next().unwrap().len() == self.num_points
         }
 
         fn product_of_largest_circuits(&self, num_circuits: usize) -> usize {
@@ -97,7 +112,7 @@ mod utils {
      * Idea: limit the search space based on the number of connections that are needed.
      * But with only 1K inputs, it is feasible to calculate the distances pairwise.
      */
-    #[derive(Debug)]
+    #[derive(Debug, Default)]
     pub struct Playground {
         points: Vec<Point>, // TODO: figure out the right data structure
         circuits: Circuits,
@@ -130,6 +145,7 @@ mod utils {
                     }
                 })
                 .collect();
+            self.circuits = Circuits::new(self.points.len());
         }
 
         pub fn make_shortest_connections(&mut self) {
@@ -152,6 +168,32 @@ mod utils {
                     let points: Vec<Point> = pts.into_iter().collect();
                     self.circuits.add_connection(points);
                 });
+        }
+
+        // Returns the product of the xc coordinates of the 2 junction boxes that were most recently
+        // connected to create one fully connected circuit.
+        pub fn connect_until_all_connected(&mut self) -> i64 {
+            let mut pairwise_distances: HashMap<BTreeSet<Point>, f64> = HashMap::new();
+            for i in 0..self.points.len() {
+                for j in (i + 1)..self.points.len() {
+                    pairwise_distances.insert(
+                        BTreeSet::from([
+                            self.points[i],
+                            self.points[j],
+                        ]),
+                        self.points[i].distance(&self.points[j]),
+                    );
+                }
+            }
+            for (pts, _) in pairwise_distances.into_iter()
+                .sorted_by(|a, b| a.1.partial_cmp(&b.1).unwrap()) {
+                    let points: Vec<Point> = pts.into_iter().collect();
+                    let res = points[0].x * points[1].x;
+                    if self.circuits.add_connection(points) {
+                        return res;
+                    }
+                }
+            unreachable!();
         }
 
         pub fn product_of_largest_circuits(&self) -> usize {
@@ -225,6 +267,41 @@ pub mod part_one {
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::new(10, 3),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+    use super::utils::Playground;
+
+    #[derive(Debug, Default)]
+    pub struct Soln {
+        playground: Playground,
+    }
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            self.playground.parse_input_file(filename);
+            Answer::I64(self.playground.connect_until_all_connected())
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::I64(25272); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
                 example_key,
                 answer,
                 &DAY,
