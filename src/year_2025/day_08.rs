@@ -4,7 +4,7 @@ use crate::utils::Day;
 const DAY: Day = crate::utils::Day { year: 2025, day: 8 };
 
 mod utils {
-    use std::collections::{BTreeSet, HashMap, HashSet};
+    use std::{cmp::Reverse, collections::{BinaryHeap, HashMap, HashSet}};
 
     use itertools::Itertools;
 
@@ -29,7 +29,7 @@ mod utils {
         }
 
         // Returns whether the connection created one fully connected circuit
-        fn add_connection(&mut self, points: Vec<Point>) -> bool {
+        fn add_connection(&mut self, points: Vec<&Point>) -> bool {
             match (
                 self.point_to_circuit_id.get(&points[0]),
                 self.point_to_circuit_id.get(&points[1]),
@@ -38,23 +38,23 @@ mod utils {
                     // Create the new circuit
                     self.circuits.insert(
                         self.next_circuit_id,
-                        HashSet::from_iter(points.iter().cloned())
+                        HashSet::from_iter(points.clone().into_iter().cloned())
                     );
                     points.into_iter().for_each(|pt| {
                         self.point_to_circuit_id.insert(
-                            pt,
+                            *pt,
                             self.next_circuit_id,
                         );
                     });
                     self.next_circuit_id += 1;
                 },
                 (Some(&id), None) => {
-                    self.point_to_circuit_id.insert(points[1], id);
+                    self.point_to_circuit_id.insert(*points[1], id);
                     self.circuits.entry(id)
                         .and_modify(|circuit| circuit.extend(points.into_iter()));
                 }, 
                 (None, Some(&id)) => {
-                    self.point_to_circuit_id.insert(points[0], id);
+                    self.point_to_circuit_id.insert(*points[0], id);
                     self.circuits.entry(id)
                         .and_modify(|circuit| circuit.extend(points.into_iter()));
                 },
@@ -108,6 +108,29 @@ mod utils {
         }
     }
 
+    #[derive(Debug, Default, PartialEq, PartialOrd)]
+    struct Pair<'a> {
+        dist: f64,
+        points: Vec<&'a Point>,
+    }
+
+    impl<'a> Eq for Pair<'a> {}
+
+    impl<'a> Ord for Pair<'a> {
+        fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+            // First, compare the f64 values using total_cmp
+            let value_cmp = self.dist.total_cmp(&other.dist);
+
+            // If the f64 values are equal, then compare other fields (e.g., id)
+            if value_cmp == std::cmp::Ordering::Equal {
+                self.points.cmp(&other.points)
+            } else {
+                value_cmp
+            }
+        }
+    }
+
+
     /*
      * Idea: limit the search space based on the number of connections that are needed.
      * But with only 1K inputs, it is feasible to calculate the distances pairwise.
@@ -149,51 +172,42 @@ mod utils {
         }
 
         pub fn make_shortest_connections(&mut self) {
-            let mut pairwise_distances: HashMap<BTreeSet<Point>, f64> = HashMap::new();
-            for i in 0..self.points.len() {
-                for j in (i + 1)..self.points.len() {
-                    pairwise_distances.insert(
-                        BTreeSet::from([
-                            self.points[i],
-                            self.points[j],
-                        ]),
-                        self.points[i].distance(&self.points[j]),
-                    );
-                }
+            let mut pairwise_distances: BinaryHeap<Reverse<Pair>> = BinaryHeap::from_iter(
+                self.points.iter().combinations(2).map(|points| {
+                    Reverse(
+                        Pair {
+                            dist: points[0].distance(points[1]),
+                            points,
+                        }
+                    )
+                })
+            );
+            for _ in 0..self.num_connections {
+                let Reverse(pair) = pairwise_distances.pop().unwrap();
+                self.circuits.add_connection(pair.points);
             }
-            pairwise_distances.into_iter()
-                .sorted_by(|a, b| a.1.partial_cmp(&b.1).unwrap())
-                .take(self.num_connections)
-                .for_each(|(pts, _)| {
-                    let points: Vec<Point> = pts.into_iter().collect();
-                    self.circuits.add_connection(points);
-                });
         }
 
         // Returns the product of the xc coordinates of the 2 junction boxes that were most recently
         // connected to create one fully connected circuit.
         pub fn connect_until_all_connected(&mut self) -> i64 {
-            let mut pairwise_distances: HashMap<BTreeSet<Point>, f64> = HashMap::new();
-            for i in 0..self.points.len() {
-                for j in (i + 1)..self.points.len() {
-                    pairwise_distances.insert(
-                        BTreeSet::from([
-                            self.points[i],
-                            self.points[j],
-                        ]),
-                        self.points[i].distance(&self.points[j]),
-                    );
+            let mut pairwise_distances: BinaryHeap<Reverse<Pair>> = BinaryHeap::from_iter(
+                self.points.iter().combinations(2).map(|points| {
+                    Reverse(
+                            Pair {
+                            dist: points[0].distance(points[1]),
+                            points,
+                        }
+                    )
+                })
+            );
+            loop {
+                let Reverse(pair) = pairwise_distances.pop().unwrap();
+                let res = pair.points[0].x * pair.points[1].x;
+                if self.circuits.add_connection(pair.points) {
+                    return res;
                 }
             }
-            for (pts, _) in pairwise_distances.into_iter()
-                .sorted_by(|a, b| a.1.partial_cmp(&b.1).unwrap()) {
-                    let points: Vec<Point> = pts.into_iter().collect();
-                    let res = points[0].x * points[1].x;
-                    if self.circuits.add_connection(points) {
-                        return res;
-                    }
-                }
-            unreachable!();
         }
 
         pub fn product_of_largest_circuits(&self) -> usize {
