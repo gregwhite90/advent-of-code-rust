@@ -4,13 +4,10 @@ use crate::utils::Day;
 const DAY: Day = crate::utils::Day { year: 2025, day: 10 };
 
 mod utils {
-    use std::{cmp::Reverse, collections::{BinaryHeap, HashMap, HashSet}};
+    use std::{cmp::Reverse, collections::{BinaryHeap, HashSet}};
 
-    use itertools::Itertools;
     use lazy_static::lazy_static;
     use regex::Regex;
-
-    use crate::utils::io_utils;
 
     lazy_static! {
         pub static ref MACHINE_RE: Regex = Regex::new(r"\[(?<indicator_lights>[\.\#]+)\] (?<buttons>[\( \)\,\d]+) \{(?<joltages>[\d\,]+)\}").unwrap();
@@ -23,9 +20,15 @@ mod utils {
         mask: u16,
     }
 
+    impl Button {
+        fn new_indicator_lights(&self, indicator_lights: u16) -> u16 {
+            self.mask ^ indicator_lights
+        }
+    }
+
     #[derive(Debug, Default, PartialEq, Eq)]
-    struct Machine {
-        on_indicator_lights: u16, // TODO adjust
+    pub struct Machine {
+        on_indicator_lights: u16,
         buttons: Vec<Button>, // TODO: decide if Vec is right?
         joltages: Vec<u64>,
     }
@@ -81,6 +84,45 @@ mod utils {
                 joltages,
             }
         }
+
+        fn next_states(&self, state: &State) -> Vec<State> {
+            self.buttons.iter()
+                .map(|btn| {
+                    State {
+                        cost: state.cost + 1,
+                        indicator_lights: btn.new_indicator_lights(state.indicator_lights)
+                    }
+                })
+                .collect()
+        }
+
+        fn is_end_state(&self, state: &State) -> bool {
+            self.on_indicator_lights == state.indicator_lights
+        }
+
+        // Returns the minimal cost (button clicks) to confiugre the indicator lights
+        pub fn configure_indicator_lights(&self) -> u64 {
+            let mut pq: BinaryHeap<Reverse<State>> = BinaryHeap::from([Reverse(State::default())]);
+            let mut visited_indicator_lights: HashSet<u16> = HashSet::new();
+            while let Some(Reverse(state)) = pq.pop() {
+                if self.is_end_state(&state) {
+                    return state.cost;
+                }
+                if !visited_indicator_lights.insert(state.indicator_lights) {
+                    continue;
+                }
+                pq.extend(
+                    self.next_states(&state).into_iter().map(|state| Reverse(state))
+                );
+            }
+            panic!("Emptied priority queue without reaching end state.");
+        }
+    }
+
+    #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+    pub struct State {
+        cost: u64,
+        indicator_lights: u16,
     }
 
     #[cfg(test)]
@@ -114,14 +156,22 @@ mod utils {
 }
 
 pub mod part_one {
-    use crate::utils::solution::{Answer, Solution};
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
+    use super::utils::Machine;
 
     #[derive(Debug, Default)]
     pub struct Soln {}
 
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            unimplemented!();
+            Answer::U64(
+                io_utils::file_to_lines(filename)
+                    .map(|line| {
+                        let machine = Machine::from_str(&line);
+                        machine.configure_indicator_lights()
+                    })
+                    .sum()
+            )
         }
     }
 
