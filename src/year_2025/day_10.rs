@@ -17,23 +17,68 @@ mod utils {
         pub static ref BUTTONS_RE: Regex = Regex::new(r"(?:\()([\d\,]+)(?:\))").unwrap();
     }
 
+    // TODO: this may be overkill
+    #[derive(Debug, Default, PartialEq, Eq)]
+    struct Button {
+        mask: u16,
+    }
+
     #[derive(Debug, Default, PartialEq, Eq)]
     struct Machine {
-        on_indicator_lights: String, // TODO adjust
-        buttons: Vec<String>, // TODO: adjust
-        joltages: String,
+        on_indicator_lights: u16, // TODO adjust
+        buttons: Vec<Button>, // TODO: decide if Vec is right?
+        joltages: Vec<u64>,
     }
 
     impl Machine {
         pub fn from_str(input: &str) -> Self {
             let caps = MACHINE_RE.captures(input).unwrap();
+            let on_indicator_lights = caps.name("indicator_lights").unwrap().as_str().to_string();
             let buttons = BUTTONS_RE.captures_iter(caps.name("buttons").unwrap().as_str())
-                .map(|cap| cap.get(1).unwrap().as_str().to_string())
+                .map(|cap| {
+                    let idxs: HashSet<usize> = cap.get(1)
+                        .unwrap()
+                        .as_str()
+                        .split(',')
+                        .map(|num| num.parse().unwrap())
+                        .collect();
+                    let mask = u16::from_str_radix(
+                        (0..on_indicator_lights.len()).map(|idx| {
+                            match idxs.contains(&idx) {
+                                true => '1',
+                                false => '0',
+                            }
+                        })
+                        .collect::<String>()
+                        .as_str(),
+                        2,
+                    ).unwrap();
+                    Button { mask }
+                })
+                .collect();
+            let on_indicator_lights = u16::from_str_radix(
+                on_indicator_lights.chars()
+                    .map(|ch| {
+                        match ch {
+                            '.' => '0',
+                            '#' => '1',
+                            _ => unreachable!(),
+                        }
+                    })
+                    .collect::<String>()
+                    .as_str(),
+                    2,
+                ).unwrap();
+            let joltages = caps.name("joltages")
+                .unwrap()
+                .as_str()
+                .split(',')
+                .map(|num| num.parse().unwrap())
                 .collect();
             Self {
-                on_indicator_lights: caps.name("indicator_lights").unwrap().as_str().to_string(),
+                on_indicator_lights,
                 buttons,
-                joltages: caps.name("joltages").unwrap().as_str().to_string(),
+                joltages,
             }
         }
     }
@@ -46,16 +91,16 @@ mod utils {
         #[test_case(
             "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}",
             Machine {
-                on_indicator_lights: ".##.".to_string(),
+                on_indicator_lights: 6,
                 buttons: vec![
-                    "3".to_string(),
-                    "1,3".to_string(),
-                    "2".to_string(),
-                    "2,3".to_string(),
-                    "0,2".to_string(),
-                    "0,1".to_string(),
+                    Button { mask:  1 },
+                    Button { mask:  5 },
+                    Button { mask:  2 },
+                    Button { mask:  3 },
+                    Button { mask: 10 },
+                    Button { mask: 12 },
                 ],
-                joltages: "3,5,4,7".to_string(),
+                joltages: vec![3, 5, 4, 7],
             };
             "example_1"
         )]
