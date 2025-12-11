@@ -4,8 +4,6 @@ use crate::utils::Day;
 const DAY: Day = crate::utils::Day { year: 2025, day: 10 };
 
 mod utils {
-    use std::{cmp::Reverse, collections::{BinaryHeap, HashSet}};
-
     use lazy_static::lazy_static;
     use regex::Regex;
 
@@ -13,7 +11,15 @@ mod utils {
         pub static ref MACHINE_RE: Regex = Regex::new(r"\[(?<indicator_lights>[\.\#]+)\] (?<buttons>[\( \)\,\d]+) \{(?<joltages>[\d\,]+)\}").unwrap();
         pub static ref BUTTONS_RE: Regex = Regex::new(r"(?:\()([\d\,]+)(?:\))").unwrap();
     }
+}
 
+pub mod part_one {
+    use std::{cmp::Reverse, collections::{BinaryHeap, HashSet}};
+
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
+    use super::utils::{MACHINE_RE, BUTTONS_RE};
+
+    
     // TODO: this may be overkill
     #[derive(Debug, Default, PartialEq, Eq)]
     struct Button {
@@ -27,7 +33,7 @@ mod utils {
     }
 
     #[derive(Debug, Default, PartialEq, Eq)]
-    pub struct Machine {
+    struct Machine {
         on_indicator_lights: u16,
         buttons: Vec<Button>, // TODO: decide if Vec is right?
         joltages: Vec<u64>,
@@ -120,44 +126,11 @@ mod utils {
     }
 
     #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
-    pub struct State {
+    struct State {
         cost: u64,
         indicator_lights: u16,
     }
 
-    #[cfg(test)]
-    mod tests {
-        use test_case::test_case;
-        use super::*;
-
-        #[test_case(
-            "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}",
-            Machine {
-                on_indicator_lights: 6,
-                buttons: vec![
-                    Button { mask:  1 },
-                    Button { mask:  5 },
-                    Button { mask:  2 },
-                    Button { mask:  3 },
-                    Button { mask: 10 },
-                    Button { mask: 12 },
-                ],
-                joltages: vec![3, 5, 4, 7],
-            };
-            "example_1"
-        )]
-        fn machine_from_str_is_correct(input: &str, expected: Machine) {
-            assert_eq!(
-                Machine::from_str(input),
-                expected,
-            );
-        }
-    }    
-}
-
-pub mod part_one {
-    use crate::utils::{io_utils, solution::{Answer, Solution}};
-    use super::utils::Machine;
 
     #[derive(Debug, Default)]
     pub struct Soln {}
@@ -181,6 +154,29 @@ pub mod part_one {
         use crate::utils::{test_utils, solution::Answer};
         use super::*;
         use super::super::DAY;
+
+        #[test_case(
+            "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}",
+            Machine {
+                on_indicator_lights: 6,
+                buttons: vec![
+                    Button { mask:  1 },
+                    Button { mask:  5 },
+                    Button { mask:  2 },
+                    Button { mask:  3 },
+                    Button { mask: 10 },
+                    Button { mask: 12 },
+                ],
+                joltages: vec![3, 5, 4, 7],
+            };
+            "example_1"
+        )]
+        fn machine_from_str_is_correct(input: &str, expected: Machine) {
+            assert_eq!(
+                Machine::from_str(input),
+                expected,
+            );
+        }
 
         #[test_case(1, Answer::U64(7); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
