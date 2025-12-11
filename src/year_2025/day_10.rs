@@ -36,7 +36,6 @@ pub mod part_one {
     struct Machine {
         on_indicator_lights: u16,
         buttons: Vec<Button>, // TODO: decide if Vec is right?
-        joltages: Vec<u64>,
     }
 
     impl Machine {
@@ -78,16 +77,9 @@ pub mod part_one {
                     .as_str(),
                     2,
                 ).unwrap();
-            let joltages = caps.name("joltages")
-                .unwrap()
-                .as_str()
-                .split(',')
-                .map(|num| num.parse().unwrap())
-                .collect();
             Self {
                 on_indicator_lights,
                 buttons,
-                joltages,
             }
         }
 
@@ -167,7 +159,6 @@ pub mod part_one {
                     Button { mask: 10 },
                     Button { mask: 12 },
                 ],
-                joltages: vec![3, 5, 4, 7],
             };
             "example_1"
         )]
@@ -179,6 +170,180 @@ pub mod part_one {
         }
 
         #[test_case(1, Answer::U64(7); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
+
+pub mod part_two {
+    use std::{cmp::Reverse, collections::{BinaryHeap, HashSet}};
+
+    use crate::utils::{io_utils, solution::{Answer, Solution}};
+    use super::utils::{MACHINE_RE, BUTTONS_RE};
+
+    
+    // TODO: this may be overkill
+    #[derive(Debug, Default, PartialEq, Eq)]
+    struct Button {
+        idxs: HashSet<usize>,
+    }
+
+    impl Button {
+        fn new_joltages(&self, joltages: &Vec<u64>) -> Vec<u64> {
+            joltages
+                .iter()
+                .enumerate()
+                .map(|(idx, joltage)| {
+                    joltage + if self.idxs.contains(&idx) {
+                        1
+                    } else {
+                        0
+                    }
+                })
+                .collect()
+        }
+    }
+
+    #[derive(Debug, Default, PartialEq, Eq)]
+    struct Machine {
+        buttons: Vec<Button>, // TODO: decide if Vec is right?
+        joltages: Vec<u64>,
+    }
+
+    impl Machine {
+        pub fn from_str(input: &str) -> Self {
+            let caps = MACHINE_RE.captures(input).unwrap();
+            let buttons = BUTTONS_RE.captures_iter(caps.name("buttons").unwrap().as_str())
+                .map(|cap| {
+                    let idxs: HashSet<usize> = cap.get(1)
+                        .unwrap()
+                        .as_str()
+                        .split(',')
+                        .map(|num| num.parse().unwrap())
+                        .collect();
+                    Button { idxs }
+                })
+                .collect();
+            let joltages = caps.name("joltages")
+                .unwrap()
+                .as_str()
+                .split(',')
+                .map(|num| num.parse().unwrap())
+                .collect();
+            Self {
+                buttons,
+                joltages,
+            }
+        }
+
+        fn next_states(&self, state: &State) -> Vec<State> {
+            self.buttons.iter()
+                .map(|btn| {
+                    State {
+                        cost: state.cost + 1,
+                        joltages: btn.new_joltages(&state.joltages),
+                    }
+                })
+                .filter(|state| self.is_valid_state(state))
+                .collect()
+        }
+
+        fn is_end_state(&self, state: &State) -> bool {
+            self.joltages == state.joltages
+        }
+
+        fn is_valid_state(&self, state: &State) -> bool {
+            state.joltages.iter().zip(self.joltages.iter())
+                .all(|(state_joltage, machine_joltage)| *state_joltage <= *machine_joltage)
+        }
+
+        // Returns the minimal cost (button clicks) to confiugre the indicator lights
+        pub fn configure_indicator_lights(&self) -> u64 {
+            let mut pq: BinaryHeap<Reverse<State>> = BinaryHeap::from([Reverse(State::with_joltage_len(self.joltages.len()))]);
+            let mut visited_indicator_lights: HashSet<Vec<u64>> = HashSet::new();
+            while let Some(Reverse(state)) = pq.pop() {
+                if self.is_end_state(&state) {
+                    return state.cost;
+                }
+                if !visited_indicator_lights.insert(state.joltages.clone()) {
+                    continue;
+                }
+                pq.extend(
+                    self.next_states(&state).into_iter().map(|state| Reverse(state))
+                );
+            }
+            panic!("Emptied priority queue without reaching end state.");
+        }
+    }
+
+    #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
+    struct State {
+        cost: u64,
+        joltages: Vec<u64>,
+    }
+
+    impl State {
+        fn with_joltage_len(joltage_len: usize) -> Self {
+            Self {
+                cost: 0,
+                joltages: vec![0; joltage_len],
+            }
+        }
+    }
+
+
+    #[derive(Debug, Default)]
+    pub struct Soln {}
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            Answer::U64(
+                io_utils::file_to_lines(filename)
+                    .map(|line| {
+                        let machine = Machine::from_str(&line);
+                        machine.configure_indicator_lights()
+                    })
+                    .sum()
+            )
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(
+            "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}",
+            Machine {
+                buttons: vec![
+                    Button { idxs: HashSet::from([3]) },
+                    Button { idxs: HashSet::from([1, 3]) },
+                    Button { idxs: HashSet::from([2]) },
+                    Button { idxs: HashSet::from([2, 3]) },
+                    Button { idxs: HashSet::from([0, 2]) },
+                    Button { idxs: HashSet::from([0, 1]) },
+                ],
+                joltages: vec![3, 5, 4, 7],
+            };
+            "example_1"
+        )]
+        fn machine_from_str_is_correct(input: &str, expected: Machine) {
+            assert_eq!(
+                Machine::from_str(input),
+                expected,
+            );
+        }
+
+        #[test_case(1, Answer::U64(33); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
