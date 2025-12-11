@@ -4,7 +4,7 @@ use crate::utils::Day;
 const DAY: Day = crate::utils::Day { year: 2025, day: 9 };
 
 mod utils {
-    use std::collections::BinaryHeap;
+    use std::collections::{BinaryHeap, HashMap};
     use itertools::Itertools;
 
     use crate::utils::io_utils;
@@ -58,6 +58,64 @@ mod utils {
             pairwise_areas.peek().unwrap().area
         }
     }
+
+    // TODO: possibly consolidate this into Theater or inherit from it
+    // if there's a lot of shared functionality
+    struct RestrictedTheater {
+        points: Vec<Point>, // TODO: need?
+        // Need to know if clockwise or counter-clockwise
+        // Need cardinal directions enum
+        // Need horizontal segments.
+        // Segment is start, end, direction.
+        // Combine with overall direction of travel to know if up or down is "in".
+        // 
+        // To check validity:
+        //    go from one edge sweeping down? or right? Maybe the shorter dimension? Either should flag it.
+        //    if it intersects (not just on an edge) and is in the opposite direction, it's invalid unless there's
+        //    an immediately below facing the same direction again that covers the whole thing.
+        // Need an efficient way to check intersection
+        // Maps row index to the horizontal segments on that row
+        horizontal_directed_segments: HashMap<usize, Vec<DirectedSegment>>, // TODO: probably want the values sorted for easy lookups
+        // Maps column index to the vertical segments on that col
+        vertical_directed_segments: HashMap<usize, Vec<DirectedSegment>>, // TODO: probably want the values sorted
+        orientation: Orientation,
+    }
+
+    enum Direction {
+        North,
+        East,
+        South,
+        West,
+    }
+
+    enum Orientation {
+        Clockwise,
+        Counterclockwise,
+    }
+
+    struct Segment {
+        low: usize,
+        high: usize,
+    }
+
+    impl Segment {
+        fn overlap(&self, other: &Self) -> Option<Segment> {
+            if other.high > self.low && other.low < self.high {
+                Some(Segment {
+                    low: std::cmp::max(self.low, other.low),
+                    high: std::cmp::min(self.high, other.high),
+                })
+            } else {
+                None
+            }
+        }
+    }
+
+    struct DirectedSegment {
+        segment: Segment,
+        direction: Direction,
+    }
+
 }
 
 pub mod part_one {
@@ -84,6 +142,37 @@ pub mod part_one {
         use super::super::DAY;
 
         #[test_case(1, Answer::Usize(50); "example_1")]
+        fn examples_are_correct(example_key: u8, answer: Answer) {
+            test_utils::check_example_case(
+                &mut Soln::default(),
+                example_key,
+                answer,
+                &DAY,
+            );
+        }
+    }    
+}
+
+pub mod part_two {
+    use crate::utils::solution::{Answer, Solution};
+
+    #[derive(Debug, Default)]
+    pub struct Soln {}
+
+    impl Solution for Soln {
+        fn solve(&mut self, filename: &str) -> Answer {
+            unimplemented!();
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use test_case::test_case;
+        use crate::utils::{test_utils, solution::Answer};
+        use super::*;
+        use super::super::DAY;
+
+        #[test_case(1, Answer::Usize(24); "example_1")]
         fn examples_are_correct(example_key: u8, answer: Answer) {
             test_utils::check_example_case(
                 &mut Soln::default(),
