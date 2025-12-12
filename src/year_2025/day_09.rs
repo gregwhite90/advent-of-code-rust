@@ -4,12 +4,12 @@ use crate::utils::Day;
 const DAY: Day = crate::utils::Day { year: 2025, day: 9 };
 
 mod utils {
-    use std::collections::{BinaryHeap, HashMap};
+    use std::{cmp::{self, Ordering}, collections::{BinaryHeap, HashMap}, net};
     use itertools::Itertools;
 
     use crate::utils::io_utils;
 
-    #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
+    #[derive(Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
     struct Point {
         col: usize,
         row: usize,
@@ -18,6 +18,16 @@ mod utils {
     impl Point {
         fn rect_area(&self, other: &Self) -> usize {
             (self.col.abs_diff(other.col) + 1) * (self.row.abs_diff(other.row) + 1)
+        }
+
+        fn direction_to(&self, other: &Self) -> Direction {
+            match (self.col.cmp(&other.col), self.row.cmp(&other.row)) {
+                (Ordering::Equal, Ordering::Less) => Direction::South,
+                (Ordering::Equal, Ordering::Greater) => Direction::North,
+                (Ordering::Less, Ordering::Equal) => Direction::East,
+                (Ordering::Greater, Ordering::Equal) => Direction::West,
+                _ => panic!("Comparing points that don't share exactly one of row or column."),
+            }
         }
     }
 
@@ -61,7 +71,8 @@ mod utils {
 
     // TODO: possibly consolidate this into Theater or inherit from it
     // if there's a lot of shared functionality
-    struct RestrictedTheater {
+    #[derive(Debug, Default)]
+    pub struct RestrictedTheater {
         points: Vec<Point>, // TODO: need?
         // Need to know if clockwise or counter-clockwise
         // Need cardinal directions enum
@@ -78,21 +89,125 @@ mod utils {
         horizontal_directed_segments: HashMap<usize, Vec<DirectedSegment>>, // TODO: probably want the values sorted for easy lookups
         // Maps column index to the vertical segments on that col
         vertical_directed_segments: HashMap<usize, Vec<DirectedSegment>>, // TODO: probably want the values sorted
-        orientation: Orientation,
+        orientation: Option<Orientation>,
     }
 
+    impl RestrictedTheater {
+        pub fn parse_input_file(&mut self, filename: &str) {
+            // TODO: what else needs 
+            let mut net_clockwise: isize = 0;
+            let mut prev_point: Option<Point> = None;
+            let mut prev_dir: Option<Direction> = None;
+            self.points = io_utils::file_to_lines(filename)
+                .map(|line| {
+                    let mut coords = line.split(',')
+                        .map(|coord| coord.parse::<usize>().unwrap());
+                    let pt = Point {
+                        col: coords.next().unwrap(),
+                        row: coords.next().unwrap(),
+                    };
+                    let cur_dir = if let Some(point) = prev_point {
+                        let dir = point.direction_to(&pt);
+                        let directed_segment = DirectedSegment::new(
+                            point,
+                            pt,
+                            dir,
+                        );
+                        match dir {
+                            Direction::North | Direction::South => {
+                                self.vertical_directed_segments.entry(pt.col)
+                                    .and_modify(|v| {
+                                        let idx = v.partition_point(|&seg| seg <= directed_segment);
+                                        v.insert(idx, directed_segment);
+                                    })
+                                    .or_insert(vec![directed_segment]);
+                            },
+                            Direction::East | Direction::West => {
+                                self.horizontal_directed_segments.entry(pt.row)
+                                    .and_modify(|v| {
+                                        let idx = v.partition_point(|&seg| seg <= directed_segment);
+                                        v.insert(idx, directed_segment);
+                                    })
+                                    .or_insert(vec![directed_segment]);
+                            }
+                        }
+                        Some(dir)
+                    } else {
+                        None
+                    };
+                    if let Some(p_dir) = prev_dir {
+                        match p_dir.orientation_turning_to(
+                            &cur_dir.expect("Have a previous direction, so should have a current direction")
+                        ) {
+                            Orientation::Clockwise        => net_clockwise += 1,
+                            Orientation::Counterclockwise => net_clockwise -= 1,
+                        }
+                    }
+                    prev_point = Some(pt.clone());
+                    prev_dir = cur_dir;
+                    pt
+                })
+                .collect();
+            self.orientation = match net_clockwise.cmp(&0) {
+                Ordering::Less    => Some(Orientation::Counterclockwise),
+                Ordering::Greater => Some(Orientation::Clockwise),
+                _ => panic!("Unexpected value for net clockwise turns"),
+            }
+        }
+
+        pub fn largest_area(&self) -> usize {
+            let pairwise_areas: BinaryHeap<Rect> = BinaryHeap::from_iter(
+                self.points.iter().combinations(2).filter_map(|points| {
+                    if self.rect_is_valid(&points) {
+                        Some(
+                            Rect {
+                                area: points[0].rect_area(points[1]),
+                                points,
+                            }
+                        )
+                    } else {
+                        None
+                    }
+                })
+            );
+            pairwise_areas.peek().unwrap().area
+        }
+
+        fn rect_is_valid(
+            &self,
+            points: &Vec<&Point>,
+        ) -> bool {
+            // TODO: implement
+            true
+        }
+    }
+
+    #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
+    #[repr(i8)]
     enum Direction {
-        North,
-        East,
-        South,
-        West,
+        North = 0,
+        East  = 1,
+        South = 2,
+        West  = 3,
+    }
+    
+    impl Direction {
+        fn orientation_turning_to(&self, other: &Self) -> Orientation {
+            match (*self as i8 - *other as i8).rem_euclid(4) {
+                3 => Orientation::Clockwise,
+                1 => Orientation::Counterclockwise,
+                _ => panic!("Comparign directions that are not exactly one 90 degree rotation apart"),
+            }
+        }
     }
 
+    #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
     enum Orientation {
         Clockwise,
         Counterclockwise,
     }
 
+    #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
     struct Segment {
         low: usize,
         high: usize,
@@ -111,9 +226,40 @@ mod utils {
         }
     }
 
+    #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, Copy)]
     struct DirectedSegment {
         segment: Segment,
         direction: Direction,
+    }
+
+    impl DirectedSegment {
+        fn new(
+            previous_point: Point,
+            current_point: Point,
+            direction: Direction,
+        ) -> Self {
+            let (low, high) = match direction {
+                Direction::North | Direction::South => {
+                    (
+                        cmp::min(previous_point.row, current_point.row),
+                        cmp::max(previous_point.row, current_point.row),
+                    )
+                },
+                Direction::East | Direction::West => {
+                    (
+                        cmp::min(previous_point.col, current_point.col),
+                        cmp::max(previous_point.col, current_point.col),
+                    )
+                },
+            };
+            Self {
+                segment: Segment {
+                    low,
+                    high,
+                },
+                direction,
+            }
+        }
     }
 
 }
@@ -155,13 +301,17 @@ pub mod part_one {
 
 pub mod part_two {
     use crate::utils::solution::{Answer, Solution};
+    use super::utils::RestrictedTheater;
 
     #[derive(Debug, Default)]
-    pub struct Soln {}
+    pub struct Soln {
+        theater: RestrictedTheater,
+    }
 
     impl Solution for Soln {
         fn solve(&mut self, filename: &str) -> Answer {
-            unimplemented!();
+            self.theater.parse_input_file(filename);
+            Answer::Usize(self.theater.largest_area())
         }
     }
 
